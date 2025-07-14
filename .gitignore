@@ -2,6 +2,9 @@
 .godot/
 /android/
 
+# Godot addons (install via Asset Library)
+addons/
+
 # macOS specific files
 .DS_Store
 .DS_Store?
