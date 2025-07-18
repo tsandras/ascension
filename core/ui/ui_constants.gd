@@ -34,17 +34,17 @@ const VIEWPORT_HEIGHT = 720
 # ===================
 # FONT SIZES
 # ===================
-const FONT_SIZE_BUTTON = 18
-const FONT_SIZE_LABEL = 16
-const FONT_SIZE_TITLE = 24
-const FONT_SIZE_POINTS = 18
+const FONT_SIZE_BUTTON = 14        # Reduced for better fit in character creation
+const FONT_SIZE_LABEL = 12         # Reduced for better fit in character creation
+const FONT_SIZE_TITLE = 18         # Reduced for better fit in character creation
+const FONT_SIZE_POINTS = 14        # Reduced for better fit in character creation
 
 # ===================
 # BUTTON SIZES
 # ===================
 const BUTTON_MAIN_MENU = Vector2(300, 80)
 const BUTTON_BACK_CONTINUE = Vector2(150, 60)
-const BUTTON_PLUS_MINUS = Vector2(50, 50)
+const BUTTON_PLUS_MINUS = Vector2(35, 35)  # Reduced from 50x50 for better fit
 
 # ===================
 # LABEL SIZES
@@ -56,8 +56,8 @@ const LABEL_VALUE_WIDTH = 80
 # CONTAINER SIZES
 # ===================
 const CONTAINER_MAIN_MENU = Vector2(500, 600)
-const CONTAINER_ATTRIBUTES_ALLOCATION = Vector2(800, 900)
-const CONTAINER_ABILITIES_ALLOCATION = Vector2(800, 900)
+const CONTAINER_CHARACTER_CREATION_STEP1 = Vector2(1000, 950)  # Step 1: Attributes & Race + Trait display (horizontal layout)
+const CONTAINER_CHARACTER_CREATION_STEP2 = Vector2(1000, 950)  # Step 2: Abilities & Skills (horizontal layout, increased height)
 
 # ===================
 # SPACING
@@ -121,10 +121,10 @@ static func get_container_size(screen_type: String) -> Vector2:
 	match screen_type:
 		"main_menu":
 			return CONTAINER_MAIN_MENU
-		"attributes_allocation":
-			return CONTAINER_ATTRIBUTES_ALLOCATION
-		"abilities_allocation":
-			return CONTAINER_ABILITIES_ALLOCATION
+		"character_creation_step1":
+			return CONTAINER_CHARACTER_CREATION_STEP1
+		"character_creation_step2":
+			return CONTAINER_CHARACTER_CREATION_STEP2
 		_:
 			return Vector2(500, 600)  # Default
 

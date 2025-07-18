@@ -5,8 +5,8 @@ func _ready():
 	UIManager.setup_main_menu(self)
 
 func _on_new_game_button_pressed():
-	# Navigate to character creation scene (now generic and database-driven)
-	get_tree().change_scene_to_file("res://scenes/character_creation/attributes_allocation.tscn")
+	# Navigate to character creation step 1 (attributes & race)
+	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step1.tscn")
 
 func _on_test_map_button_pressed():
 	# Navigate directly to the hex map for testing

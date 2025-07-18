@@ -1,0 +1,128 @@
+[gd_scene load_steps=2 format=3 uid="uid://daj0xqr5pak4r"]
+
+[ext_resource type="Script" path="res://scenes/character_creation/character_creation_step2.gd" id="1_step2_script"]
+
+[node name="CharacterCreationStep2" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_step2_script")
+
+[node name="BackgroundColor" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(1000, 900)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "CHARACTER CREATION - STEP 2"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Abilities & Skills"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="ContentContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="LeftPanel" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="PointsLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/LeftPanel"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Ability Points Remaining: 3"
+horizontal_alignment = 1
+
+[node name="AbilitiesLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/LeftPanel"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "ALLOCATE ABILITIES"
+horizontal_alignment = 1
+
+[node name="AbilitiesSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/LeftPanel"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="AttributesContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/LeftPanel"]
+layout_mode = 2
+
+[node name="CenterSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+
+[node name="RightPanel" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="SkillsPointsLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Skill Points Remaining: 4"
+horizontal_alignment = 1
+
+[node name="SkillsLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "ALLOCATE SKILLS"
+horizontal_alignment = 1
+
+[node name="SkillsSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="SkillsContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
+layout_mode = 2
+
+[node name="Spacer3" type="Control" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="BackButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(150, 60)
+layout_mode = 2
+text = "Back"
+
+[node name="Spacer4" type="Control" parent="CenterContainer/VBoxContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+
+[node name="ContinueButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(150, 60)
+layout_mode = 2
+text = "Continue"
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonsContainer/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton" to="." method="_on_continue_button_pressed"] 

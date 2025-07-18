@@ -26,15 +26,28 @@ func load_item_definitions():
 		items = DatabaseManager.get_all_attributes()
 	elif table_name == "abilities":
 		items = DatabaseManager.get_all_abilities()
+	elif table_name == "races":
+		items = DatabaseManager.get_all_races()
+	elif table_name == "skills":
+		items = DatabaseManager.get_all_skills()
 	
 	for item in items:
-		item_definitions[item.name] = {
-			"id": item.id,
-			"base_value": item.base_value,
-			"max_value": item.max_value,
-			"display_order": item.display_order,
-			"description": item.description
-		}
+		if table_name == "races":
+			# Races don't have base/max values, just selection
+			item_definitions[item.name] = {
+				"id": item.id,
+				"display_order": item.display_order,
+				"description": item.description
+			}
+		else:
+			# Attributes, abilities, and skills have base/max values
+			item_definitions[item.name] = {
+				"id": item.id,
+				"base_value": item.base_value,
+				"max_value": item.max_value,
+				"display_order": item.display_order,
+				"description": item.description
+			}
 	
 	print("Loaded %d %s definitions" % [item_definitions.size(), item_type])
 
@@ -43,8 +56,13 @@ func initialize_character_items():
 	remaining_points = total_points
 	
 	for item_name in item_definitions:
-		var base_value = item_definitions[item_name].base_value
-		character_items[item_name] = base_value
+		if table_name == "races":
+			# For races, we don't initialize values (selection-based)
+			character_items[item_name] = false  # false = not selected
+		else:
+			# For attributes, abilities, and skills
+			var base_value = item_definitions[item_name].base_value
+			character_items[item_name] = base_value
 
 func get_item_names() -> Array:
 	# Return item names sorted by display order
@@ -56,18 +74,57 @@ func get_item_names() -> Array:
 
 func get_item_value(item_name: String) -> int:
 	if character_items.has(item_name):
-		return character_items[item_name]
+		if table_name == "races":
+			# For races, return 1 if selected, 0 if not
+			return 1 if character_items[item_name] else 0
+		else:
+			return character_items[item_name]
 	return 0
 
 func get_item_base_value(item_name: String) -> int:
+	if table_name == "races":
+		return 0  # Races don't have base values
 	if item_definitions.has(item_name):
 		return item_definitions[item_name].base_value
 	return 0
 
 func get_item_max_value(item_name: String) -> int:
+	if table_name == "races":
+		return 1  # Races have max of 1 (selected or not)
 	if item_definitions.has(item_name):
 		return item_definitions[item_name].max_value
 	return 0
+
+# Race selection methods
+func select_race(race_name: String) -> bool:
+	if table_name != "races":
+		return false
+	
+	# Deselect all other races first (only one race can be selected)
+	for item_name in character_items:
+		character_items[item_name] = false
+	
+	# Select the chosen race
+	if character_items.has(race_name):
+		character_items[race_name] = true
+		return true
+	return false
+
+func get_selected_race() -> String:
+	if table_name != "races":
+		return ""
+	
+	for race_name in character_items:
+		if character_items[race_name]:
+			return race_name
+	return ""
+
+func is_race_selected(race_name: String) -> bool:
+	if table_name != "races":
+		return false
+	if character_items.has(race_name):
+		return character_items[race_name]
+	return false
 
 func get_item_description(item_name: String) -> String:
 	if item_definitions.has(item_name):
@@ -78,6 +135,10 @@ func can_increase_item(item_name: String) -> bool:
 	if not character_items.has(item_name):
 		return false
 	
+	if table_name == "races":
+		# For races, can always "increase" (select) if not already selected
+		return not character_items[item_name]
+	
 	var current_value = character_items[item_name]
 	var max_value = get_item_max_value(item_name)
 	
@@ -87,12 +148,19 @@ func can_decrease_item(item_name: String) -> bool:
 	if not character_items.has(item_name):
 		return false
 	
+	if table_name == "races":
+		# For races, can always "decrease" (deselect) if currently selected
+		return character_items[item_name]
+	
 	var current_value = character_items[item_name]
 	var base_value = get_item_base_value(item_name)
 	
 	return current_value > base_value
 
 func increase_item(item_name: String) -> bool:
+	if table_name == "races":
+		return select_race(item_name)
+	
 	if can_increase_item(item_name):
 		character_items[item_name] += 1
 		update_remaining_points()
@@ -100,6 +168,12 @@ func increase_item(item_name: String) -> bool:
 	return false
 
 func decrease_item(item_name: String) -> bool:
+	if table_name == "races":
+		if can_decrease_item(item_name):
+			character_items[item_name] = false
+			return true
+		return false
+	
 	if can_decrease_item(item_name):
 		character_items[item_name] -= 1
 		update_remaining_points()
@@ -107,6 +181,10 @@ func decrease_item(item_name: String) -> bool:
 	return false
 
 func update_remaining_points():
+	if table_name == "races":
+		# Races don't use points, so remaining_points stays at total_points
+		return
+	
 	var used_points = 0
 	
 	for item_name in character_items:
@@ -126,7 +204,12 @@ func reset_items():
 	initialize_character_items()
 
 func all_points_spent() -> bool:
-	return remaining_points == 0
+	if table_name == "races":
+		# For races, check if any race is selected
+		return get_selected_race() != ""
+	else:
+		# For other types, check if all points are spent
+		return remaining_points == 0
 
 func print_character_stats():
 	print("=== CHARACTER %s ===" % item_type.to_upper())

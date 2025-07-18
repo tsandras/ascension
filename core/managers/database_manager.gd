@@ -21,12 +21,12 @@ func _ready():
 	seed_data()
 
 func create_tables():
-	# Create attributes table
+	# Create attributes table (updated base_value to 0)
 	var attributes_query = """
 	CREATE TABLE IF NOT EXISTS attributes (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
-		base_value INTEGER NOT NULL DEFAULT 2,
+		base_value INTEGER NOT NULL DEFAULT 0,
 		max_value INTEGER NOT NULL DEFAULT 6,
 		display_order INTEGER NOT NULL DEFAULT 0,
 		description TEXT
@@ -56,6 +56,62 @@ func create_tables():
 		print("Error creating abilities table: ", db.error_message)
 	else:
 		print("Abilities table created successfully")
+	
+	# Create races table
+	var races_query = """
+	CREATE TABLE IF NOT EXISTS races (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		trait_id INTEGER,
+		display_order INTEGER NOT NULL DEFAULT 0,
+		description TEXT,
+		FOREIGN KEY (trait_id) REFERENCES traits(id)
+	);
+	"""
+	
+	db.query(races_query)
+	if not is_query_successful():
+		print("Error creating races table: ", db.error_message)
+	else:
+		print("Races table created successfully")
+	
+	# Create traits table
+	var traits_query = """
+	CREATE TABLE IF NOT EXISTS traits (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		attribute_bonuses TEXT,
+		ability_bonuses TEXT,
+		skill_bonuses TEXT,
+		other_bonuses TEXT,
+		display_order INTEGER NOT NULL DEFAULT 0
+	);
+	"""
+	
+	db.query(traits_query)
+	if not is_query_successful():
+		print("Error creating traits table: ", db.error_message)
+	else:
+		print("Traits table created successfully")
+	
+	# Create skills table
+	var skills_query = """
+	CREATE TABLE IF NOT EXISTS skills (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		base_value INTEGER NOT NULL DEFAULT 0,
+		max_value INTEGER NOT NULL DEFAULT 6,
+		display_order INTEGER NOT NULL DEFAULT 0,
+		description TEXT
+	);
+	"""
+	
+	db.query(skills_query)
+	if not is_query_successful():
+		print("Error creating skills table: ", db.error_message)
+	else:
+		print("Skills table created successfully")
 	
 	# Create ref_map table (template maps)
 	var ref_map_query = """
@@ -146,6 +202,9 @@ func create_tables():
 func seed_data():
 	seed_attributes()
 	seed_abilities()
+	seed_traits()       # Seed traits before races (foreign key dependency)
+	seed_races()
+	seed_skills()
 	seed_ref_maps()
 	seed_ref_tiles()
 	seed_ref_map_tiles()
@@ -167,23 +226,23 @@ func seed_attributes():
 	
 	# Insert the 6 attributes
 	var attributes_data = [
-		{"name": "Vigor", "description": "Physical strength and health", "display_order": 1},
+		{"name": "Strength", "description": "Physical strength and power", "display_order": 1},
 		{"name": "Essence", "description": "Magical power and energy", "display_order": 2},
-		{"name": "Perception", "description": "Awareness and intuition", "display_order": 3},
-		{"name": "Willpower", "description": "Mental resilience and determination", "display_order": 4},
+		{"name": "Agility", "description": "Physical agility and reflexes", "display_order": 3},
+		{"name": "Resolution", "description": "Mental resilience and determination", "display_order": 4},
 		{"name": "Intelligence", "description": "Reasoning and learning ability", "display_order": 5},
-		{"name": "Constitution", "description": "Endurance and vitality", "display_order": 6}
+		{"name": "Stamina", "description": "Endurance and vitality", "display_order": 6}
 	]
 	
 	for attr in attributes_data:
 		var insert_query = """
 		INSERT INTO attributes (name, base_value, max_value, display_order, description)
-		VALUES ('%s', 2, 6, %d, '%s')
+		VALUES ('%s', 0, 6, %d, '%s')
 		""" % [attr.name, attr.display_order, attr.description]
 		
 		db.query(insert_query)
 		if not is_query_successful():
-			print("Error inserting attribute %s: %s" % [attr.name, db.error_message])
+			print("Error inserting attribute " + attr.name + ": " + db.error_message)
 		else:
 			print("Inserted attribute: ", attr.name)
 
@@ -202,18 +261,20 @@ func seed_abilities():
 	
 	print("No existing ability data found, seeding abilities...")
 	
-	# Insert the 10 abilities
+	# Insert the 12 abilities
 	var abilities_data = [
 		{"name": "Scoundrel", "description": "Sneaking, thievery, and cunning", "display_order": 1},
-		{"name": "Fire magic", "description": "Destructive fire spells and pyromancy", "display_order": 2},
-		{"name": "Single-handed", "description": "One-handed weapon mastery", "display_order": 3},
-		{"name": "Two-handed", "description": "Two-handed weapon expertise", "display_order": 4},
-		{"name": "Dual wielding", "description": "Fighting with weapons in both hands", "display_order": 5},
-		{"name": "Ranged", "description": "Bows, crossbows, and throwing weapons", "display_order": 6},
-		{"name": "Protection", "description": "Defensive magic and armor mastery", "display_order": 7},
-		{"name": "Tacticien", "description": "Leadership and battlefield strategy", "display_order": 8},
-		{"name": "Blood magic", "description": "Dark magic using life force", "display_order": 9},
-		{"name": "Magic source", "description": "Pure magical energy manipulation", "display_order": 10}
+		{"name": "Warrior", "description": "One-handed weapon mastery", "display_order": 2},
+		{"name": "Berserker", "description": "Two-handed weapon expertise", "display_order": 3},
+		{"name": "Ranger", "description": "Bows, crossbows, and throwing weapons", "display_order": 4},
+		{"name": "Juggernaut", "description": "Defensive and armor mastery", "display_order": 5},
+		{"name": "Tactician", "description": "Battlefield strategy", "display_order": 6},
+		{"name": "Pyromancer", "description": "Destructive fire spells and pyromancy", "display_order": 7},
+		{"name": "Aeromancer", "description": "Destructive air spells and aeromancy", "display_order": 8},
+		{"name": "Hydromancer", "description": "Destructive water spells and hydromancy", "display_order": 9},
+		{"name": "Lithomancer", "description": "Destructive earth spells and lithomancy", "display_order": 10},
+		{"name": "Arcanist", "description": "Pure magical energy manipulation", "display_order": 11},
+		{"name": "Bloodmage", "description": "Dark magic using life force", "display_order": 12}
 	]
 	
 	for ability in abilities_data:
@@ -224,7 +285,7 @@ func seed_abilities():
 		
 		db.query(insert_query)
 		if not is_query_successful():
-			print("Error inserting ability %s: %s" % [ability.name, db.error_message])
+			print("Error inserting ability " + ability.name + ": " + db.error_message)
 		else:
 			print("Inserted ability: ", ability.name)
 
@@ -270,6 +331,217 @@ func get_ability_by_name(ability_name: String):
 	else:
 		return null
 
+func seed_traits():
+	# Check if we already have trait data
+	var check_query = "SELECT COUNT(*) as count FROM traits"
+	db.query(check_query)
+	var result = db.query_result
+	
+	if result.size() > 0 and result[0]["count"] > 0:
+		print("Database already contains trait data")
+		return
+	
+	print("No existing trait data found, seeding traits...")
+	
+	# Insert Polyvalent trait (Human)
+	var query1 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
+	query1 += "('Polyvalent', 'Humans are adaptable and versatile, gaining small bonuses to all areas of expertise', "
+	query1 += "'[]', "
+	query1 += "'[]', "
+	query1 += "'[{\"name\": \"survival\", \"value\": 1}, {\"name\": \"perception\", \"value\": 1}, {\"name\": \"stealth\", \"value\": 1}, {\"name\": \"knowledge\", \"value\": 1}, {\"name\": \"arcana\", \"value\": 1}, {\"name\": \"sleight_of_hand\", \"value\": 1}, {\"name\": \"persuasion\", \"value\": 1}, {\"name\": \"athletics\", \"value\": 1}]', "
+	query1 += "'[{\"type\": \"damage\", \"value\": 5}, {\"type\": \"endurance\", \"value\": 2}, {\"type\": \"pv\", \"value\": 10}, {\"type\": \"mana\", \"value\": 10}]', 1)"
+	db.query(query1)
+	if is_query_successful():
+		print("Inserted trait: Polyvalent")
+	else:
+		print("Error inserting Polyvalent trait: " + db.error_message)
+	
+	# Insert Ancient Wisdom trait (Elder)
+	var query2 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
+	query2 += "('Ancient Wisdom', 'Elders possess centuries of accumulated knowledge and unshakeable mental fortitude', "
+	query2 += "'[{\"name\": \"stamina\", \"value\": -1}, {\"name\": \"willpower\", \"value\": 1}]', "
+	query2 += "'[]', "
+	query2 += "'[{\"name\": \"knowledge\", \"value\": 2}', "
+	query2 += "'[{\"type\": \"resistance\", \"value\": 10, \"subtype\": \"magical\"}]', 2)"
+	db.query(query2)
+	if is_query_successful():
+		print("Inserted trait: Ancient Wisdom")
+	else:
+		print("Error inserting Ancient Wisdom trait: " + db.error_message)
+	
+	# Insert Divine Heritage trait (Celestial-blooded)
+	var query3 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
+	query3 += "('Divine Heritage', 'Celestial-blooded carry divine blessings, excelling in protection and social grace', "
+	query3 += "'[{\"name\": \"essence\", \"value\": 1}]', "
+	query3 += "'[]', "
+	query3 += "'[]', "
+	query3 += "'[{\"type\": \"resistance\", \"value\": 15, \"subtype\": \"magical\"}, {\"type\": \"resistance\", \"value\": 5, \"subtype\": \"physical\"}]', 3)"
+	db.query(query3)
+	if is_query_successful():
+		print("Inserted trait: Divine Heritage")
+	else:
+		print("Error inserting Divine Heritage trait: " + db.error_message)
+	
+	# Insert Infernal Power trait (Infernal-blooded)
+	var query4 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
+	query4 += "('Infernal Power', 'Infernal-blooded channel raw dark power, devastating in combat but consuming', "
+	query4 += "'[{\"name\": \"essence\", \"value\": 1}]', "
+	query4 += "'[]', "
+	query4 += "'[]', "
+	query4 += "'[{\"type\": \"resistance\", \"value\": 20, \"subtype\": \"fire\"}]', 4)"
+	db.query(query4)
+	if is_query_successful():
+		print("Inserted trait: Infernal Power")
+	else:
+		print("Error inserting Infernal Power trait: " + db.error_message)
+
+func seed_races():
+	# Check if we already have race data
+	var check_query = "SELECT COUNT(*) as count FROM races"
+	db.query(check_query)
+	var result = db.query_result
+	
+	if result.size() > 0 and result[0]["count"] > 0:
+		print("Database already contains race data")
+		return
+	
+	print("No existing race data found, seeding races...")
+	
+	# Insert the 4 races with their corresponding trait IDs
+	var races_data = [
+		{"name": "Human", "description": "The most adaptable and common race", "display_order": 1, "trait_id": 1},
+		{"name": "Elder", "description": "Ancient and wise beings with extended lifespans", "display_order": 2, "trait_id": 2},
+		{"name": "Celestial-blooded", "description": "Descendants of celestial beings with divine heritage", "display_order": 3, "trait_id": 3},
+		{"name": "Infernal-blooded", "description": "Descendants of infernal beings with dark heritage", "display_order": 4, "trait_id": 4}
+	]
+	
+	for race_data in races_data:
+		var insert_query = """
+		INSERT INTO races (name, trait_id, display_order, description)
+		VALUES ('%s', %d, %d, '%s')
+		""" % [race_data.name, race_data.trait_id, race_data.display_order, race_data.description]
+		
+		db.query(insert_query)
+		if not is_query_successful():
+			print("Error inserting race " + race_data.name + ": " + db.error_message)
+		else:
+			print("Inserted race: ", race_data.name)
+
+func get_all_races():
+	var query = """
+	SELECT r.*, t.name as trait_name, t.description as trait_description, 
+		   t.attribute_bonuses, t.ability_bonuses, t.skill_bonuses, t.other_bonuses
+	FROM races r
+	LEFT JOIN traits t ON r.trait_id = t.id
+	ORDER BY r.display_order
+	"""
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully fetched %d races from database" % db.query_result.size())
+		return db.query_result
+	else:
+		print("Error fetching races: ", db.error_message)
+		return []
+
+func get_race_by_name(race_name: String):
+	var query = "SELECT * FROM races WHERE name = '%s'" % race_name
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		return result[0]
+	else:
+		return null
+
+func seed_skills():
+	# Check if we already have skill data
+	var check_query = "SELECT COUNT(*) as count FROM skills"
+	db.query(check_query)
+	var result = db.query_result
+	
+	if result.size() > 0 and result[0]["count"] > 0:
+		print("Database already contains skill data")
+		return
+	
+	print("No existing skill data found, seeding skills...")
+	
+	# Insert the 8 skills as specified
+	var skills_data = [
+		{"name": "Survival", "description": "Ability to survive in the wilderness", "display_order": 1},
+		{"name": "Perception", "description": "Awareness and ability to notice details", "display_order": 2},
+		{"name": "Stealth", "description": "Ability to move silently and remain hidden", "display_order": 3},
+		{"name": "Knowledge", "description": "General learning and intellectual capacity", "display_order": 4},
+		{"name": "Arcana", "description": "Understanding of magical theory and practice", "display_order": 5},
+		{"name": "Sleight of Hand", "description": "Dexterity and manual skill for precise tasks", "display_order": 6},
+		{"name": "Persuasion", "description": "Ability to influence and convince others", "display_order": 7},
+		{"name": "Athletics", "description": "Physical prowess and bodily coordination", "display_order": 8}
+	]
+	
+	for skill in skills_data:
+		var insert_query = """
+		INSERT INTO skills (name, base_value, max_value, display_order, description)
+		VALUES ('%s', 0, 6, %d, '%s')
+		""" % [skill.name, skill.display_order, skill.description]
+		
+		db.query(insert_query)
+		if not is_query_successful():
+			print("Error inserting skill " + skill.name + ": " + db.error_message)
+		else:
+			print("Inserted skill: ", skill.name)
+
+func get_all_skills():
+	var query = "SELECT * FROM skills ORDER BY display_order"
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully fetched %d skills from database" % db.query_result.size())
+		return db.query_result
+	else:
+		print("Error fetching skills: ", db.error_message)
+		return []
+
+func get_skill_by_name(skill_name: String):
+	var query = "SELECT * FROM skills WHERE name = '%s'" % skill_name
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		return result[0]
+	else:
+		return null
+
+func get_all_traits():
+	var query = "SELECT * FROM traits ORDER BY display_order"
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully fetched %d traits from database" % db.query_result.size())
+		return db.query_result
+	else:
+		print("Error fetching traits: ", db.error_message)
+		return []
+
+func get_trait_by_id(trait_id: int):
+	var query = "SELECT * FROM traits WHERE id = %d" % trait_id
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		return result[0]
+	else:
+		return null
+
+func get_trait_by_name(trait_name: String):
+	var query = "SELECT * FROM traits WHERE name = '%s'" % trait_name
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		return result[0]
+	else:
+		return null
+
 func seed_ref_maps():
 	# Check if we already have ref_map data
 	var check_query = "SELECT COUNT(*) as count FROM ref_map"
@@ -298,7 +570,7 @@ func seed_ref_maps():
 		
 		db.query(insert_query)
 		if not is_query_successful():
-			print("Error inserting ref_map %s: %s" % [map_data.name, db.error_message])
+			print("Error inserting ref_map " + map_data.name + ": " + db.error_message)
 		else:
 			print("Inserted ref_map: ", map_data.name)
 
@@ -330,7 +602,7 @@ func seed_ref_tiles():
 		
 		db.query(insert_query)
 		if not is_query_successful():
-			print("Error inserting ref_tile %s: %s" % [tile_data.type_name, db.error_message])
+			print("Error inserting ref_tile " + tile_data.type_name + ": " + db.error_message)
 		else:
 			print("Inserted ref_tile: ", tile_data.type_name)
 
@@ -354,6 +626,7 @@ func seed_ref_map_tiles():
 		return
 	
 	var forest_map_id = db.query_result[0]["id"]
+	print("Found ref_map_id: " + str(forest_map_id) + " for map: Simple Forest Test")
 	
 	# Get the forest tile ID
 	var tile_query = "SELECT id FROM ref_tile WHERE type_name = 'forest'"
@@ -422,7 +695,7 @@ func seed_ref_map_tiles():
 		
 			db.query(insert_query)
 			if not is_query_successful():
-				print("Error creating ref_map_tile at (%d, %d): %s" % [x, y, db.error_message])
+				print("Error creating ref_map_tile at (" + str(x) + ", " + str(y) + "): " + db.error_message)
 	
 	print("Created ref_map_tile entries for Simple Forest Test map (3x3 grid)")
 
@@ -457,11 +730,11 @@ func create_new_game(ref_map_name: String, game_id: int = HexTileConstants.DEFAU
 	var map_query = "SELECT id FROM ref_map WHERE name = '%s'" % ref_map_name
 	db.query(map_query)
 	if not is_query_successful() or db.query_result.size() == 0:
-		print("Error: Ref_map '%s' not found" % ref_map_name)
+		print("Error: Ref_map '" + ref_map_name + "' not found")
 		return false
 	
 	var ref_map_id = db.query_result[0]["id"]
-	print("Found ref_map_id: %d for map: %s" % [ref_map_id, ref_map_name])
+	print("Found ref_map_id: " + str(ref_map_id) + " for map: " + ref_map_name)
 	
 	# Check how many tiles are in ref_map_tile for this map
 	var count_query = "SELECT COUNT(*) as count FROM ref_map_tile WHERE ref_map_id = %d" % ref_map_id
@@ -601,7 +874,7 @@ func update_tile_tileset_coordinates(type_name: String, tileset_x: int, tileset_
 		print("Updated tileset coordinates for %s: (%d, %d)" % [type_name, tileset_x, tileset_y])
 		return true
 	else:
-		print("Error updating tileset coordinates for %s: %s" % [type_name, db.error_message])
+		print("Error updating tileset coordinates for " + type_name + ": " + db.error_message)
 		return false
 
 # Debug function to show current tileset mappings
@@ -645,6 +918,23 @@ func reset_database():
 	
 	print("Database reset complete")
 
+func reset_traits_and_races():
+	print("Resetting traits and races with updated data...")
+	
+	# Delete existing data
+	db.query("DELETE FROM races")
+	db.query("DELETE FROM traits")
+	
+	# Reset auto-increment counters
+	db.query("DELETE FROM sqlite_sequence WHERE name='races'")
+	db.query("DELETE FROM sqlite_sequence WHERE name='traits'")
+	
+	# Re-seed with updated data
+	seed_traits()
+	seed_races()
+	
+	print("Traits and races reset complete")
+
 # Update existing tile texture paths to use new tilev2 files
 func update_tile_texture_paths() -> bool:
 	print("Updating tile texture paths to new tilev2 files...")
@@ -667,7 +957,7 @@ func update_tile_texture_paths() -> bool:
 		if is_query_successful():
 			print("Updated texture path for %s to %s" % [update.type_name, update.new_path])
 		else:
-			print("Error updating texture path for %s: %s" % [update.type_name, db.error_message])
+			print("Error updating texture path for " + update.type_name + ": " + db.error_message)
 			success = false
 	
 	# Also fix the typo if it exists
@@ -686,3 +976,34 @@ func update_tile_texture_paths() -> bool:
 # Create a simple forest test map for immediate testing
 func create_simple_forest_test_game(game_id: int = 1) -> bool:
 	return create_new_game("Simple Forest Test", game_id) 
+
+func update_traits_to_full_json():
+	print("Updating traits table to use JSON for all bonus fields...")
+	
+	# Drop the existing traits table and recreate with new schema
+	db.query("DROP TABLE IF EXISTS traits")
+	
+	# Recreate traits table with new schema (same schema, but we'll populate with JSON)
+	var traits_query = """
+	CREATE TABLE IF NOT EXISTS traits (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		attribute_bonuses TEXT,
+		ability_bonuses TEXT,
+		skill_bonuses TEXT,
+		other_bonuses TEXT,
+		display_order INTEGER NOT NULL DEFAULT 0
+	);
+	"""
+	
+	db.query(traits_query)
+	if not is_query_successful():
+		print("Error recreating traits table: " + db.error_message)
+		return false
+	
+	# Re-seed with new JSON format
+	seed_traits()
+	
+	print("Traits table updated to full JSON format successfully")
+	return true 
