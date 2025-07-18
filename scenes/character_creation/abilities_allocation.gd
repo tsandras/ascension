@@ -137,6 +137,6 @@ func _on_continue_button_pressed():
 	print("Character creation complete!")
 	print("Ready to enter the world of Ascension!")
 	
-	# TODO: Navigate to next scene (game world, character summary, etc.)
-	# For now, return to main menu
-	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn") 
+	# Navigate to the hexagonal map
+	print("Loading map...")
+	get_tree().change_scene_to_file("res://scenes/game_world/hex_map.tscn") 
