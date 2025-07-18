@@ -4,23 +4,54 @@ extends Control
 var map_manager: MapManager
 
 # UI references
-@onready var scroll_container = $ScrollContainer
-@onready var map_canvas = $ScrollContainer/MapCanvas
+@onready var game_world_clip = $GameWorldClip
+@onready var game_world = $GameWorldClip/GameWorld
+@onready var camera = $GameWorldClip/GameWorld/Camera2D
+@onready var tile_layer = $GameWorldClip/GameWorld/TileLayer
+@onready var character_layer = $GameWorldClip/GameWorld/CharacterLayer
+@onready var character = $GameWorldClip/GameWorld/CharacterLayer/Character
 @onready var info_panel = $InfoPanel
 @onready var map_name_label = $InfoPanel/VBoxContainer/MapNameLabel
 @onready var tile_info_label = $InfoPanel/VBoxContainer/TileInfoLabel
 @onready var coordinates_label = $InfoPanel/VBoxContainer/CoordinatesLabel
+@onready var character_info_label = $InfoPanel/VBoxContainer/CharacterInfoLabel
 @onready var back_button = $InfoPanel/VBoxContainer/BackButton
 
 # Tile rendering
 var hex_tiles = []
 var selected_tile = null
+var character_grid_pos = Vector2(0, 0)  # Character's grid position
 
 # Tile image cache
 var tile_textures = {}
 
+# Movement animation
+var is_moving = false
+
 func _ready():
 	print("HexMap scene loaded")
+	
+	# Debug GameWorld setup
+	print("GameWorldClip setup:")
+	print("  Size: ", game_world_clip.size)
+	print("  Position: ", game_world_clip.position)
+	print("  Visible: ", game_world_clip.visible)
+	print("  GameWorld children: ", game_world.get_child_count())
+	print("  TileLayer children: ", tile_layer.get_child_count())
+	
+	# Set GameWorldClip to receive mouse events
+	game_world_clip.mouse_filter = Control.MOUSE_FILTER_STOP
+	print("  Mouse filter set to STOP")
+	
+	# Connect direct input to GameWorldClip as backup
+	game_world_clip.gui_input.connect(_on_game_world_input)
+	print("  Direct input connected to GameWorldClip")
+	
+	# Debug InfoPanel
+	print("InfoPanel setup:")
+	print("  Size: ", info_panel.size)
+	print("  Position: ", info_panel.position)
+	print("  Visible: ", info_panel.visible)
 	
 	# Show debug controls
 	show_debug_help()
@@ -39,6 +70,7 @@ func _ready():
 	if map_manager.initialize_game_map():
 		setup_map_display()
 		update_info_panel()
+		update_character_info()
 	else:
 		print("Failed to initialize map")
 		show_error_message("Failed to load map data")
@@ -49,152 +81,449 @@ func load_tile_textures():
 	# Get all ref_tiles from database to load their textures
 	var ref_tiles = DatabaseManager.get_all_ref_tiles()
 	
-	for tile_ref in ref_tiles:
-		var texture_path = tile_ref.get("texture_path", "")
-		var type_name = tile_ref.get("type_name", "")
-		
-		if texture_path != "":
+	for ref_tile in ref_tiles:
+		var texture_path = ref_tile.get("texture_path", "")
+		if texture_path != "" and texture_path != "null":
 			var texture = load(texture_path)
-			if texture != null:
-				# Resize source textures to display size for consistent fixed size
-				var resized_texture = resize_texture(texture, HexTileConstants.TILE_WIDTH, HexTileConstants.TILE_HEIGHT)
-				tile_textures[type_name] = resized_texture
-				print("Loaded and resized texture for %s: %s (%dx%d -> %dx%d)" % [type_name, texture_path, HexTileConstants.SOURCE_TEXTURE_WIDTH, HexTileConstants.SOURCE_TEXTURE_HEIGHT, HexTileConstants.TILE_WIDTH, HexTileConstants.TILE_HEIGHT])
+			if texture:
+				tile_textures[ref_tile.type_name] = texture
+				print("Loaded texture for: ", ref_tile.type_name)
 			else:
-				print("Warning: Could not load texture: %s" % texture_path)
-	
-	print("Loaded %d tile textures" % tile_textures.size())
-
-# Resize a texture to specified dimensions
-func resize_texture(original_texture: Texture2D, new_width: int, new_height: int) -> ImageTexture:
-	# Get the image from the texture
-	var image = original_texture.get_image()
-	
-	# Resize the image using Lanczos interpolation for good quality
-	image.resize(new_width, new_height, Image.INTERPOLATE_LANCZOS)
-	
-	# Create a new ImageTexture from the resized image
-	var new_texture = ImageTexture.new()
-	new_texture.set_image(image)
-	
-	return new_texture
+				print("Warning: Failed to load texture: ", texture_path)
+		else:
+			print("Warning: No texture path for tile type: ", ref_tile.type_name)
 
 func setup_map_display():
 	print("Setting up map display...")
 	
-	# Clear any existing tiles
-	for child in map_canvas.get_children():
+	# Clear existing tiles
+	for child in tile_layer.get_children():
 		child.queue_free()
 	hex_tiles.clear()
 	
-	# Get map info and tiles
-	var map_info = map_manager.get_current_map_info()
+	# Get map data
+	var map_data = map_manager.get_current_map_info()
+	if not map_data:
+		print("No map data available")
+		return
+	
+	print("Map data received:")
+	print("  Name: ", map_data.get("name", "Unknown"))
+	print("  Width: ", map_data.get("width", 0))
+	print("  Height: ", map_data.get("height", 0))
+	
+	var map_width = map_data.get("width", 0)
+	var map_height = map_data.get("height", 0)
 	var tiles = map_manager.get_current_tiles()
 	
-	print("Rendering %d tiles for map: %s" % [tiles.size(), map_info["name"]])
-	print("Using hex spacing: %.1fx%.1f" % [map_manager.hex_horiz_spacing, map_manager.hex_vert_spacing])
+	print("Creating %d hex tiles for %dx%d map" % [tiles.size(), map_width, map_height])
 	
-	# Calculate map canvas size needed
-	var max_x = 0
-	var max_y = 0
+	if tiles.size() == 0:
+		print("ERROR: No tiles returned from map manager!")
+		return
 	
-	# Create hexagonal tiles
-	for tile_data in tiles:
-		var grid_x = tile_data["x"]
-		var grid_y = tile_data["y"]
-		
-		# Convert grid position to screen position using actual image-based calculations
-		var screen_pos = map_manager.grid_to_screen_position(grid_x, grid_y)
-		
-		# Track maximum positions for canvas sizing (add image dimensions for proper bounds)
-		max_x = max(max_x, screen_pos.x + map_manager.hex_image_width)
-		max_y = max(max_y, screen_pos.y + map_manager.hex_image_height)
-		
-		# Create the hex tile visual
-		print("Creating hex tile at (%d, %d)" % [grid_x, grid_y])
-		print("Screen position: %s" % str(screen_pos))
-		print("Tile data: %s" % str(tile_data))
-		create_hex_tile(tile_data, screen_pos)
+	# Create tiles as Sprite2D nodes
+	for i in range(tiles.size()):
+		var tile = tiles[i]
+		print("Creating tile %d: %s at (%d, %d)" % [i, tile.get("type_name", "unknown"), tile.get("x", 0), tile.get("y", 0)])
+		create_hex_tile(tile)
 	
-	# Set canvas size to fit all tiles with padding
-	map_canvas.custom_minimum_size = Vector2(max_x + HexTileConstants.MAP_CANVAS_PADDING, max_y + HexTileConstants.MAP_CANVAS_PADDING)
+	print("Map display setup complete with %d tiles" % hex_tiles.size())
+	print("Tile layer children: ", tile_layer.get_child_count())
 	
-	print("Map canvas size set to: %s" % str(map_canvas.custom_minimum_size))
+	# Debug Area2D setup after all tiles are created
+	await get_tree().process_frame  # Wait for Area2D to be fully setup
+	print("=== AREA2D DEBUG ===")
+	for i in range(min(3, hex_tiles.size())):  # Check first 3 tiles
+		var tile = hex_tiles[i]
+		var area = tile.get_child(0) as Area2D
+		if area:
+			var global_pos = area.global_position
+			var local_pos = area.position
+			print("Tile %d Area2D - Local: %s, Global: %s, Input pickable: %s" % [i, local_pos, global_pos, area.input_pickable])
+			var collision = area.get_child(0) as CollisionShape2D
+			if collision:
+				print("  Collision shape: %s, Size: %s" % [collision.shape, collision.shape.size if collision.shape else "none"])
+		else:
+			print("Tile %d has no Area2D child!" % i)
+	print("==================")
+	
+	# Initialize character position on first walkable tile
+	initialize_character_position()
 
-func create_hex_tile(tile_data: Dictionary, tile_position: Vector2):
-	# Create a TextureRect for each hex tile using actual image dimensions
-	var hex_tile = TextureRect.new()
+func initialize_character_position():
+	"""Place character on the first walkable tile"""
+	print("Initializing character position...")
 	
-	# Load the tile texture based on type_name
-	var type_name = tile_data.get("type_name", "forest")
-	var texture = tile_textures.get(type_name)
+	# Calculate the bounds of all tiles
+	var tile_bounds = calculate_tile_bounds()
+	var tile_center = Vector2(
+		(tile_bounds.x + tile_bounds.z) / 2.0,  # x min + x max / 2
+		(tile_bounds.y + tile_bounds.w) / 2.0   # y min + y max / 2
+	)
 	
-	if texture != null:
-		# Use the actual image size
-		var image_width = texture.get_width()
-		var image_height = texture.get_height()
-		
-		hex_tile.size = Vector2(image_width, image_height)
-		hex_tile.position = tile_position
+	# Calculate where to position the GameWorld Node2D to center tiles in the visible area
+	var visible_area_center = Vector2(
+		game_world_clip.size.x / 2.0,  # Center of the clipped area
+		game_world_clip.size.y / 2.0
+	)
+	
+	# Offset the entire GameWorld to center the tiles
+	var world_offset = visible_area_center - tile_center
+	game_world.position = world_offset
+	
+	print("Tile center: ", tile_center)
+	print("Visible area center: ", visible_area_center)
+	print("GameWorld offset: ", world_offset)
+	print("GameWorld position: ", game_world.position)
+	
+	# Place character on first walkable tile
+	for tile in hex_tiles:
+		var tile_data = tile.get_meta("tile_data")
+		if tile_data.get("is_walkable", false):
+			var grid_pos = tile.get_meta("grid_pos")
+			character_grid_pos = grid_pos
+			character.position = hex_grid_to_world_position(grid_pos)
+			print("Character initialized at grid position: ", grid_pos)
+			print("Character world position: ", character.position)
+			
+			update_character_info()
+			return
+	
+	# Fallback: place at origin if no walkable tiles found
+	print("Warning: No walkable tiles found, placing character at origin")
+	character_grid_pos = Vector2(0, 0)
+	character.position = hex_grid_to_world_position(Vector2(0, 0))
+	print("Character fallback position: ", character.position)
+	update_character_info()
+
+func calculate_tile_bounds() -> Vector4:
+	"""Calculate the min/max world coordinates of all tiles"""
+	if hex_tiles.size() == 0:
+		return Vector4(0, 0, 0, 0)
+	
+	var min_x = hex_tiles[0].position.x
+	var min_y = hex_tiles[0].position.y
+	var max_x = min_x
+	var max_y = min_y
+	
+	for tile in hex_tiles:
+		min_x = min(min_x, tile.position.x)
+		min_y = min(min_y, tile.position.y)
+		max_x = max(max_x, tile.position.x)
+		max_y = max(max_y, tile.position.y)
+	
+	print("Tile bounds: min(", min_x, ", ", min_y, ") max(", max_x, ", ", max_y, ")")
+	return Vector4(min_x, min_y, max_x, max_y)
+
+func create_hex_tile(tile_data: Dictionary):
+	# Create a Sprite2D for each hex tile
+	var hex_tile = Sprite2D.new()
+	var grid_pos = Vector2(tile_data.x, tile_data.y)
+	
+	print("  Creating hex tile at grid: ", grid_pos)
+	
+	# Get tile type and texture
+	var tile_type = tile_data.get("type_name", "grass")
+	var texture = tile_textures.get(tile_type)
+	
+	if texture:
 		hex_tile.texture = texture
-		hex_tile.stretch_mode = TextureRect.STRETCH_KEEP
-		
-		print("Created tile at (%d,%d) using texture for: %s (size: %dx%d)" % [tile_data["x"], tile_data["y"], type_name, image_width, image_height])
+		print("  Loaded texture for: ", tile_type, " (", texture.get_size(), ")")
 	else:
-		# Fallback to colored rectangle if texture not available
-		print("Warning: No texture found for type: %s, using fallback color" % type_name)
-		
-		# Use the map manager's hex dimensions for fallback
-		var fallback_width = map_manager.hex_image_width
-		var fallback_height = map_manager.hex_image_height
-		
-		hex_tile.size = Vector2(fallback_width, fallback_height)
-		hex_tile.position = tile_position
-		
-		var color_rect = ColorRect.new()
-		color_rect.size = Vector2(fallback_width, fallback_height)
-		var color_hex = tile_data.get("color_hex", HexTileConstants.DEFAULT_FALLBACK_COLOR)
-		color_rect.color = Color(color_hex)
-		hex_tile.add_child(color_rect)
+		print("Warning: No texture found for tile type: ", tile_type)
+		# Use a default texture or create a colored rectangle
+		hex_tile.texture = tile_textures.get("grass", load("res://icon.svg"))
+		if hex_tile.texture:
+			print("  Using fallback texture: ", hex_tile.texture.get_size())
 	
-	# Store tile data for interaction
+	# Position the tile using hexagonal grid layout
+	var world_pos = hex_grid_to_world_position(grid_pos)
+	hex_tile.position = world_pos
+	
+	# Calculate scale based on constants
+	var scale_factor = float(HexTileConstants.TILE_WIDTH) / float(HexTileConstants.SOURCE_TEXTURE_WIDTH)
+	hex_tile.scale = Vector2(scale_factor, scale_factor)
+	
+	print("  Tile world position: ", world_pos)
+	print("  Tile scale: ", hex_tile.scale, " (", HexTileConstants.TILE_WIDTH, "px target from ", HexTileConstants.SOURCE_TEXTURE_WIDTH, "px source)")
+	
+	# Store tile data and grid position
 	hex_tile.set_meta("tile_data", tile_data)
-	hex_tile.set_meta("grid_pos", Vector2i(tile_data["x"], tile_data["y"]))
-	hex_tile.set_meta("original_modulate", hex_tile.modulate)
+	hex_tile.set_meta("grid_pos", grid_pos)
+	hex_tile.set_meta("original_modulate", Color.WHITE)
 	
-	# Add mouse interaction
-	hex_tile.mouse_entered.connect(_on_tile_mouse_entered.bind(hex_tile))
-	hex_tile.mouse_exited.connect(_on_tile_mouse_exited.bind(hex_tile))
-	hex_tile.gui_input.connect(_on_tile_input.bind(hex_tile))
+	# Create Area2D for input detection
+	var area = Area2D.new()
+	var collision = CollisionShape2D.new()
+	var shape = RectangleShape2D.new()
 	
-	# Add to canvas and track
-	map_canvas.add_child(hex_tile)
+	# Configure Area2D for input detection
+	area.input_pickable = true
+	area.monitoring = false  # We don't need collision detection, just input
+	area.monitorable = false
+	
+	# Set up collision shape based on target tile size
+	shape.size = Vector2(HexTileConstants.TILE_WIDTH, HexTileConstants.TILE_HEIGHT)
+	collision.shape = shape
+	collision.position = Vector2.ZERO
+	
+	print("  Collision size: ", shape.size)
+	
+	area.add_child(collision)
+	hex_tile.add_child(area)
+	
+	print("  Area2D configured - input_pickable: ", area.input_pickable)
+	
+	# Connect Area2D signals for input detection
+	var input_connection = area.input_event.connect(_on_tile_input.bind(hex_tile))
+	var mouse_enter_connection = area.mouse_entered.connect(_on_tile_mouse_entered.bind(hex_tile))
+	var mouse_exit_connection = area.mouse_exited.connect(_on_tile_mouse_exited.bind(hex_tile))
+	
+	print("  Signal connections - input: ", input_connection == OK, ", mouse_enter: ", mouse_enter_connection == OK, ", mouse_exit: ", mouse_exit_connection == OK)
+	
+	# Add to tile layer
+	tile_layer.add_child(hex_tile)
 	hex_tiles.append(hex_tile)
+	print("  Tile added to layer. Total tiles: ", hex_tiles.size())
 
-func _on_tile_mouse_entered(tile: TextureRect):
-	# Highlight tile on hover (using modulate for TextureRect)
-	tile.modulate = Color(HexTileConstants.HOVER_BRIGHTNESS, HexTileConstants.HOVER_BRIGHTNESS, HexTileConstants.HOVER_BRIGHTNESS, 1.0)
+func hex_grid_to_world_position(grid_pos: Vector2) -> Vector2:
+	"""Convert hex grid coordinates to world position"""
+	# Use spacing constants from HexTileConstants
+	var x_offset = HexTileConstants.HORIZONTAL_SPACING
+	var y_offset = HexTileConstants.VERTICAL_SPACING
+	
+	var world_x = grid_pos.x * x_offset
+	var world_y = grid_pos.y * y_offset
+	
+	# Offset every other row for hexagonal pattern
+	if int(grid_pos.y) % 2 == 1:
+		world_x += x_offset * 0.5
+	
+	print("Hex grid ", grid_pos, " -> world ", Vector2(world_x, world_y), " (x_offset: ", x_offset, ", y_offset: ", y_offset, ")")
+	return Vector2(world_x, world_y)
+
+func world_position_to_hex_grid(world_pos: Vector2) -> Vector2:
+	"""Convert world position back to hex grid coordinates (approximate)"""
+	# Use same spacing values as hex_grid_to_world_position
+	var x_offset = HexTileConstants.HORIZONTAL_SPACING
+	var y_offset = HexTileConstants.VERTICAL_SPACING
+	
+	var grid_y = round(world_pos.y / y_offset)
+	var grid_x = world_pos.x / x_offset
+	
+	# Adjust for hexagonal offset
+	if int(grid_y) % 2 == 1:
+		grid_x -= 0.5
+	
+	grid_x = round(grid_x)
+	
+	return Vector2(grid_x, grid_y)
+
+func move_character_to_tile(target_grid_pos: Vector2):
+	"""Move character to the specified tile with pathfinding animation"""
+	print("=== CHARACTER PATHFINDING ===")
+	print("Target grid position: ", target_grid_pos)
+	print("Current character grid position: ", character_grid_pos)
+	print("Is moving: ", is_moving)
+	
+	if is_moving:
+		print("Character is already moving")
+		return
+	
+	# Check if the target tile exists and is walkable
+	var target_tile = get_tile_at_grid_position(target_grid_pos)
+	if not target_tile:
+		print("ERROR: No tile found at position: ", target_grid_pos)
+		return
+	
+	var tile_data = target_tile.get_meta("tile_data")
+	print("Target tile data: ", tile_data)
+	print("Target tile walkable: ", tile_data.get("is_walkable", false))
+	
+	# if not tile_data.get("is_walkable", false):
+	# 	print("Cannot move to non-walkable tile: ", tile_data.get("type_name", "unknown"))
+	# 	return
+	
+	# Find path from current position to target
+	var path = find_path(character_grid_pos, target_grid_pos)
+	if path.size() == 0:
+		print("No path found to target!")
+		return
+	
+	print("Path found with %d steps: %s" % [path.size(), path])
+	
+	# Start moving along the path
+	is_moving = true
+	move_along_path(path)
+	print("=========================")
+
+func find_path(start: Vector2, goal: Vector2) -> Array:
+	"""Find path using A* algorithm for hex grid"""
+	print("Finding path from ", start, " to ", goal)
+	
+	# If start and goal are the same, no movement needed
+	if start == goal:
+		return []
+	
+	var open_set = [start]
+	var came_from = {}
+	var g_score = {start: 0}
+	var f_score = {start: hex_distance(start, goal)}
+	
+	while open_set.size() > 0:
+		# Find node with lowest f_score
+		var current = open_set[0]
+		var current_f = f_score.get(current, INF)
+		
+		for node in open_set:
+			var node_f = f_score.get(node, INF)
+			if node_f < current_f:
+				current = node
+				current_f = node_f
+		
+		# If we reached the goal, reconstruct path
+		if current == goal:
+			var path = [goal]
+			while came_from.has(current):
+				current = came_from[current]
+				if current != start:  # Don't include starting position
+					path.push_front(current)
+			print("Path reconstruction complete: ", path)
+			return path
+		
+		open_set.erase(current)
+		
+		# Check all neighbors
+		var neighbors = get_hex_neighbors(current)
+		for neighbor in neighbors:
+			# Check if neighbor is walkable
+			var neighbor_tile = get_tile_at_grid_position(neighbor)
+			if not neighbor_tile:
+				continue
+			
+			var _neighbor_data = neighbor_tile.get_meta("tile_data")
+			# For now, allow movement to any tile (remove walkable check for testing)
+			# if not _neighbor_data.get("is_walkable", false):
+			# 	continue
+			
+			var tentative_g = g_score.get(current, INF) + 1  # Each step costs 1
+			
+			if tentative_g < g_score.get(neighbor, INF):
+				came_from[neighbor] = current
+				g_score[neighbor] = tentative_g
+				f_score[neighbor] = tentative_g + hex_distance(neighbor, goal)
+				
+				if neighbor not in open_set:
+					open_set.append(neighbor)
+	
+	print("No path found!")
+	return []
+
+func get_hex_neighbors(grid_pos: Vector2) -> Array:
+	"""Get the 6 neighboring hex tiles"""
+	var neighbors = []
+	var x = int(grid_pos.x)
+	var y = int(grid_pos.y)
+	
+	# Use neighbor offsets from HexTileConstants
+	var offsets = []
+	if y % 2 == 0:  # Even row
+		offsets = HexTileConstants.HEX_NEIGHBORS_EVEN_ROW
+	else:  # Odd row
+		offsets = HexTileConstants.HEX_NEIGHBORS_ODD_ROW
+	
+	for offset in offsets:
+		var neighbor = Vector2(x + offset.x, y + offset.y)
+		# Check if neighbor is within valid grid bounds
+		if neighbor.x >= 0 and neighbor.y >= 0:
+			neighbors.append(neighbor)
+	
+	return neighbors
+
+func hex_distance(a: Vector2, b: Vector2) -> int:
+	"""Calculate hex grid distance between two positions"""
+	# Convert to cube coordinates for easier distance calculation
+	var ac = offset_to_cube(a)
+	var bc = offset_to_cube(b)
+	
+	return int((abs(ac.x - bc.x) + abs(ac.y - bc.y) + abs(ac.z - bc.z)) / 2)
+
+func offset_to_cube(hex: Vector2) -> Vector3:
+	"""Convert offset coordinates to cube coordinates"""
+	var x = hex.x - (hex.y - int(hex.y) % 2) / 2
+	var z = hex.y
+	var y = -x - z
+	return Vector3(x, y, z)
+
+func move_along_path(path: Array):
+	"""Animate character movement along the given path"""
+	if path.size() == 0:
+		is_moving = false
+		return
+	
+	# Move to first position in path
+	var next_grid_pos = path[0]
+	var next_world_pos = hex_grid_to_world_position(next_grid_pos)
+	
+	print("Moving to step: ", next_grid_pos, " (world: ", next_world_pos, ")")
+	
+	# Update character grid position
+	character_grid_pos = next_grid_pos
+	
+	# Create tween for this step
+	var tween = create_tween()
+	tween.tween_property(character, "position", next_world_pos, 0.3)  # Faster steps
+	
+	# When this step completes, continue with remaining path
+	var remaining_path = path.slice(1)  # Remove first element
+	tween.tween_callback(func():
+		if remaining_path.size() > 0:
+			move_along_path(remaining_path)  # Continue with remaining path
+		else:
+			is_moving = false
+			print("Path completed!")
+			update_character_info()
+	)
+
+func get_tile_at_grid_position(grid_pos: Vector2) -> Sprite2D:
+	"""Find the tile at the given grid position"""
+	for tile in hex_tiles:
+		if tile.get_meta("grid_pos") == grid_pos:
+			return tile
+	return null
+
+func _on_tile_mouse_entered(tile: Sprite2D):
+	# Highlight tile on hover
+	tile.modulate = Color(1.1, 1.1, 1.1, 1.0)
 	
 	# Update tile info
 	update_tile_info(tile.get_meta("tile_data"))
 
-func _on_tile_mouse_exited(tile: TextureRect):
+func _on_tile_mouse_exited(tile: Sprite2D):
 	# Remove highlight only if this tile is not selected
 	if tile != selected_tile:
 		tile.modulate = tile.get_meta("original_modulate")
 
-func _on_tile_input(event: InputEvent, tile: TextureRect):
+func _on_tile_input(_viewport: Node, event: InputEvent, _shape_idx: int, tile: Sprite2D):
+	print("Tile input event received: ", event)
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		print("Left mouse button clicked on tile!")
 		select_tile(tile)
+	else:
+		print("Non-click event on tile: ", event)
 
-func select_tile(tile: TextureRect):
+func select_tile(tile: Sprite2D):
+	print("=== TILE SELECTION ===")
+	print("Tile clicked!")
+	
 	# Deselect previous tile
 	if selected_tile != null:
 		selected_tile.modulate = selected_tile.get_meta("original_modulate")
 	
 	# Select new tile
 	selected_tile = tile
-	tile.modulate = Color(HexTileConstants.SELECTION_BRIGHTNESS, HexTileConstants.SELECTION_BRIGHTNESS, HexTileConstants.SELECTION_YELLOW_TINT, 1.0)
+	tile.modulate = Color(1.2, 1.2, 0.8, 1.0)  # Bright yellow tint for selection
 	
 	# Update info panel
 	update_tile_info(tile.get_meta("tile_data"))
@@ -203,7 +532,13 @@ func select_tile(tile: TextureRect):
 	var grid_pos = tile.get_meta("grid_pos")
 	coordinates_label.text = "Position: (%d, %d)" % [grid_pos.x, grid_pos.y]
 	
-	print("Selected tile at (%d, %d): %s" % [grid_pos.x, grid_pos.y, tile.get_meta("tile_data")["type_name"]])
+	print("Selected tile at grid (%d, %d): %s" % [grid_pos.x, grid_pos.y, tile.get_meta("tile_data")["type_name"]])
+	print("Tile world position: ", tile.position)
+	
+	# Move character to selected tile
+	print("Attempting to move character to grid: ", grid_pos)
+	move_character_to_tile(grid_pos)
+	print("=====================")
 
 func update_tile_info(tile_data: Dictionary):
 	var type_name = tile_data.get("type_name", "unknown")
@@ -220,13 +555,17 @@ func update_tile_info(tile_data: Dictionary):
 		description
 	]
 
+func update_character_info():
+	"""Update the character info display"""
+	character_info_label.text = "Character: (%d, %d)" % [character_grid_pos.x, character_grid_pos.y]
+
 func update_info_panel():
-	var map_info = map_manager.get_current_map_info()
-	if map_info.is_empty():
-		map_name_label.text = "Unknown Map"
-		return
-	
-	map_name_label.text = "%s\n%dx%d tiles" % [map_info["name"], map_info["width"], map_info["height"]]
+	"""Update the map info panel"""
+	var map_data = map_manager.get_current_map_info()
+	if map_data:
+		map_name_label.text = "Map: " + map_data.get("name", "Unknown")
+	else:
+		map_name_label.text = "Map: Unknown"
 
 func show_error_message(message: String):
 	map_name_label.text = "Error"
@@ -239,103 +578,115 @@ func _on_back_button_pressed():
 
 # Debug functions
 func _input(event):
+	# Global input test for debugging
+	if event is InputEventMouseButton and event.pressed:
+		print("=== GLOBAL MOUSE INPUT ===")
+		print("Mouse button pressed: ", event.button_index)
+		print("Mouse position: ", event.position)
+		
+		# Test coordinate transformation
+		var local_mouse_pos = game_world.to_local(event.position)
+		print("Local mouse position in GameWorld: ", local_mouse_pos)
+		
+		# Check if mouse is over any Area2D
+		if hex_tiles.size() > 0:
+			print("Checking first few tiles:")
+			for i in range(min(3, hex_tiles.size())):
+				var tile = hex_tiles[i]
+				var area = tile.get_child(0) as Area2D
+				if area:
+					var area_global_pos = area.global_position
+					var distance = event.position.distance_to(area_global_pos)
+					print("  Tile %d Area2D global pos: %s, distance to mouse: %.1f" % [i, area_global_pos, distance])
+		print("===========================")
+	
 	if event.is_action_pressed("ui_accept"):  # Space key or Enter
 		if map_manager:
 			map_manager.print_map_debug()
 	
-	# Update tile paths with U key (for development/migration)
-	if event.is_action_pressed("ui_cancel"):  # Escape key, or use a custom key
-		update_tile_paths_debug()
+
 	
-	# Real-time spacing adjustment for debugging gaps
+	# Camera controls
 	if event is InputEventKey and event.pressed:
-		var spacing_changed = false
-		var step_size = HexTileConstants.DEBUG_SPACING_STEP
-		
 		match event.keycode:
-			KEY_Q: # Decrease horizontal spacing
-				map_manager.hex_horiz_spacing -= step_size
-				spacing_changed = true
-			KEY_W: # Increase horizontal spacing
-				map_manager.hex_horiz_spacing += step_size
-				spacing_changed = true
-			KEY_A: # Decrease vertical spacing
-				map_manager.hex_vert_spacing -= step_size
-				spacing_changed = true
-			KEY_S: # Increase vertical spacing
-				map_manager.hex_vert_spacing += step_size
-				spacing_changed = true
-			KEY_R: # Reset to default spacing
-				map_manager.load_hex_tile_dimensions()
-				spacing_changed = true
-				print("Reset to default spacing")
-			KEY_T: # Save current spacing (print values to copy to code)
-				save_current_spacing()
-		
-		if spacing_changed:
-			print("=== SPACING ADJUSTMENT ===")
-			print("Horizontal: %.1f (Q/W to adjust)" % map_manager.hex_horiz_spacing)
-			print("Vertical: %.1f (A/S to adjust)" % map_manager.hex_vert_spacing)
-			print("Press R to reset, T to save current values")
-			print("========================")
-			# Refresh the map with new spacing
-			setup_map_display()
+			KEY_H: # Show debug help
+				show_debug_help()
+			KEY_SPACE: # Print debug info
+				print_debug_info()
 	
-	# Show debug help
-	if event is InputEventKey and event.pressed and event.keycode == KEY_H:
-		show_debug_help()
-	
-	# Zoom with mouse wheel (simple zoom)
+	# Zoom with mouse wheel using Camera2D
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			zoom_map(HexTileConstants.ZOOM_IN_FACTOR)
+			zoom_camera(1.1)  # Zoom in
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			zoom_map(HexTileConstants.ZOOM_OUT_FACTOR)
+			zoom_camera(0.9)  # Zoom out
 
 # Show debug help controls
 func show_debug_help():
 	print("=== HEX MAP DEBUG CONTROLS ===")
-	print("Space/Enter - Print map debug info")
-	print("Escape - Update tile texture paths")
-	print("Q/W - Decrease/Increase horizontal spacing")
-	print("A/S - Decrease/Increase vertical spacing")
-	print("R - Reset spacing to defaults")
-	print("T - Save current spacing values")
+	print("Space - Print debug info")
 	print("H - Show this help")
-	print("Mouse Wheel - Zoom in/out")
+	print("Mouse wheel - Zoom camera")
+	print("Click tiles - Move character")
 	print("==============================")
 
-# Debug function to update tile texture paths (press Escape key)
-func update_tile_paths_debug():
-	print("=== UPDATING TILE TEXTURE PATHS ===")
-	if DatabaseManager.update_tile_texture_paths():
-		print("Successfully updated tile texture paths")
-		# Reload textures with new paths
-		tile_textures.clear()
-		load_tile_textures()
-		# Refresh the map display
-		setup_map_display()
-	else:
-		print("Failed to update tile texture paths")
-	print("=====================================")
+func print_debug_info():
+	"""Print current map and character debug information"""
+	print("=== MAP DEBUG INFO ===")
+	print("Character position: ", character_grid_pos)
+	print("Character world pos: ", character.position)
+	print("GameWorld position: ", game_world.position)
+	print("GameWorld scale: ", game_world.scale)
+	print("Total tiles: ", hex_tiles.size())
+	if selected_tile:
+		var tile_data = selected_tile.get_meta("tile_data")
+		print("Selected tile: ", tile_data.get("type_name", "unknown"))
+		print("Selected tile walkable: ", tile_data.get("is_walkable", false))
+	print("=====================")
 
-# Debug function to save current spacing values
-func save_current_spacing():
-	print("=== CURRENT OPTIMAL SPACING ===")
-	print("Copy these values to map_manager.gd:")
-	print("")
-	var h_multiplier = map_manager.hex_horiz_spacing / map_manager.hex_image_width
-	var v_multiplier = map_manager.hex_vert_spacing / map_manager.hex_image_height
-	print("hex_horiz_spacing = hex_image_width * %.3f  # %.1fpx" % [h_multiplier, map_manager.hex_horiz_spacing])
-	print("hex_vert_spacing = hex_image_height * %.3f  # %.1fpx" % [v_multiplier, map_manager.hex_vert_spacing])
-	print("")
-	print("================================")
+func zoom_camera(zoom_factor: float):
+	"""Zoom the game world by scaling the GameWorld node"""
+	var new_scale = game_world.scale * zoom_factor
+	# Clamp zoom between reasonable values
+	new_scale = new_scale.clamp(Vector2(0.2, 0.2), Vector2(3.0, 3.0))
+	game_world.scale = new_scale
+	print("GameWorld scale: ", game_world.scale)
 
-func zoom_map(factor: float):
-	var current_scale = map_canvas.scale
-	var new_scale = current_scale * factor
+
+
+func _on_game_world_input(event: InputEvent):
+	"""Direct input handler for GameWorldClip as backup for Area2D"""
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		print("=== DIRECT TILE CLICK DETECTION ===")
+		print("Click position in GameWorldClip: ", event.position)
+		
+		# Convert click position to GameWorld coordinates
+		var world_click_pos = event.position - game_world.position
+		print("Click position in GameWorld: ", world_click_pos)
+		
+		# Find which tile was clicked
+		var clicked_tile = find_tile_at_world_position(world_click_pos)
+		if clicked_tile:
+			print("Found clicked tile!")
+			select_tile(clicked_tile)
+		else:
+			print("No tile found at click position")
+		print("===================================")
+
+func find_tile_at_world_position(world_pos: Vector2) -> Sprite2D:
+	"""Find which tile contains the given world position"""
+	var closest_tile = null
+	var closest_distance = INF
 	
-	# Limit zoom levels
-	new_scale = new_scale.clamp(Vector2(HexTileConstants.MIN_ZOOM_SCALE, HexTileConstants.MIN_ZOOM_SCALE), Vector2(HexTileConstants.MAX_ZOOM_SCALE, HexTileConstants.MAX_ZOOM_SCALE))
+	for tile in hex_tiles:
+		var tile_pos = tile.position
+		var distance = world_pos.distance_to(tile_pos)
+		
+		# Check if within tile bounds using constants
+		var tile_radius = HexTileConstants.TILE_WIDTH / 2.0
+		if distance < tile_radius and distance < closest_distance:
+			closest_distance = distance
+			closest_tile = tile
+			print("  Checking tile at %s, distance: %.1f (within bounds: %s)" % [tile_pos, distance, distance < tile_radius])
 	
-	map_canvas.scale = new_scale 
+	return closest_tile

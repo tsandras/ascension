@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://bkxp5wqr2dwv8"]
+[gd_scene load_steps=3 format=3 uid="uid://bkxp5wqr2dwv8"]
 
 [ext_resource type="Script" uid="uid://c5mc8eod3ffim" path="res://scenes/game_world/hex_map.gd" id="1_hex_map_script"]
+[ext_resource type="Texture2D" uid="uid://bfldhq7j3hjh2" path="res://icon.svg" id="2_character_texture"]
 
 [node name="HexMap" type="Control"]
 layout_mode = 3
@@ -20,7 +21,8 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.05, 0.05, 0.1, 1)
 
-[node name="ScrollContainer" type="ScrollContainer" parent="."]
+[node name="GameWorldClip" type="Control" parent="."]
+clip_contents = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,11 +31,24 @@ offset_right = -300.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MapCanvas" type="Control" parent="ScrollContainer"]
-custom_minimum_size = Vector2(1000, 800)
-layout_mode = 2
+[node name="GameWorld" type="Node2D" parent="GameWorldClip"]
+
+[node name="Camera2D" type="Camera2D" parent="GameWorldClip/GameWorld"]
+position = Vector2(500, 400)
+enabled = false
+
+[node name="TileLayer" type="Node2D" parent="GameWorldClip/GameWorld"]
+
+[node name="CharacterLayer" type="Node2D" parent="GameWorldClip/GameWorld"]
+
+[node name="Character" type="Sprite2D" parent="GameWorldClip/GameWorld/CharacterLayer"]
+position = Vector2(100, 100)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_character_texture")
 
 [node name="InfoPanel" type="Panel" parent="."]
+self_modulate = Color(0.8, 0.8, 1, 1)
+z_index = 10
 layout_mode = 1
 anchors_preset = 11
 anchor_left = 1.0
@@ -55,66 +70,41 @@ offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TitleLabel" type="Label" parent="InfoPanel/VBoxContainer"]
-layout_mode = 2
-text = "MAP INFO"
-horizontal_alignment = 1
-
-[node name="HSeparator" type="HSeparator" parent="InfoPanel/VBoxContainer"]
-layout_mode = 2
-
 [node name="MapNameLabel" type="Label" parent="InfoPanel/VBoxContainer"]
 layout_mode = 2
-text = "Loading map..."
-autowrap_mode = 2
+text = "Map Name: Unknown"
 
 [node name="Spacer1" type="Control" parent="InfoPanel/VBoxContainer"]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="TileInfoTitle" type="Label" parent="InfoPanel/VBoxContainer"]
-layout_mode = 2
-text = "TILE INFO"
-horizontal_alignment = 1
-
-[node name="HSeparator2" type="HSeparator" parent="InfoPanel/VBoxContainer"]
-layout_mode = 2
-
 [node name="TileInfoLabel" type="Label" parent="InfoPanel/VBoxContainer"]
 layout_mode = 2
-text = "Hover over a tile for details"
-vertical_alignment = 1
+text = "Select a tile to see info"
 autowrap_mode = 2
 
 [node name="Spacer2" type="Control" parent="InfoPanel/VBoxContainer"]
-custom_minimum_size = Vector2(0, 10)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
 [node name="CoordinatesLabel" type="Label" parent="InfoPanel/VBoxContainer"]
 layout_mode = 2
-text = "Position: (-, -)"
+text = "Position: (0, 0)"
 
 [node name="Spacer3" type="Control" parent="InfoPanel/VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="Instructions" type="Label" parent="InfoPanel/VBoxContainer"]
-layout_mode = 2
-text = "CONTROLS:
-• Click to select tile
-• Mouse wheel to zoom
-• Space for debug info"
-vertical_alignment = 2
-autowrap_mode = 2
-
-[node name="Spacer4" type="Control" parent="InfoPanel/VBoxContainer"]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="BackButton" type="Button" parent="InfoPanel/VBoxContainer"]
-custom_minimum_size = Vector2(150, 60)
+[node name="CharacterInfoLabel" type="Label" parent="InfoPanel/VBoxContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
+text = "Character: (0, 0)"
+
+[node name="Spacer4" type="Control" parent="InfoPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="InfoPanel/VBoxContainer"]
+layout_mode = 2
 text = "Back to Menu"
 
 [connection signal="pressed" from="InfoPanel/VBoxContainer/BackButton" to="." method="_on_back_button_pressed"]

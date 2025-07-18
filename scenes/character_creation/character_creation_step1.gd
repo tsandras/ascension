@@ -6,6 +6,7 @@ var race_manager: AllocationManager
 
 # UI node references
 @onready var points_label = $CenterContainer/VBoxContainer/PointsLabel
+@onready var character_name_input = $CenterContainer/VBoxContainer/ContentContainer/RightPanel/CharacterNameInput
 @onready var attributes_container = $CenterContainer/VBoxContainer/ContentContainer/RightPanel/AttributesContainer
 @onready var race_container = $CenterContainer/VBoxContainer/ContentContainer/LeftPanel/RaceContainer
 @onready var trait_name_label = $CenterContainer/VBoxContainer/ContentContainer/LeftPanel/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitNameLabel
@@ -34,11 +35,54 @@ func _ready():
 	generate_attribute_ui()
 	generate_race_ui()
 	
+	# Connect character name input signal
+	character_name_input.text_changed.connect(_on_character_name_changed)
+	
 	# Wait for UI elements to be added to scene tree
 	await get_tree().process_frame
 	
+	# Load existing character data if returning from step 2
+	load_existing_character_data()
+	
 	# Update the UI
 	update_ui()
+
+func load_existing_character_data():
+	"""Load existing character data if user is returning from step 2"""
+	if not CharacterCreation.has_complete_data():
+		print("No existing character data to load")
+		return
+	
+	print("Loading existing character data...")
+	
+	# Load character name
+	if CharacterCreation.character_name != "":
+		character_name_input.text = CharacterCreation.character_name
+		print("Loaded character name: " + CharacterCreation.character_name)
+	
+	# Load selected race
+	if CharacterCreation.selected_race != "":
+		race_manager.select_race(CharacterCreation.selected_race)
+		update_trait_display(CharacterCreation.selected_race)
+		print("Loaded selected race: " + CharacterCreation.selected_race)
+	
+	# Load attribute allocations
+	if CharacterCreation.attributes.size() > 0:
+		print("Loading attribute allocations...")
+		for attribute_name in CharacterCreation.attributes:
+			var value = CharacterCreation.attributes[attribute_name]
+			var base_value = attribute_manager.get_item_base_value(attribute_name)
+			var points_to_add = value - base_value
+			
+			# Add points one by one to respect the allocation system
+			for i in range(points_to_add):
+				if not attribute_manager.increase_item(attribute_name):
+					print("Warning: Could not fully restore attribute " + attribute_name)
+					break
+			
+			print("Loaded %s: %d (added %d points)" % [attribute_name, value, points_to_add])
+	
+	print("Character data loading complete")
 
 func generate_attribute_ui():
 	# Clear existing children
@@ -166,6 +210,13 @@ func _on_race_selected(race_name: String):
 	if race_manager.select_race(race_name):
 		update_trait_display(race_name)
 		update_ui()
+
+func _on_character_name_changed(_new_text: String):
+	# Update the continue button state when the character name changes
+	update_ui()
+
+func get_character_name() -> String:
+	return character_name_input.text.strip_edges()
 
 func update_trait_display(race_name: String):
 	if race_data.has(race_name):
@@ -363,7 +414,8 @@ func update_ui():
 	
 	# Update continue button state using UIManager
 	var continue_button = get_node("CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton")
-	var can_continue = attribute_manager.all_points_spent() and race_manager.all_points_spent()
+	var character_name = character_name_input.text.strip_edges()
+	var can_continue = attribute_manager.all_points_spent() and race_manager.all_points_spent() and character_name.length() > 0
 	UIManager.apply_button_state(continue_button, can_continue)
 
 func _on_back_button_pressed():
@@ -380,9 +432,26 @@ func _on_continue_button_pressed():
 		print("Cannot continue: You must select a race before proceeding!")
 		return
 	
+	# Check if character name is provided
+	var character_name = get_character_name()
+	if character_name.length() == 0:
+		print("Cannot continue: You must enter a character name!")
+		character_name_input.modulate = Color.RED
+		var tween = character_name_input.create_tween()
+		tween.tween_property(character_name_input, "modulate", Color.WHITE, 0.5)
+		return
+	
+	# Store step 1 data in global CharacterCreation
+	CharacterCreation.set_step1_data(
+		character_name,
+		race_manager.get_selected_race(),
+		attribute_manager.get_character_items()
+	)
+	
 	# Print character stats
 	attribute_manager.print_character_stats()
 	print("Selected Race: %s" % race_manager.get_selected_race())
+	print("Character Name: %s" % character_name)
 	
 	# Navigate to step 2 (abilities & skills allocation)
 	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step2.tscn") 

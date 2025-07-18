@@ -112,6 +112,26 @@ func create_tables():
 		print("Error creating skills table: ", db.error_message)
 	else:
 		print("Skills table created successfully")
+
+	# Create character table for persistent character creation
+	var character_query = """
+	CREATE TABLE IF NOT EXISTS character (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL,
+		race_id INTEGER,
+		attributes TEXT,
+		abilities TEXT,
+		skills TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (race_id) REFERENCES races(id)
+	);
+	"""
+	
+	db.query(character_query)
+	if not is_query_successful():
+		print("Error creating character table: ", db.error_message)
+	else:
+		print("Character table created successfully")
 	
 	# Create ref_map table (template maps)
 	var ref_map_query = """
@@ -809,131 +829,9 @@ func get_game_map_tiles(game_id: int = 1):
 		print("Error fetching game map tiles: ", db.error_message)
 		return []
 
-# Mark a tile as visited by the character
-func mark_tile_visited(game_id: int, x: int, y: int) -> bool:
-	var update_query = """
-	UPDATE map_tile 
-	SET character_visited = 1, 
-		visit_count = visit_count + 1,
-		last_visited = CURRENT_TIMESTAMP
-	WHERE game_id = %d AND x = %d AND y = %d
-	""" % [game_id, x, y]
-	
-	db.query(update_query)
-	
-	if is_query_successful():
-		print("Marked tile (%d, %d) as visited for game %d" % [x, y, game_id])
-		return true
-	else:
-		print("Error marking tile as visited: ", db.error_message)
-		return false
-
-# Set tile occupation status
-func set_tile_occupied(game_id: int, x: int, y: int, occupied: bool, entity_id: int = 0) -> bool:
-	var update_query = """
-	UPDATE map_tile 
-	SET is_occupied = %s, entity_id = %d
-	WHERE game_id = %d AND x = %d AND y = %d
-	""" % [str(occupied).to_lower(), entity_id, game_id, x, y]
-	
-	db.query(update_query)
-	
-	if is_query_successful():
-		print("Set tile (%d, %d) occupied=%s for game %d" % [x, y, str(occupied), game_id])
-		return true
-	else:
-		print("Error setting tile occupation: ", db.error_message)
-		return false
-
-# Legacy function names for compatibility (will be removed)
-func get_all_map_references():
-	return get_all_ref_maps()
-
-func get_all_tile_references():
-	return get_all_ref_tiles()
-
-func get_current_map(game_id: int = 1):
-	return get_current_map_info(game_id)
-
-func get_map_tiles(map_id: int):
-	# This function is deprecated - use get_game_map_tiles instead
-	print("Warning: get_map_tiles is deprecated, use get_game_map_tiles")
-	return get_game_map_tiles(1)  # Default to game_id 1
-
-# Helper function to update tileset coordinates for a tile type
-func update_tile_tileset_coordinates(type_name: String, tileset_x: int, tileset_y: int, tile_size: int = 75) -> bool:
-	var update_query = """
-	UPDATE tile_reference 
-	SET tileset_x = %d, tileset_y = %d, tile_size = %d
-	WHERE type_name = '%s'
-	""" % [tileset_x, tileset_y, tile_size, type_name]
-	
-	db.query(update_query)
-	
-	if is_query_successful():
-		print("Updated tileset coordinates for %s: (%d, %d)" % [type_name, tileset_x, tileset_y])
-		return true
-	else:
-		print("Error updating tileset coordinates for " + type_name + ": " + db.error_message)
-		return false
-
-# Debug function to show current tileset mappings
-func print_tileset_mappings():
-	var query = "SELECT type_name, tileset_x, tileset_y, tile_size FROM tile_reference ORDER BY type_name"
-	db.query(query)
-	
-	if is_query_successful():
-		print("=== TILESET MAPPINGS ===")
-		for tile_ref in db.query_result:
-			print("%s: (%d, %d) [size: %d]" % [tile_ref["type_name"], tile_ref["tileset_x"], tile_ref["tileset_y"], tile_ref["tile_size"]])
-		print("========================")
-	else:
-		print("Error fetching tileset mappings: ", db.error_message)
-
 func close_database():
 	if db:
 		db.close_db()
-
-# Force database recreation (useful when schema changes)
-func reset_database():
-	print("Resetting database...")
-	
-	# Close current database
-	if db:
-		db.close_db()
-	
-	# Remove the database file to force recreation
-	if FileAccess.file_exists(db_name):
-		DirAccess.remove_absolute(db_name)
-		print("Removed existing database file")
-	
-	# Reinitialize
-	db = SQLite.new()
-	db.path = db_name
-	db.open_db()
-	
-	# Recreate tables and seed data
-	create_tables()
-	seed_data()
-	
-	print("Database reset complete")
-
-func reset_traits_and_races():
-	print("Resetting traits and races with updated data...")
-	
-	# Delete existing data
-	db.query("DELETE FROM races")
-	db.query("DELETE FROM traits")
-	
-	# Reset auto-increment counters
-	db.query("DELETE FROM sqlite_sequence WHERE name='races'")
-	db.query("DELETE FROM sqlite_sequence WHERE name='traits'")
-	
-	# Re-seed with updated data
-	seed_traits()
-	seed_races()
-	
-	print("Traits and races reset complete")
 
 # Update existing tile texture paths to use new tilev2 files
 func update_tile_texture_paths() -> bool:
@@ -974,36 +872,105 @@ func update_tile_texture_paths() -> bool:
 	return success
 
 # Create a simple forest test map for immediate testing
-func create_simple_forest_test_game(game_id: int = 1) -> bool:
-	return create_new_game("Simple Forest Test", game_id) 
+ 
 
-func update_traits_to_full_json():
-	print("Updating traits table to use JSON for all bonus fields...")
+func save_character(character_name: String, race_name: String, attributes: Dictionary, abilities: Dictionary, skills: Dictionary) -> int:
+	"""Save a character to the database and return the character ID"""
+	print("Saving character: " + character_name)
 	
-	# Drop the existing traits table and recreate with new schema
-	db.query("DROP TABLE IF EXISTS traits")
+	# Get race ID from race name
+	var race = get_race_by_name(race_name)
+	if not race:
+		print("Error: Race not found: " + race_name)
+		return -1
 	
-	# Recreate traits table with new schema (same schema, but we'll populate with JSON)
-	var traits_query = """
-	CREATE TABLE IF NOT EXISTS traits (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL UNIQUE,
-		description TEXT,
-		attribute_bonuses TEXT,
-		ability_bonuses TEXT,
-		skill_bonuses TEXT,
-		other_bonuses TEXT,
-		display_order INTEGER NOT NULL DEFAULT 0
-	);
+	var race_id = race.id
+	
+	# Convert dictionaries to JSON strings
+	var attributes_json = JSON.stringify(attributes)
+	var abilities_json = JSON.stringify(abilities)
+	var skills_json = JSON.stringify(skills)
+	
+	# Insert character into database
+	var insert_query = """
+	INSERT INTO character (name, race_id, attributes, abilities, skills)
+	VALUES ('%s', %d, '%s', '%s', '%s')
+	""" % [character_name, race_id, attributes_json, abilities_json, skills_json]
+	
+	db.query(insert_query)
+	if not is_query_successful():
+		print("Error saving character: " + db.error_message)
+		return -1
+	
+	# Get the ID of the newly created character
+	var id_query = "SELECT last_insert_rowid() as id"
+	db.query(id_query)
+	if is_query_successful() and db.query_result.size() > 0:
+		var character_id = db.query_result[0].id
+		print("Character saved successfully with ID: " + str(character_id))
+		return character_id
+	else:
+		print("Error retrieving character ID")
+		return -1
+
+func get_character_by_id(character_id: int) -> Dictionary:
+	"""Retrieve a character by ID with race information"""
+	var query = """
+	SELECT c.*, r.name as race_name, r.description as race_description
+	FROM character c
+	LEFT JOIN races r ON c.race_id = r.id
+	WHERE c.id = %d
+	""" % character_id
+	
+	db.query(query)
+	if is_query_successful() and db.query_result.size() > 0:
+		var character_data = db.query_result[0]
+		
+		# Parse JSON strings back to dictionaries
+		var json = JSON.new()
+		
+		if character_data.attributes:
+			json.parse(character_data.attributes)
+			character_data.attributes_dict = json.data
+		
+		if character_data.abilities:
+			json.parse(character_data.abilities)
+			character_data.abilities_dict = json.data
+		
+		if character_data.skills:
+			json.parse(character_data.skills)
+			character_data.skills_dict = json.data
+		
+		return character_data
+	else:
+		print("Character not found with ID: " + str(character_id))
+		return {}
+
+func get_all_characters() -> Array:
+	"""Get all characters with their race information"""
+	var query = """
+	SELECT c.id, c.name, c.created_at, r.name as race_name
+	FROM character c
+	LEFT JOIN races r ON c.race_id = r.id
+	ORDER BY c.created_at DESC
 	"""
 	
-	db.query(traits_query)
-	if not is_query_successful():
-		print("Error recreating traits table: " + db.error_message)
+	db.query(query)
+	if is_query_successful():
+		print("Successfully fetched %d characters from database" % db.query_result.size())
+		return db.query_result
+	else:
+		print("Error fetching characters: ", db.error_message)
+		return []
+
+func delete_character(character_id: int) -> bool:
+	"""Delete a character by ID"""
+	var delete_query = "DELETE FROM character WHERE id = %d" % character_id
+	db.query(delete_query)
+	
+	if is_query_successful():
+		print("Character deleted successfully")
+		return true
+	else:
+		print("Error deleting character: " + db.error_message)
 		return false
-	
-	# Re-seed with new JSON format
-	seed_traits()
-	
-	print("Traits table updated to full JSON format successfully")
-	return true 

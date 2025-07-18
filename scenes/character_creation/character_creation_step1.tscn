@@ -133,6 +133,27 @@ layout_mode = 2
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
+[node name="CharacterNameLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "CHARACTER NAME"
+horizontal_alignment = 1
+
+[node name="NameSpacer1" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="CharacterNameInput" type="LineEdit" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(300, 40)
+placeholder_text = "Enter character name..."
+alignment = 1
+
+[node name="NameSpacer2" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
 [node name="AttributesLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/RightPanel"]
 layout_mode = 2
 size_flags_horizontal = 4

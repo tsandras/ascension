@@ -42,7 +42,7 @@ func initialize_game_map(game_id: int = 1) -> bool:
 		return true
 	
 	# Create a new game with the Simple Forest Test map
-	if DatabaseManager.create_simple_forest_test_game(game_id):
+	if DatabaseManager.create_new_game("Simple Forest Test", game_id):
 		# Load the newly created map
 		load_current_map(game_id)
 		print("Successfully initialized game map: ", current_map_data["name"])

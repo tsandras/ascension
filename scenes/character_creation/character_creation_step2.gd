@@ -33,8 +33,53 @@ func _ready():
 	# Wait for UI elements to be added to scene tree
 	await get_tree().process_frame
 	
+	# Load existing character data if returning with previous allocations
+	load_existing_character_data()
+	
 	# Update the UI
 	update_ui()
+
+func load_existing_character_data():
+	"""Load existing abilities and skills data if user has previous allocations"""
+	if CharacterCreation.abilities.size() == 0 and CharacterCreation.skills.size() == 0:
+		print("No existing abilities/skills data to load")
+		return
+	
+	print("Loading existing abilities and skills data...")
+	
+	# Load ability allocations
+	if CharacterCreation.abilities.size() > 0:
+		print("Loading ability allocations...")
+		for ability_name in CharacterCreation.abilities:
+			var value = CharacterCreation.abilities[ability_name]
+			var base_value = ability_manager.get_item_base_value(ability_name)
+			var points_to_add = value - base_value
+			
+			# Add points one by one to respect the allocation system
+			for i in range(points_to_add):
+				if not ability_manager.increase_item(ability_name):
+					print("Warning: Could not fully restore ability " + ability_name)
+					break
+			
+			print("Loaded %s: %d (added %d points)" % [ability_name, value, points_to_add])
+	
+	# Load skill allocations
+	if CharacterCreation.skills.size() > 0:
+		print("Loading skill allocations...")
+		for skill_name in CharacterCreation.skills:
+			var value = CharacterCreation.skills[skill_name]
+			var base_value = skills_manager.get_item_base_value(skill_name)
+			var points_to_add = value - base_value
+			
+			# Add points one by one to respect the allocation system
+			for i in range(points_to_add):
+				if not skills_manager.increase_item(skill_name):
+					print("Warning: Could not fully restore skill " + skill_name)
+					break
+			
+			print("Loaded %s: %d (added %d points)" % [skill_name, value, points_to_add])
+	
+	print("Abilities and skills data loading complete")
 
 func generate_ability_ui():
 	# Clear existing children
@@ -207,6 +252,13 @@ func update_ui():
 	UIManager.apply_button_state(continue_button, can_continue)
 
 func _on_back_button_pressed():
+	# Save current progress before going back to step 1
+	CharacterCreation.set_step2_data(
+		ability_manager.get_character_items(),
+		skills_manager.get_character_items()
+	)
+	print("Saved current step 2 progress before going back")
+	
 	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step1.tscn")
 
 func _on_continue_button_pressed():
@@ -221,14 +273,28 @@ func _on_continue_button_pressed():
 		UIManager.flash_error_feedback(skills_points_label)
 		return
 	
-	# Print character stats
-	ability_manager.print_character_stats()
-	skills_manager.print_character_stats()
+	# Store step 2 data and save character
+	CharacterCreation.set_step2_data(
+		ability_manager.get_character_items(),
+		skills_manager.get_character_items()
+	)
 	
-	# Character creation complete!
-	print("Character creation complete!")
-	print("Ready to enter the world of Ascension!")
+	# Save the complete character to database
+	var character_id = CharacterCreation.save_character()
 	
-	# Navigate to the hexagonal map
-	print("Loading map...")
-	get_tree().change_scene_to_file("res://scenes/game_world/hex_map.tscn") 
+	if character_id > 0:
+		# Print character stats
+		ability_manager.print_character_stats()
+		skills_manager.print_character_stats()
+		
+		# Character creation complete!
+		print("Character creation complete!")
+		print("Character saved with ID: %d" % character_id)
+		print("Ready to enter the world of Ascension!")
+		
+		# Navigate to the hexagonal map
+		print("Loading map...")
+		get_tree().change_scene_to_file("res://scenes/game_world/hex_map.tscn")
+	else:
+		print("Error: Failed to save character. Please try again.")
+		# Could add UI feedback here for the error 

@@ -11,7 +11,7 @@ class_name UIConstants
 # USAGE:
 # - UIManager.setup_*() functions apply these constants to scenes
 # - Dynamic UI generation uses these constants automatically
-# - ThemeManager uses font size constants
+# - Font size constants for UI consistency
 #
 # TO SCALE THE ENTIRE UI:
 # 1. Multiply all button/container sizes by your scale factor
@@ -80,7 +80,7 @@ class MainMenu:
 	const TITLE_SPACER = 150
 	const BUTTON_SPACER = SPACING_MEDIUM
 
-class CharacterCreation:
+class CharacterCreationUI:
 	const TITLE_SPACER = SPACING_LARGE
 	const POINTS_SPACER = SPACING_SMALL
 	const ATTRIBUTES_SPACER = SPACING_LARGE

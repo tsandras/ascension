@@ -13,8 +13,7 @@ Ascension is an RPG featuring a comprehensive character creation system with att
 ascension/
 ├── scenes/
 │   ├── character_creation/     # Character creation flow
-│   │   ├── attributes_allocation.tscn
-│   │   ├── attributes_allocation.gd
+
 │   │   ├── abilities_allocation.tscn
 │   │   └── abilities_allocation.gd
 │   └── ui/                    # Main UI scenes
@@ -90,7 +89,7 @@ const BUTTON_PLUS_MINUS = Vector2(50, 50)
 const BUTTON_NAVIGATION = Vector2(150, 60)
 
 # Container sizes  
-const CONTAINER_ATTRIBUTES_ALLOCATION = Vector2(800, 900)
+
 const CONTAINER_ABILITIES_ALLOCATION = Vector2(800, 900)
 ```
 
