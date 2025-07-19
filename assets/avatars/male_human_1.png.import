@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ccrux8mmdeuam"
-path="res://.godot/imported/tilev3_grasslands.png-0ec290f7c099bb7d0318ed4e34a53e1c.ctex"
+uid="uid://lituppb0noi6"
+path="res://.godot/imported/male_human_1.png-9b14e9e96fbee8e355c445b74c433982.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tiles/tilev3_grasslands.png"
-dest_files=["res://.godot/imported/tilev3_grasslands.png-0ec290f7c099bb7d0318ed4e34a53e1c.ctex"]
+source_file="res://assets/avatars/male_human_1.png"
+dest_files=["res://.godot/imported/male_human_1.png-9b14e9e96fbee8e355c445b74c433982.ctex"]
 
 [params]
 

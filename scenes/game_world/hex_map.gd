@@ -4,12 +4,13 @@ extends Control
 var map_manager: MapManager
 
 # UI references
-@onready var game_world_clip = $GameWorldClip
-@onready var game_world = $GameWorldClip/GameWorld
-@onready var camera = $GameWorldClip/GameWorld/Camera2D
-@onready var tile_layer = $GameWorldClip/GameWorld/TileLayer
-@onready var character_layer = $GameWorldClip/GameWorld/CharacterLayer
-@onready var character = $GameWorldClip/GameWorld/CharacterLayer/Character
+@onready var game_viewport_container = $GameViewport
+@onready var game_viewport = $GameViewport/GameViewport
+@onready var game_world = $GameViewport/GameViewport/GameWorld
+@onready var camera = $GameViewport/GameViewport/Camera2D
+@onready var tile_layer = $GameViewport/GameViewport/GameWorld/TileLayer
+@onready var character_layer = $GameViewport/GameViewport/GameWorld/CharacterLayer
+@onready var character = $GameViewport/GameViewport/GameWorld/CharacterLayer/Character
 @onready var info_panel = $InfoPanel
 @onready var map_name_label = $InfoPanel/VBoxContainer/MapNameLabel
 @onready var tile_info_label = $InfoPanel/VBoxContainer/TileInfoLabel
@@ -28,24 +29,30 @@ var tile_textures = {}
 # Movement animation
 var is_moving = false
 
+# Camera following
+var camera_follow_enabled = true
+var camera_follow_speed = 5.0  # How fast camera follows character
+
 func _ready():
 	print("HexMap scene loaded")
+	# Wait for the scene to be fully ready
+	await get_tree().process_frame
 	
 	# Debug GameWorld setup
-	print("GameWorldClip setup:")
-	print("  Size: ", game_world_clip.size)
-	print("  Position: ", game_world_clip.position)
-	print("  Visible: ", game_world_clip.visible)
+	print("GameViewportContainer setup:")
+	print("  Size: ", game_viewport.size)
+	print("  Position: ", game_viewport_container.position)
+	print("  Visible: ", game_viewport_container.visible)
 	print("  GameWorld children: ", game_world.get_child_count())
 	print("  TileLayer children: ", tile_layer.get_child_count())
 	
-	# Set GameWorldClip to receive mouse events
-	game_world_clip.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Set GameViewportContainer to receive mouse events
+	game_viewport_container.mouse_filter = Control.MOUSE_FILTER_STOP
 	print("  Mouse filter set to STOP")
 	
-	# Connect direct input to GameWorldClip as backup
-	game_world_clip.gui_input.connect(_on_game_world_input)
-	print("  Direct input connected to GameWorldClip")
+	# Connect direct input to GameViewportContainer as backup
+	game_viewport_container.gui_input.connect(_on_game_world_input)
+	print("  Direct input connected to GameViewportContainer")
 	
 	# Debug InfoPanel
 	print("InfoPanel setup:")
@@ -61,10 +68,6 @@ func _ready():
 	
 	# Initialize map manager
 	map_manager = MapManager.new()
-	
-	# Wait for database to be ready
-	await get_tree().process_frame
-	await get_tree().process_frame
 	
 	# Initialize the game map
 	if map_manager.initialize_game_map():
@@ -150,52 +153,84 @@ func setup_map_display():
 	
 	# Initialize character position on first walkable tile
 	initialize_character_position()
+	
+	# Set up camera to follow character
+	setup_camera_following()
+	
+	# Ensure everything fits in the viewport
+	# ensure_proper_viewport_layout()
+	
+	# Debug viewport setup
+	print("=== VIEWPORT SETUP ===")
+	print("HexMap size: ", size)
+	print("GameViewport size: ", game_viewport.size)
+	print("InfoPanel size: ", info_panel.size)
+	print("InfoPanel position: ", info_panel.position)
+	print("=====================")
 
 func initialize_character_position():
 	"""Place character on the first walkable tile"""
 	print("Initializing character position...")
 	
-	# Calculate the bounds of all tiles
-	var tile_bounds = calculate_tile_bounds()
-	var tile_center = Vector2(
-		(tile_bounds.x + tile_bounds.z) / 2.0,  # x min + x max / 2
-		(tile_bounds.y + tile_bounds.w) / 2.0   # y min + y max / 2
-	)
+	# Place character on hex (4, 4) tile
+	print("Placing character on hex (4, 4) tile")
+	var target_grid_pos = Vector2(4, 4)
+	var target_tile = get_tile_at_grid_position(target_grid_pos)
+	if not target_tile:
+		print("ERROR: No tile found at position: ", target_grid_pos)
+		return
+
+	var tile_data = target_tile.get_meta("tile_data")
+	var grid_pos = target_tile.get_meta("grid_pos")
+	character_grid_pos = grid_pos
+	character.position = hex_grid_to_world_position(grid_pos)
+	print("Character initialized at grid position: ", grid_pos)
+	print("Character world position: ", character.position)
 	
-	# Calculate where to position the GameWorld Node2D to center tiles in the visible area
-	var visible_area_center = Vector2(
-		game_world_clip.size.x / 2.0,  # Center of the clipped area
-		game_world_clip.size.y / 2.0
-	)
+	# Center camera on character
+	center_camera_on_character()
 	
-	# Offset the entire GameWorld to center the tiles
-	var world_offset = visible_area_center - tile_center
-	game_world.position = world_offset
-	
-	print("Tile center: ", tile_center)
-	print("Visible area center: ", visible_area_center)
-	print("GameWorld offset: ", world_offset)
-	print("GameWorld position: ", game_world.position)
-	
-	# Place character on first walkable tile
-	for tile in hex_tiles:
-		var tile_data = tile.get_meta("tile_data")
-		if tile_data.get("is_walkable", false):
-			var grid_pos = tile.get_meta("grid_pos")
-			character_grid_pos = grid_pos
-			character.position = hex_grid_to_world_position(grid_pos)
-			print("Character initialized at grid position: ", grid_pos)
-			print("Character world position: ", character.position)
-			
-			update_character_info()
-			return
-	
-	# Fallback: place at origin if no walkable tiles found
-	print("Warning: No walkable tiles found, placing character at origin")
-	character_grid_pos = Vector2(0, 0)
-	character.position = hex_grid_to_world_position(Vector2(0, 0))
-	print("Character fallback position: ", character.position)
 	update_character_info()
+	
+
+
+func setup_camera_following():
+	"""Set up GameWorld to follow the character"""
+	print("Setting up GameWorld following...")
+	
+	# Enable camera following
+	camera_follow_enabled = true
+	
+	# Set camera to follow character
+	camera.enabled = true
+	camera.make_current()
+	
+	# Set initial GameWorld position to center character
+	center_camera_on_character()
+	
+	print("GameWorld following enabled")
+
+func center_camera_on_character():
+	"""Center the GameWorld on the character position, accounting for zoom"""
+	if not camera_follow_enabled:
+		return
+	
+	var character_world_pos = character.position
+	var game_world_center = Vector2(
+		game_viewport.size.x / 2.0,
+		game_viewport.size.y / 2.0
+	)
+	
+	# Account for zoom level when calculating offset
+	var scaled_character_pos = character_world_pos * game_world.scale
+	var offset = game_world_center - scaled_character_pos
+	game_world.position = offset
+	
+	print("GameWorld centered on character at: ", character_world_pos)
+	print("Scaled character position: ", scaled_character_pos)
+	print("GameWorld offset: ", offset)
+	print("GameWorld scale: ", game_world.scale)
+	print("GameViewport size: ", game_viewport.size)
 
 func calculate_tile_bounds() -> Vector4:
 	"""Calculate the min/max world coordinates of all tiles"""
@@ -221,7 +256,7 @@ func create_hex_tile(tile_data: Dictionary):
 	var hex_tile = Sprite2D.new()
 	var grid_pos = Vector2(tile_data.x, tile_data.y)
 	
-	print("  Creating hex tile at grid: ", grid_pos)
+	# print("  Creating hex tile at grid: ", grid_pos)
 	
 	# Get tile type and texture
 	var tile_type = tile_data.get("type_name", "grass")
@@ -229,9 +264,9 @@ func create_hex_tile(tile_data: Dictionary):
 	
 	if texture:
 		hex_tile.texture = texture
-		print("  Loaded texture for: ", tile_type, " (", texture.get_size(), ")")
+		# print("  Loaded texture for: ", tile_type, " (", texture.get_size(), ")")
 	else:
-		print("Warning: No texture found for tile type: ", tile_type)
+		# print("Warning: No texture found for tile type: ", tile_type)
 		# Use a default texture or create a colored rectangle
 		hex_tile.texture = tile_textures.get("grass", load("res://icon.svg"))
 		if hex_tile.texture:
@@ -245,8 +280,11 @@ func create_hex_tile(tile_data: Dictionary):
 	var scale_factor = float(HexTileConstants.TILE_WIDTH) / float(HexTileConstants.SOURCE_TEXTURE_WIDTH)
 	hex_tile.scale = Vector2(scale_factor, scale_factor)
 	
-	print("  Tile world position: ", world_pos)
-	print("  Tile scale: ", hex_tile.scale, " (", HexTileConstants.TILE_WIDTH, "px target from ", HexTileConstants.SOURCE_TEXTURE_WIDTH, "px source)")
+	# Set texture filtering to improve quality without performance hit
+	hex_tile.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	
+	# print("  Tile world position: ", world_pos)
+	# print("  Tile scale: ", hex_tile.scale, " (", HexTileConstants.TILE_WIDTH, "px target from ", HexTileConstants.SOURCE_TEXTURE_WIDTH, "px source)")
 	
 	# Store tile data and grid position
 	hex_tile.set_meta("tile_data", tile_data)
@@ -268,24 +306,24 @@ func create_hex_tile(tile_data: Dictionary):
 	collision.shape = shape
 	collision.position = Vector2.ZERO
 	
-	print("  Collision size: ", shape.size)
+	# print("  Collision size: ", shape.size)
 	
 	area.add_child(collision)
 	hex_tile.add_child(area)
 	
-	print("  Area2D configured - input_pickable: ", area.input_pickable)
+	# print("  Area2D configured - input_pickable: ", area.input_pickable)
 	
 	# Connect Area2D signals for input detection
 	var input_connection = area.input_event.connect(_on_tile_input.bind(hex_tile))
 	var mouse_enter_connection = area.mouse_entered.connect(_on_tile_mouse_entered.bind(hex_tile))
 	var mouse_exit_connection = area.mouse_exited.connect(_on_tile_mouse_exited.bind(hex_tile))
 	
-	print("  Signal connections - input: ", input_connection == OK, ", mouse_enter: ", mouse_enter_connection == OK, ", mouse_exit: ", mouse_exit_connection == OK)
+	# print("  Signal connections - input: ", input_connection == OK, ", mouse_enter: ", mouse_enter_connection == OK, ", mouse_exit: ", mouse_exit_connection == OK)
 	
 	# Add to tile layer
 	tile_layer.add_child(hex_tile)
 	hex_tiles.append(hex_tile)
-	print("  Tile added to layer. Total tiles: ", hex_tiles.size())
+	# print("  Tile added to layer. Total tiles: ", hex_tiles.size())
 
 func hex_grid_to_world_position(grid_pos: Vector2) -> Vector2:
 	"""Convert hex grid coordinates to world position"""
@@ -338,7 +376,6 @@ func move_character_to_tile(target_grid_pos: Vector2):
 		return
 	
 	var tile_data = target_tile.get_meta("tile_data")
-	print("Target tile data: ", tile_data)
 	print("Target tile walkable: ", tile_data.get("is_walkable", false))
 	
 	# if not tile_data.get("is_walkable", false):
@@ -475,6 +512,21 @@ func move_along_path(path: Array):
 	var tween = create_tween()
 	tween.tween_property(character, "position", next_world_pos, 0.3)  # Faster steps
 	
+	# Also tween GameWorld to follow character smoothly
+	if camera_follow_enabled:
+		var game_world_center = Vector2(
+			game_viewport.size.x / 2.0,
+			game_viewport.size.y / 2.0
+		)
+		# Account for zoom level when calculating target offset
+		var scaled_next_world_pos = next_world_pos * game_world.scale
+		var target_offset = game_world_center - scaled_next_world_pos
+		tween.parallel().tween_property(game_world, "position", target_offset, 0.3)
+		
+		# Debug: Check if InfoPanel is being affected
+		print("InfoPanel position during movement: ", info_panel.position)
+		print("GameWorld position: ", game_world.position)
+	
 	# When this step completes, continue with remaining path
 	var remaining_path = path.slice(1)  # Remove first element
 	tween.tween_callback(func():
@@ -604,8 +656,6 @@ func _input(event):
 		if map_manager:
 			map_manager.print_map_debug()
 	
-
-	
 	# Camera controls
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
@@ -613,22 +663,93 @@ func _input(event):
 				show_debug_help()
 			KEY_SPACE: # Print debug info
 				print_debug_info()
+			KEY_C: # Toggle camera following
+				toggle_camera_following()
 	
-	# Zoom with mouse wheel using Camera2D
+	# Zoom with mouse wheel
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			zoom_camera(1.1)  # Zoom in
+			zoom_camera(1.2)  # Zoom in
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			zoom_camera(0.9)  # Zoom out
+			zoom_camera(0.8)  # Zoom out
+	
+	# Keyboard zoom controls
+	if event is InputEventKey and event.pressed:
+		print("Keyboard event: ", event.keycode)
+		print("KEY_PLUS: ", KEY_PLUS)
+		print("KEY_MINUS: ", KEY_MINUS)
+		match event.keycode:
+			KEY_PLUS, KEY_KP_ADD, 61:  # Plus key or numpad plus
+				zoom_camera(1.2)  # Zoom in
+			KEY_MINUS, KEY_KP_SUBTRACT, 45:  # Minus key or numpad minus
+				zoom_camera(0.8)  # Zoom out
+			KEY_0, KEY_KP_0, 48:  # Zero key or numpad zero
+				reset_zoom()  # Reset zoom
 
 # Show debug help controls
 func show_debug_help():
 	print("=== HEX MAP DEBUG CONTROLS ===")
 	print("Space - Print debug info")
 	print("H - Show this help")
-	print("Mouse wheel - Zoom camera")
+	print("C - Toggle GameWorld following")
+	print("Mouse wheel - Zoom in/out")
+	print("+ / - keys - Zoom in/out")
+	print("0 key - Reset zoom")
 	print("Click tiles - Move character")
 	print("==============================")
+
+func reset_zoom():
+	"""Reset zoom to default scale with smooth animation"""
+	var tween = create_tween()
+	tween.tween_property(game_world, "scale", Vector2.ONE, 0.3)
+	
+	# Don't auto-center when resetting zoom - let user control the view
+	
+	print("Zoom reset to default scale")
+
+func toggle_camera_following():
+	"""Toggle GameWorld following on/off"""
+	camera_follow_enabled = !camera_follow_enabled
+	print("GameWorld following: ", "ENABLED" if camera_follow_enabled else "DISABLED")
+	
+	if camera_follow_enabled:
+		center_camera_on_character()
+
+func ensure_proper_viewport_layout():
+	"""Ensure the viewport layout is properly configured"""
+	print("=== ENSURING PROPER VIEWPORT LAYOUT ===")
+	
+	# Wait for the scene to be fully ready
+	await get_tree().process_frame
+	
+	# Get the actual sizes
+	var total_width = size.x
+	var total_height = size.y
+	var info_panel_width = 300  # Fixed width for InfoPanel
+	
+	# Calculate available space for GameViewport
+	var available_width = total_width - info_panel_width
+	
+	print("Total viewport: ", total_width, "x", total_height)
+	print("InfoPanel width: ", info_panel_width)
+	print("Available width for GameViewport: ", available_width)
+	
+	# Update SubViewport size to match container exactly
+	game_viewport.size = Vector2i(available_width, total_height)
+	
+	# Ensure SubViewportContainer size matches and position is correct
+	game_viewport_container.size = Vector2(available_width, total_height)
+	game_viewport_container.position = Vector2.ZERO
+	
+	# Ensure InfoPanel is positioned correctly
+	info_panel.position.x = available_width
+	
+	print("Final layout:")
+	print("  GameViewport: ", game_viewport.size, " at ", game_viewport_container.position)
+	print("  GameViewportContainer: ", game_viewport_container.size)
+	print("  InfoPanel: ", info_panel.size, " at ", info_panel.position)
+	print("=====================================")
+	
 
 func print_debug_info():
 	"""Print current map and character debug information"""
@@ -636,6 +757,7 @@ func print_debug_info():
 	print("Character position: ", character_grid_pos)
 	print("Character world pos: ", character.position)
 	print("GameWorld position: ", game_world.position)
+	print("GameWorld following: ", "ENABLED" if camera_follow_enabled else "DISABLED")
 	print("GameWorld scale: ", game_world.scale)
 	print("Total tiles: ", hex_tiles.size())
 	if selected_tile:
@@ -645,24 +767,33 @@ func print_debug_info():
 	print("=====================")
 
 func zoom_camera(zoom_factor: float):
-	"""Zoom the game world by scaling the GameWorld node"""
+	"""Zoom the game world by scaling the GameWorld node with smooth animation"""
 	var new_scale = game_world.scale * zoom_factor
 	# Clamp zoom between reasonable values
-	new_scale = new_scale.clamp(Vector2(0.2, 0.2), Vector2(3.0, 3.0))
-	game_world.scale = new_scale
-	print("GameWorld scale: ", game_world.scale)
+	new_scale.x = clamp(new_scale.x, 0.1, 5.0)
+	new_scale.y = clamp(new_scale.y, 0.1, 5.0)
+	
+	# Create smooth zoom animation
+	var tween = create_tween()
+	tween.tween_property(game_world, "scale", new_scale, 0.3)
+	
+	# Don't auto-center when zooming - let user control the view
+	
+	print("GameWorld scale: ", game_world.scale, " -> ", new_scale)
+	print("Zoom factor applied: ", zoom_factor)
 
 
 
 func _on_game_world_input(event: InputEvent):
-	"""Direct input handler for GameWorldClip as backup for Area2D"""
+	"""Direct input handler for GameViewportContainer as backup for Area2D"""
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		print("=== DIRECT TILE CLICK DETECTION ===")
-		print("Click position in GameWorldClip: ", event.position)
+		print("Click position in GameViewportContainer: ", event.position)
+		print("GameWorld scale: ", game_world.scale)
 		
-		# Convert click position to GameWorld coordinates
-		var world_click_pos = event.position - game_world.position
-		print("Click position in GameWorld: ", world_click_pos)
+		# Convert click position to GameWorld coordinates, accounting for zoom
+		var world_click_pos = (event.position - game_world.position) / game_world.scale
+		print("Click position in GameWorld (unscaled): ", world_click_pos)
 		
 		# Find which tile was clicked
 		var clicked_tile = find_tile_at_world_position(world_click_pos)

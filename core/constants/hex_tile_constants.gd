@@ -22,8 +22,8 @@ class_name HexTileConstants
 # ===================
 # TILE DIMENSIONS
 # ===================
-const TILE_WIDTH = 150
-const TILE_HEIGHT = 150
+const TILE_WIDTH = 256  # Increased from 150 to reduce scaling
+const TILE_HEIGHT = 256  # Increased from 150 to reduce scaling
 
 # Source texture dimensions (assets are this size before resize)
 const SOURCE_TEXTURE_WIDTH = 1024

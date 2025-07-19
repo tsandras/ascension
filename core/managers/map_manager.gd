@@ -41,14 +41,14 @@ func initialize_game_map(game_id: int = 1) -> bool:
 		load_current_map(game_id)
 		return true
 	
-	# Create a new game with the Simple Forest Test map
-	if DatabaseManager.create_new_game("Simple Forest Test", game_id):
+	# Create a new game with the Simple Map Test map
+	if DatabaseManager.create_new_game("Simple Map Test", game_id):
 		# Load the newly created map
 		load_current_map(game_id)
 		print("Successfully initialized game map: ", current_map_data["name"])
 		return true
 	else:
-		print("Error: Failed to create simple forest test map")
+		print("Error: Failed to create simple map test map")
 		return false
 
 # Load the current map for the game

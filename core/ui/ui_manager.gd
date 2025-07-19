@@ -26,19 +26,19 @@ static func setup_character_creation_step1(scene: Control):
 	"""Apply character creation step 1 styling using UIConstants"""
 	var container = scene.get_node("CenterContainer/VBoxContainer")
 	var spacer1 = scene.get_node("CenterContainer/VBoxContainer/Spacer1")
-	var spacer2 = scene.get_node("CenterContainer/VBoxContainer/Spacer2") 
+	var name_spacer2 = scene.get_node("CenterContainer/VBoxContainer/NameSpacer2") 
 	var spacer3 = scene.get_node("CenterContainer/VBoxContainer/Spacer3")
 	var back_btn = scene.get_node("CenterContainer/VBoxContainer/ButtonsContainer/BackButton")
 	var continue_btn = scene.get_node("CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton")
-	var button_spacer = scene.get_node("CenterContainer/VBoxContainer/ButtonsContainer/Spacer4")
+	var button_spacer = scene.get_node("CenterContainer/VBoxContainer/ButtonsContainer/ButtonSpacer")
 	
 	# Apply container size
 	container.custom_minimum_size = UIConstants.CONTAINER_CHARACTER_CREATION_STEP1
 	
-	# Apply spacing (adjusted for horizontal layout)
-	spacer1.custom_minimum_size = Vector2(0, 40)  # After title
-	spacer2.custom_minimum_size = Vector2(0, 30)  # After points label
-	spacer3.custom_minimum_size = Vector2(0, 60)  # Before buttons
+	# Apply spacing (adjusted for 3-column layout - compact for 720px window)
+	spacer1.custom_minimum_size = Vector2(0, 20)  # After title
+	name_spacer2.custom_minimum_size = Vector2(0, 15)  # After character name
+	spacer3.custom_minimum_size = Vector2(0, 20)  # Before buttons
 	button_spacer.custom_minimum_size = Vector2(40, 0)  # Between buttons
 	
 	# Apply button sizes
@@ -57,9 +57,9 @@ static func setup_character_creation_step2(scene: Control):
 	# Apply container size
 	container.custom_minimum_size = UIConstants.CONTAINER_CHARACTER_CREATION_STEP2
 	
-	# Apply spacing (adjusted for horizontal layout)
-	spacer1.custom_minimum_size = Vector2(0, 40)  # After title
-	spacer3.custom_minimum_size = Vector2(0, 60)  # Before buttons
+	# Apply spacing (adjusted for compact 720px window)
+	spacer1.custom_minimum_size = Vector2(0, 20)  # After title
+	spacer3.custom_minimum_size = Vector2(0, 20)  # Before buttons
 	button_spacer.custom_minimum_size = Vector2(40, 0)  # Between buttons
 	
 	# Apply button sizes

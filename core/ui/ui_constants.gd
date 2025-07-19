@@ -43,7 +43,7 @@ const FONT_SIZE_POINTS = 14        # Reduced for better fit in character creatio
 # BUTTON SIZES
 # ===================
 const BUTTON_MAIN_MENU = Vector2(300, 80)
-const BUTTON_BACK_CONTINUE = Vector2(150, 60)
+const BUTTON_BACK_CONTINUE = Vector2(120, 45)
 const BUTTON_PLUS_MINUS = Vector2(35, 35)  # Reduced from 50x50 for better fit
 
 # ===================
@@ -53,19 +53,19 @@ const LABEL_ATTRIBUTE_WIDTH = 200
 const LABEL_VALUE_WIDTH = 80
 
 # ===================
-# CONTAINER SIZES
+# CONTAINER SIZES  
 # ===================
 const CONTAINER_MAIN_MENU = Vector2(500, 600)
-const CONTAINER_CHARACTER_CREATION_STEP1 = Vector2(1000, 950)  # Step 1: Attributes & Race + Trait display (horizontal layout)
-const CONTAINER_CHARACTER_CREATION_STEP2 = Vector2(1000, 950)  # Step 2: Abilities & Skills (horizontal layout, increased height)
+const CONTAINER_CHARACTER_CREATION_STEP1 = Vector2(1000, 650)  # Step 1: 3-column layout (fits in 720px window)
+const CONTAINER_CHARACTER_CREATION_STEP2 = Vector2(1000, 650)  # Step 2: Abilities & Skills (fits in 720px window)
 
 # ===================
 # SPACING
 # ===================
-const SPACING_LARGE = 60      # Between major sections
-const SPACING_MEDIUM = 40     # Between button groups
-const SPACING_SMALL = 30      # Between related elements
-const SPACING_TINY = 20       # Between buttons in same group
+const SPACING_LARGE = 40      # Between major sections (reduced)
+const SPACING_MEDIUM = 25     # Between button groups (reduced)
+const SPACING_SMALL = 20      # Between related elements (reduced)
+const SPACING_TINY = 15       # Between buttons in same group (reduced)
 
 # ===================
 # MARGINS & PADDING

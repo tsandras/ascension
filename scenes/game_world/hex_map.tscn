@@ -13,16 +13,16 @@ grow_vertical = 2
 script = ExtResource("1_hex_map_script")
 
 [node name="BackgroundColor" type="ColorRect" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.05, 0.05, 0.1, 1)
+color = Color(0, 0, 0, 1)
 
-[node name="GameWorldClip" type="Control" parent="."]
-clip_contents = true
+[node name="GameViewport" type="SubViewportContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,21 +30,26 @@ anchor_bottom = 1.0
 offset_right = -300.0
 grow_horizontal = 2
 grow_vertical = 2
+stretch = true
 
-[node name="GameWorld" type="Node2D" parent="GameWorldClip"]
+[node name="GameViewport" type="SubViewport" parent="GameViewport"]
+handle_input_locally = false
+size = Vector2i(980, 720)
+render_target_update_mode = 4
 
-[node name="Camera2D" type="Camera2D" parent="GameWorldClip/GameWorld"]
-position = Vector2(500, 400)
-enabled = false
+[node name="GameWorld" type="Node2D" parent="GameViewport/GameViewport"]
 
-[node name="TileLayer" type="Node2D" parent="GameWorldClip/GameWorld"]
+[node name="TileLayer" type="Node2D" parent="GameViewport/GameViewport/GameWorld"]
 
-[node name="CharacterLayer" type="Node2D" parent="GameWorldClip/GameWorld"]
+[node name="CharacterLayer" type="Node2D" parent="GameViewport/GameViewport/GameWorld"]
 
-[node name="Character" type="Sprite2D" parent="GameWorldClip/GameWorld/CharacterLayer"]
+[node name="Character" type="Sprite2D" parent="GameViewport/GameViewport/GameWorld/CharacterLayer"]
 position = Vector2(100, 100)
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("2_character_texture")
+
+[node name="Camera2D" type="Camera2D" parent="GameViewport/GameViewport"]
+position = Vector2(500, 400)
 
 [node name="InfoPanel" type="Panel" parent="."]
 self_modulate = Color(0.8, 0.8, 1, 1)
@@ -97,7 +102,7 @@ layout_mode = 2
 
 [node name="CharacterInfoLabel" type="Label" parent="InfoPanel/VBoxContainer"]
 layout_mode = 2
-text = "Character: (0, 0)"
+text = "Character: (4, 4)"
 
 [node name="Spacer4" type="Control" parent="InfoPanel/VBoxContainer"]
 custom_minimum_size = Vector2(0, 40)

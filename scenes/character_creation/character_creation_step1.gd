@@ -6,18 +6,25 @@ var race_manager: AllocationManager
 
 # UI node references
 @onready var points_label = $CenterContainer/VBoxContainer/PointsLabel
-@onready var character_name_input = $CenterContainer/VBoxContainer/ContentContainer/RightPanel/CharacterNameInput
-@onready var attributes_container = $CenterContainer/VBoxContainer/ContentContainer/RightPanel/AttributesContainer
-@onready var race_container = $CenterContainer/VBoxContainer/ContentContainer/LeftPanel/RaceContainer
-@onready var trait_name_label = $CenterContainer/VBoxContainer/ContentContainer/LeftPanel/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitNameLabel
-@onready var trait_desc_label = $CenterContainer/VBoxContainer/ContentContainer/LeftPanel/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitDescLabel
-@onready var trait_bonuses_label = $CenterContainer/VBoxContainer/ContentContainer/LeftPanel/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitBonusesLabel
+@onready var character_name_input = $CenterContainer/VBoxContainer/CharacterNameInput
+@onready var male_button = $CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer/MaleButton
+@onready var female_button = $CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer/FemaleButton
+@onready var avatar_sprite = $CenterContainer/VBoxContainer/ContentContainer/Column2/AvatarContainer/AvatarSprite
+@onready var attributes_container = $CenterContainer/VBoxContainer/ContentContainer/Column3/AttributesContainer
+@onready var race_container = $CenterContainer/VBoxContainer/ContentContainer/Column1/RaceContainer
+@onready var trait_name_label = $CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitNameLabel
+@onready var trait_desc_label = $CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitDescLabel
+@onready var trait_bonuses_label = $CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitBonusesLabel
 
 # Store UI elements for each attribute and race
 var attribute_ui_elements = {}
 var race_ui_elements = {}
 # Store race data with trait information
 var race_data = {}
+# Store selected sex
+var selected_sex = ""
+# Store avatar textures
+var avatar_textures = {}
 
 func _ready():
 	# Apply UI constants to this scene
@@ -28,7 +35,7 @@ func _ready():
 	await get_tree().process_frame
 	
 	# Initialize the managers
-	attribute_manager = AllocationManager.new("attributes", "attributes", 8)
+	attribute_manager = AllocationManager.new("attributes", "attributes", 6)
 	race_manager = AllocationManager.new("races", "races", 0)  # Races don't use points
 	
 	# Generate the UI dynamically
@@ -37,6 +44,15 @@ func _ready():
 	
 	# Connect character name input signal
 	character_name_input.text_changed.connect(_on_character_name_changed)
+	
+	# Connect sex selection buttons
+	male_button.pressed.connect(_on_male_button_pressed)
+	female_button.pressed.connect(_on_female_button_pressed)
+	
+	# Load avatar textures
+	load_avatar_textures()
+	
+
 	
 	# Wait for UI elements to be added to scene tree
 	await get_tree().process_frame
@@ -65,6 +81,13 @@ func load_existing_character_data():
 		race_manager.select_race(CharacterCreation.selected_race)
 		update_trait_display(CharacterCreation.selected_race)
 		print("Loaded selected race: " + CharacterCreation.selected_race)
+	
+	# Load selected sex
+	if CharacterCreation.selected_sex != "":
+		selected_sex = CharacterCreation.selected_sex
+		update_sex_buttons()
+		update_avatar_display()
+		print("Loaded selected sex: " + CharacterCreation.selected_sex)
 	
 	# Load attribute allocations
 	if CharacterCreation.attributes.size() > 0:
@@ -209,6 +232,7 @@ func _on_attribute_minus_pressed(attribute_name: String):
 func _on_race_selected(race_name: String):
 	if race_manager.select_race(race_name):
 		update_trait_display(race_name)
+		update_avatar_display()  # Update avatar when race changes
 		update_ui()
 
 func _on_character_name_changed(_new_text: String):
@@ -217,6 +241,73 @@ func _on_character_name_changed(_new_text: String):
 
 func get_character_name() -> String:
 	return character_name_input.text.strip_edges()
+
+func load_avatar_textures():
+	"""Load all available avatar textures"""
+	print("Loading avatar textures...")
+	
+	# Define the races and sexes available
+	var races = DatabaseManager.get_all_races()
+	var sexes = ["male", "female"]
+	
+	for sex in sexes:
+		avatar_textures[sex] = {}
+		
+		for race in races:
+			var avatar_path = "res://assets/avatars/%s_%s_1.png" % [sex, race.name.to_lower()]
+			var texture = load(avatar_path)
+			if texture:
+				# Store using the lowercase race name as the key (string, not object)
+				avatar_textures[sex][race.name.to_lower()] = texture
+				print("Loaded avatar: ", sex, "_", race.name.to_lower())
+			else:
+				print("Warning: Failed to load avatar: ", avatar_path)
+	
+	print("Avatar loading complete")
+
+func _on_male_button_pressed():
+	"""Handle male button selection"""
+	selected_sex = "male"
+	update_sex_buttons()
+	update_avatar_display()
+	update_ui()
+
+func _on_female_button_pressed():
+	"""Handle female button selection"""
+	selected_sex = "female"
+	update_sex_buttons()
+	update_avatar_display()
+	update_ui()
+
+func update_sex_buttons():
+	"""Update sex button visual states"""
+	if selected_sex == "male":
+		male_button.modulate = Color(1.2, 1.2, 0.8)  # Highlight selected
+		female_button.modulate = Color.WHITE
+	elif selected_sex == "female":
+		female_button.modulate = Color(1.2, 1.2, 0.8)  # Highlight selected
+		male_button.modulate = Color.WHITE
+	else:
+		male_button.modulate = Color.WHITE
+		female_button.modulate = Color.WHITE
+
+func update_avatar_display():
+	"""Update the avatar display based on selected sex and race"""
+	var selected_race = race_manager.get_selected_race()
+	var race_lowercase = selected_race.to_lower()  # Convert to lowercase for avatar lookup
+	
+	if selected_sex != "" and selected_race != "":
+		if avatar_textures.has(selected_sex) and avatar_textures[selected_sex].has(race_lowercase):
+			avatar_sprite.texture = avatar_textures[selected_sex][race_lowercase]
+			print("Avatar updated: ", selected_sex, "_", race_lowercase)
+		else:
+			avatar_sprite.texture = null
+			print("Avatar not found for: ", selected_sex, "_", race_lowercase)
+	else:
+		avatar_sprite.texture = null
+
+func get_selected_sex() -> String:
+	return selected_sex
 
 func update_trait_display(race_name: String):
 	if race_data.has(race_name):
@@ -415,7 +506,7 @@ func update_ui():
 	# Update continue button state using UIManager
 	var continue_button = get_node("CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton")
 	var character_name = character_name_input.text.strip_edges()
-	var can_continue = attribute_manager.all_points_spent() and race_manager.all_points_spent() and character_name.length() > 0
+	var can_continue = attribute_manager.all_points_spent() and race_manager.all_points_spent() and character_name.length() > 0 and selected_sex != ""
 	UIManager.apply_button_state(continue_button, can_continue)
 
 func _on_back_button_pressed():
@@ -445,6 +536,7 @@ func _on_continue_button_pressed():
 	CharacterCreation.set_step1_data(
 		character_name,
 		race_manager.get_selected_race(),
+		selected_sex,
 		attribute_manager.get_character_items()
 	)
 	

@@ -119,6 +119,7 @@ func create_tables():
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL,
 		race_id INTEGER,
+		sex TEXT NOT NULL,
 		attributes TEXT,
 		abilities TEXT,
 		skills TEXT,
@@ -376,9 +377,9 @@ func seed_traits():
 	else:
 		print("Error inserting Polyvalent trait: " + db.error_message)
 	
-	# Insert Ancient Wisdom trait (Elder)
+	# Insert Ancient Wisdom trait (Elfs)
 	var query2 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
-	query2 += "('Ancient Wisdom', 'Elders possess centuries of accumulated knowledge and unshakeable mental fortitude', "
+	query2 += "('Ancient Wisdom', 'Elfs possess centuries of accumulated knowledge and unshakeable mental fortitude', "
 	query2 += "'[{\"name\": \"stamina\", \"value\": -1}, {\"name\": \"willpower\", \"value\": 1}]', "
 	query2 += "'[]', "
 	query2 += "'[{\"name\": \"knowledge\", \"value\": 2}', "
@@ -430,7 +431,7 @@ func seed_races():
 	# Insert the 4 races with their corresponding trait IDs
 	var races_data = [
 		{"name": "Human", "description": "The most adaptable and common race", "display_order": 1, "trait_id": 1},
-		{"name": "Elder", "description": "Ancient and wise beings with extended lifespans", "display_order": 2, "trait_id": 2},
+		{"name": "Elf", "description": "Ancient and wise beings with extended lifespans", "display_order": 2, "trait_id": 2},
 		{"name": "Celestial-blooded", "description": "Descendants of celestial beings with divine heritage", "display_order": 3, "trait_id": 3},
 		{"name": "Infernal-blooded", "description": "Descendants of infernal beings with dark heritage", "display_order": 4, "trait_id": 4}
 	]
@@ -576,7 +577,7 @@ func seed_ref_maps():
 	
 	# Insert default map references
 	var maps_data = [
-		{"name": "Simple Forest Test", "width": 3, "height": 3, "description": "A simple test map with 9 forest tiles in a 3x3 grid"},
+		{"name": "Simple Map Test", "width": 9, "height": 9, "description": "A diverse world with forests, mountains, arid lands, and varied terrain in a 9x9 grid"},
 		{"name": "Tutorial Forest", "width": 20, "height": 15, "description": "A small forest area perfect for learning the basics"},
 		{"name": "Ancient Ruins", "width": 30, "height": 25, "description": "Mysterious ruins filled with secrets and danger"},
 		{"name": "Crystal Caves", "width": 25, "height": 20, "description": "Underground caverns with magical crystal formations"}
@@ -609,9 +610,13 @@ func seed_ref_tiles():
 	# Insert default tile types using constants for paths and values
 	var tiles_data = [
 		{"type_name": "forest", "is_walkable": true, "color_hex": "#2D5016", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("forest"), "description": "Dense forest with trees"},
-		{"type_name": "mountain", "is_walkable": false, "color_hex": "#A0A0A0", "movement_cost": 3, "texture_path": HexTileConstants.get_texture_path("mountain"), "description": "Tall mountains"},
-		{"type_name": "green_mountain", "is_walkable": false, "color_hex": "#A0A0A0", "movement_cost": 3, "texture_path": HexTileConstants.get_texture_path("green_mountain"), "description": "Tall mountains with trees"},
-		{"type_name": "grasslands", "is_walkable": true, "color_hex": "#A0A0A0", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("grasslands"), "description": "Grasslands"},
+		{"type_name": "mountain", "is_walkable": false, "color_hex": "#8B8680", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("mountain"), "description": "Tall impassable mountains"},
+		{"type_name": "green_mountain", "is_walkable": false, "color_hex": "#6B8E5A", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("green_mountain"), "description": "Forested mountains"},
+		{"type_name": "grassland", "is_walkable": true, "color_hex": "#7CB342", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("grassland"), "description": "Open grassland plains"},
+		{"type_name": "empty_green", "is_walkable": true, "color_hex": "#8BC34A", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("empty_green"), "description": "Empty green fields"},
+		{"type_name": "arid_varap", "is_walkable": true, "color_hex": "#D4A574", "movement_cost": 2, "texture_path": HexTileConstants.get_texture_path("arid_varap"), "description": "Arid wasteland with sparse vegetation"},
+		{"type_name": "glade", "is_walkable": true, "color_hex": "#4CAF50", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("glade"), "description": "Peaceful forest glade"},
+		{"type_name": "cliff", "is_walkable": false, "color_hex": "#795548", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("cliff"), "description": "Steep rocky cliffs"},
 	]
 	
 	for tile_data in tiles_data:
@@ -638,86 +643,82 @@ func seed_ref_map_tiles():
 	
 	print("No existing ref_map_tile data found, seeding ref_map_tiles...")
 	
-	# Get the Simple Forest Test map ID
-	var map_query = "SELECT id FROM ref_map WHERE name = 'Simple Forest Test'"
+	# Get the Simple Map Test map ID
+	var map_query = "SELECT id FROM ref_map WHERE name = 'Simple Map Test'"
 	db.query(map_query)
 	if not is_query_successful() or db.query_result.size() == 0:
-		print("Error: Simple Forest Test map not found")
+		print("Error: Simple Map Test map not found")
 		return
 	
 	var forest_map_id = db.query_result[0]["id"]
-	print("Found ref_map_id: " + str(forest_map_id) + " for map: Simple Forest Test")
+	print("Found ref_map_id: " + str(forest_map_id) + " for map: Simple Map Test")
 	
-	# Get the forest tile ID
-	var tile_query = "SELECT id FROM ref_tile WHERE type_name = 'forest'"
-	db.query(tile_query)
-	if not is_query_successful() or db.query_result.size() == 0:
-		print("Error: Forest tile not found")
-		return
+	# Get all tile IDs we'll need for the 9x9 map
+	var tile_ids = {}
+	var tile_types = ["forest", "mountain", "green_mountain", "grassland", "empty_green", "arid_varap", "glade", "cliff"]
 	
-	var forest_tile_id = db.query_result[0]["id"]
-
-	# Get the mountain tile ID
-	var mountain_tile_query = "SELECT id FROM ref_tile WHERE type_name = 'mountain'"
-	db.query(mountain_tile_query)
-	if not is_query_successful() or db.query_result.size() == 0:
-		print("Error: Mountain tile not found")
-		return
+	for tile_type in tile_types:
+		var tile_query = "SELECT id FROM ref_tile WHERE type_name = '%s'" % tile_type
+		db.query(tile_query)
+		if not is_query_successful() or db.query_result.size() == 0:
+			print("Error: %s tile not found" % tile_type)
+			return
+		tile_ids[tile_type] = db.query_result[0]["id"]
+		print("Found tile ID %d for %s" % [tile_ids[tile_type], tile_type])
 	
-	var mountain_tile_id = db.query_result[0]["id"]
-
-	# get the mountain forest tile ID
-	var mountain_forest_tile_query = "SELECT id FROM ref_tile WHERE type_name = 'green_mountain'"
-	db.query(mountain_forest_tile_query)
-	if not is_query_successful() or db.query_result.size() == 0:
-		print("Error: Mountain forest tile not found")
-		return
+	# Define the 9x9 coherent terrain layout
+	# F=forest, M=mountain, G=grassland, E=empty_green, A=arid_varap, V=glade, C=cliff, N=green_mountain
+	var terrain_map = [
+		["G", "G", "E", "E", "F", "F", "F", "G", "G"],  # Row 0
+		["G", "E", "E", "F", "F", "F", "G", "G", "G"],  # Row 1  
+		["E", "E", "F", "F", "V", "G", "G", "C", "C"],  # Row 2
+		["F", "F", "F", "V", "A", "A", "A", "C", "M"],  # Row 3
+		["F", "V", "G", "G", "A", "A", "A", "M", "M"],  # Row 4
+		["F", "G", "G", "A", "A", "V", "V", "N", "G"],  # Row 5
+		["G", "G", "G", "A", "V", "V", "G", "G", "G"],  # Row 6
+		["G", "G", "G", "G", "G", "G", "G", "G", "G"],  # Row 7
+		["G", "G", "G", "G", "G", "G", "G", "G", "G"]   # Row 8
+	]
 	
-	var green_mountain_tile_id = db.query_result[0]["id"]
-
-	# get grasslands tile ID
-	var grasslands_tile_query = "SELECT id FROM ref_tile WHERE type_name = 'grasslands'"
-	db.query(grasslands_tile_query)
-	if not is_query_successful() or db.query_result.size() == 0:
-		print("Error: Grasslands tile not found")
-		return
-
-	var grasslands_tile_id = db.query_result[0]["id"]
+	# Tile type mapping
+	var tile_mapping = {
+		"F": "forest",
+		"M": "mountain", 
+		"N": "green_mountain",
+		"G": "grassland",
+		"E": "empty_green",
+		"A": "arid_varap",
+		"V": "glade",
+		"C": "cliff"
+	}
 	
-	# Create 9 forest tiles in a 3x3 grid for the Simple Forest Test map
-	for y in range(3):
-		for x in range(3):
-			var insert_query = ""
-			if x == 1 and y == 1:
-				insert_query = """
-				INSERT INTO ref_map_tile (ref_map_id, ref_tile_id, x, y)
-				VALUES (%d, %d, %d, %d)
-				""" % [forest_map_id, green_mountain_tile_id, x, y]
-				print("Inserting green mountain tile at (%d, %d)" % [x, y])
-			elif x == 1 or y == 1:
-				insert_query = """
-				INSERT INTO ref_map_tile (ref_map_id, ref_tile_id, x, y)
-				VALUES (%d, %d, %d, %d)
-				""" % [forest_map_id, mountain_tile_id, x, y]
-				print("Inserting mountain tile at (%d, %d)" % [x, y])
-			elif x == 0 and y == 0:
-				insert_query = """
-				INSERT INTO ref_map_tile (ref_map_id, ref_tile_id, x, y)
-				VALUES (%d, %d, %d, %d)
-				""" % [forest_map_id, forest_tile_id, x, y]
-				print("Inserting forest tile at (%d, %d)" % [x, y])
-			else:
-				insert_query = """
-				INSERT INTO ref_map_tile (ref_map_id, ref_tile_id, x, y)
-				VALUES (%d, %d, %d, %d)
-				""" % [forest_map_id, grasslands_tile_id, x, y]
-				print("Inserting grasslands tile at (%d, %d)" % [x, y])
-		
+	# Create the 9x9 map with coherent terrain
+	for y in range(9):
+		for x in range(9):
+			var terrain_code = terrain_map[y][x]
+			var tile_type = tile_mapping[terrain_code]
+			var tile_id = tile_ids[tile_type]
+			
+			var insert_query = """
+			INSERT INTO ref_map_tile (ref_map_id, ref_tile_id, x, y)
+			VALUES (%d, %d, %d, %d)
+			""" % [forest_map_id, tile_id, x, y]
+			
 			db.query(insert_query)
 			if not is_query_successful():
-				print("Error creating ref_map_tile at (" + str(x) + ", " + str(y) + "): " + db.error_message)
+				print("Error creating ref_map_tile at (%d, %d): %s" % [x, y, db.error_message])
+			else:
+				print("Placed %s tile at (%d, %d)" % [tile_type, x, y])
 	
-	print("Created ref_map_tile entries for Simple Forest Test map (3x3 grid)")
+	print("Created ref_map_tile entries for Simple Map Test map (9x9 grid)")
+	print("Map features:")
+	print("- Forest cluster in northwest")
+	print("- Mountain range in northeast (fewer mountains)")
+	print("- Arid wasteland in center-east")
+	print("- Peaceful glades as transitions")
+	print("- Rocky cliffs near mountains")
+	print("- Grassland plains as base terrain")
+	print("- Empty green fields as transitional areas")
 
 # Map and Tile database functions
 func get_all_ref_maps():
@@ -874,7 +875,7 @@ func update_tile_texture_paths() -> bool:
 # Create a simple forest test map for immediate testing
  
 
-func save_character(character_name: String, race_name: String, attributes: Dictionary, abilities: Dictionary, skills: Dictionary) -> int:
+func save_character(character_name: String, race_name: String, sex: String, attributes: Dictionary, abilities: Dictionary, skills: Dictionary) -> int:
 	"""Save a character to the database and return the character ID"""
 	print("Saving character: " + character_name)
 	
@@ -893,9 +894,9 @@ func save_character(character_name: String, race_name: String, attributes: Dicti
 	
 	# Insert character into database
 	var insert_query = """
-	INSERT INTO character (name, race_id, attributes, abilities, skills)
-	VALUES ('%s', %d, '%s', '%s', '%s')
-	""" % [character_name, race_id, attributes_json, abilities_json, skills_json]
+	INSERT INTO character (name, race_id, sex, attributes, abilities, skills)
+	VALUES ('%s', %d, '%s', '%s', '%s', '%s')
+	""" % [character_name, race_id, sex, attributes_json, abilities_json, skills_json]
 	
 	db.query(insert_query)
 	if not is_query_successful():

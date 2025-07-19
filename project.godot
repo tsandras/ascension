@@ -35,3 +35,7 @@ enabled=PackedStringArray("godot-sqlite")
 [gui]
 
 theme/custom="res://data/default_theme.tres"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=2

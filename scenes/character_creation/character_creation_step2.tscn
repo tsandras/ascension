@@ -29,7 +29,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(1000, 900)
+custom_minimum_size = Vector2(1000, 650)
 layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
@@ -45,7 +45,7 @@ text = "Abilities & Skills"
 horizontal_alignment = 1
 
 [node name="Spacer1" type="Control" parent="CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
 [node name="ContentContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
@@ -103,7 +103,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="Spacer3" type="Control" parent="CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
 [node name="ButtonsContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
