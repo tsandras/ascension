@@ -35,7 +35,7 @@ func _ready():
 	await get_tree().process_frame
 	
 	# Initialize the managers
-	attribute_manager = AllocationManager.new("attributes", "attributes", 6)
+	attribute_manager = AllocationManager.new("attributes", "attributes", 5)
 	race_manager = AllocationManager.new("races", "races", 0)  # Races don't use points
 	
 	# Generate the UI dynamically
@@ -545,5 +545,5 @@ func _on_continue_button_pressed():
 	print("Selected Race: %s" % race_manager.get_selected_race())
 	print("Character Name: %s" % character_name)
 	
-	# Navigate to step 2 (abilities & skills allocation)
+	# Navigate to step 2 (abilities & competences allocation)
 	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step2.tscn") 

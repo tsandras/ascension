@@ -237,7 +237,6 @@ func check_for_loaded_character():
 		print("Character Attributes: ", CharacterCreation.attributes)
 		print("Character Abilities: ", CharacterCreation.abilities)
 		print("Character Competences: ", CharacterCreation.competences)
-		print("Character Skills: ", CharacterCreation.skills)
 		print("================================")
 		
 		# Update character info display
@@ -687,10 +686,6 @@ func update_info_panel():
 			character_info += "\nStrength: " + str(CharacterCreation.attributes.strength)
 		if CharacterCreation.attributes.has("essence"):
 			character_info += "\nEssence: " + str(CharacterCreation.attributes.essence)
-		
-		# Add skills if available
-		if CharacterCreation.skills.size() > 0:
-			character_info += "\nSkills: " + str(CharacterCreation.skills.size()) + " learned"
 		
 		# Update tile info label to show character info instead
 		tile_info_label.text = character_info

@@ -81,10 +81,10 @@ func create_tables():
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
 		description TEXT,
-		attribute_bonuses TEXT,
-		ability_bonuses TEXT,
-		skill_bonuses TEXT,
-		other_bonuses TEXT,
+		attribute_bonuses JSON,
+		ability_bonuses JSON,
+		skill_bonuses JSON,
+		other_bonuses JSON,
 		display_order INTEGER NOT NULL DEFAULT 0
 	);
 	"""
@@ -95,14 +95,35 @@ func create_tables():
 	else:
 		print("Traits table created successfully")
 	
-	# Create skills table
-	var skills_query = """
-	CREATE TABLE IF NOT EXISTS skills (
+	# Create competences table
+	var competences_query = """
+	CREATE TABLE IF NOT EXISTS competences (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
 		base_value INTEGER NOT NULL DEFAULT 0,
 		max_value INTEGER NOT NULL DEFAULT 6,
 		display_order INTEGER NOT NULL DEFAULT 0,
+		description TEXT
+	);
+	"""
+	
+	db.query(competences_query)
+	if not is_query_successful():
+		print("Error creating competences table: ", db.error_message)
+	else:
+		print("Competences table created successfully")
+	
+	# Create skills table
+	var skills_query = """
+	CREATE TABLE IF NOT EXISTS skills (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		ability_conditions JSON NOT NULL DEFAULT '{}',
+		level INTEGER NOT NULL DEFAULT 1,
+		cost JSON NOT NULL DEFAULT '{}',
+		tags TEXT,
+		cast_conditions TEXT,
+		effect TEXT,
 		description TEXT
 	);
 	"""
@@ -120,9 +141,10 @@ func create_tables():
 		name TEXT NOT NULL,
 		race_id INTEGER,
 		sex TEXT NOT NULL,
-		attributes TEXT,
-		abilities TEXT,
-		skills TEXT,
+		attributes JSON,
+		abilities JSON,
+		competences JSON,
+		skills JSON,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (race_id) REFERENCES races(id)
 	);
@@ -225,6 +247,7 @@ func seed_data():
 	seed_abilities()
 	seed_traits()       # Seed traits before races (foreign key dependency)
 	seed_races()
+	seed_competences()
 	seed_skills()
 	seed_ref_maps()
 	seed_ref_tiles()
@@ -475,20 +498,20 @@ func get_race_by_name(race_name: String):
 	else:
 		return null
 
-func seed_skills():
-	# Check if we already have skill data
-	var check_query = "SELECT COUNT(*) as count FROM skills"
+func seed_competences():
+	# Check if we already have competence data
+	var check_query = "SELECT COUNT(*) as count FROM competences"
 	db.query(check_query)
 	var result = db.query_result
 	
 	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains skill data")
+		print("Database already contains competence data")
 		return
 	
-	print("No existing skill data found, seeding skills...")
+	print("No existing competence data found, seeding competences...")
 	
-	# Insert the 8 skills as specified
-	var skills_data = [
+	# Insert the 8 competences as specified
+	var competences_data = [
 		{"name": "Survival", "description": "Ability to survive in the wilderness", "display_order": 1},
 		{"name": "Perception", "description": "Awareness and ability to notice details", "display_order": 2},
 		{"name": "Stealth", "description": "Ability to move silently and remain hidden", "display_order": 3},
@@ -499,11 +522,78 @@ func seed_skills():
 		{"name": "Athletics", "description": "Physical prowess and bodily coordination", "display_order": 8}
 	]
 	
+	for competence in competences_data:
+		var insert_query = """
+		INSERT INTO competences (name, base_value, max_value, display_order, description)
+		VALUES ('%s', 0, 6, %d, '%s')
+		""" % [competence.name, competence.display_order, competence.description]
+		
+		db.query(insert_query)
+		if not is_query_successful():
+			print("Error inserting competence " + competence.name + ": " + db.error_message)
+		else:
+			print("Inserted competence: ", competence.name)
+
+func seed_skills():
+	"""Seed the skills table with initial data"""
+	var check_query = "SELECT COUNT(*) as count FROM skills"
+	db.query(check_query)
+	
+	if is_query_successful() and db.query_result.size() > 0 and db.query_result[0]["count"] > 0:
+		print("Skills table already has data, skipping seed")
+		return
+	
+	print("No existing skill data found, seeding skills...")
+	
+	# Insert some example skills
+	var skills_data = [
+		{
+			"name": "Fireball",
+			"ability_conditions": '{"pyromancer": 1}',
+			"level": 1,
+			"cost": '{"mana": 10}',
+			"tags": "combat,spell,fire",
+			"cast_conditions": "combat",
+			"effect": "Deal 15 fire damage to target",
+			"description": "A basic fire spell that deals damage to enemies"
+		},
+		{
+			"name": "Heal",
+			"ability_conditions": '{"cleric": 1}',
+			"level": 1,
+			"cost": '{"mana": 15}',
+			"tags": "support,spell,healing",
+			"cast_conditions": "any",
+			"effect": "Restore 20 health to target",
+			"description": "A healing spell that restores health"
+		},
+		{
+			"name": "Sword Strike",
+			"ability_conditions": '{"warrior": 1}',
+			"level": 1,
+			"cost": '{"stamina": 5}',
+			"tags": "combat,melee,physical",
+			"cast_conditions": "combat",
+			"effect": "Deal 12 physical damage with sword",
+			"description": "A basic sword attack"
+		},
+		{
+			"name": "Stealth",
+			"ability_conditions": '{"scoundrel": 1}',
+			"level": 1,
+			"cost": '{"stamina": 8}',
+			"tags": "utility,stealth",
+			"cast_conditions": "out_of_combat",
+			"effect": "Become invisible for 3 turns",
+			"description": "Hide from enemies and move silently"
+		}
+	]
+	
 	for skill in skills_data:
 		var insert_query = """
-		INSERT INTO skills (name, base_value, max_value, display_order, description)
-		VALUES ('%s', 0, 6, %d, '%s')
-		""" % [skill.name, skill.display_order, skill.description]
+		INSERT INTO skills (name, ability_conditions, level, cost, tags, cast_conditions, effect, description)
+		VALUES ('%s', '%s', %d, '%s', '%s', '%s', '%s', '%s')
+		""" % [skill.name, skill.ability_conditions, skill.level, skill.cost, skill.tags, skill.cast_conditions, skill.effect, skill.description]
 		
 		db.query(insert_query)
 		if not is_query_successful():
@@ -512,7 +602,7 @@ func seed_skills():
 			print("Inserted skill: ", skill.name)
 
 func get_all_skills():
-	var query = "SELECT * FROM skills ORDER BY display_order"
+	var query = "SELECT * FROM skills ORDER BY name"
 	db.query(query)
 	
 	if is_query_successful():
@@ -524,6 +614,27 @@ func get_all_skills():
 
 func get_skill_by_name(skill_name: String):
 	var query = "SELECT * FROM skills WHERE name = '%s'" % skill_name
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		return result[0]
+	else:
+		return null
+
+func get_all_competences():
+	var query = "SELECT * FROM competences ORDER BY display_order"
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully fetched %d competences from database" % db.query_result.size())
+		return db.query_result
+	else:
+		print("Error fetching competences: ", db.error_message)
+		return []
+
+func get_competence_by_name(competence_name: String):
+	var query = "SELECT * FROM competences WHERE name = '%s'" % competence_name
 	db.query(query)
 	var result = db.query_result
 	
@@ -613,10 +724,16 @@ func seed_ref_tiles():
 		{"type_name": "mountain", "is_walkable": false, "color_hex": "#8B8680", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("mountain"), "description": "Tall impassable mountains"},
 		{"type_name": "green_mountain", "is_walkable": false, "color_hex": "#6B8E5A", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("green_mountain"), "description": "Forested mountains"},
 		{"type_name": "grassland", "is_walkable": true, "color_hex": "#7CB342", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("grassland"), "description": "Open grassland plains"},
-		{"type_name": "empty_green", "is_walkable": true, "color_hex": "#8BC34A", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("empty_green"), "description": "Empty green fields"},
+		{"type_name": "empty_grassland", "is_walkable": true, "color_hex": "#8BC34A", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("empty_grassland"), "description": "Empty green fields"},
 		{"type_name": "arid_varap", "is_walkable": true, "color_hex": "#D4A574", "movement_cost": 2, "texture_path": HexTileConstants.get_texture_path("arid_varap"), "description": "Arid wasteland with sparse vegetation"},
 		{"type_name": "glade", "is_walkable": true, "color_hex": "#4CAF50", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("glade"), "description": "Peaceful forest glade"},
 		{"type_name": "cliff", "is_walkable": false, "color_hex": "#795548", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("cliff"), "description": "Steep rocky cliffs"},
+		{"type_name": "ruins", "is_walkable": false, "color_hex": "#795548", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("ruins"), "description": "Ruins of a long-lost civilization"},
+		{"type_name": "settlement", "is_walkable": true, "color_hex": "#795548", "movement_cost": HexTileConstants.DEFAULT_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("settlement"), "description": "Settlement with buildings and people"},
+		{"type_name": "left_sea", "is_walkable": false, "color_hex": "#000000", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("left_sea"), "description": "Left sea"},
+		{"type_name": "right_sea", "is_walkable": false, "color_hex": "#000000", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("right_sea"), "description": "Right sea"},
+		{"type_name": "top_sea", "is_walkable": false, "color_hex": "#000000", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("top_sea"), "description": "Top sea"},
+		{"type_name": "bottom_sea", "is_walkable": false, "color_hex": "#000000", "movement_cost": HexTileConstants.IMPASSABLE_MOVEMENT_COST, "texture_path": HexTileConstants.get_texture_path("bottom_sea"), "description": "Bottom sea"},
 	]
 	
 	for tile_data in tiles_data:
@@ -655,7 +772,7 @@ func seed_ref_map_tiles():
 	
 	# Get all tile IDs we'll need for the 9x9 map
 	var tile_ids = {}
-	var tile_types = ["forest", "mountain", "green_mountain", "grassland", "empty_green", "arid_varap", "glade", "cliff"]
+	var tile_types = ["forest", "mountain", "green_mountain", "grassland", "empty_grassland", "arid_varap", "glade", "cliff"]
 	
 	for tile_type in tile_types:
 		var tile_query = "SELECT id FROM ref_tile WHERE type_name = '%s'" % tile_type
@@ -667,7 +784,7 @@ func seed_ref_map_tiles():
 		print("Found tile ID %d for %s" % [tile_ids[tile_type], tile_type])
 	
 	# Define the 9x9 coherent terrain layout
-	# F=forest, M=mountain, G=grassland, E=empty_green, A=arid_varap, V=glade, C=cliff, N=green_mountain
+	# F=forest, M=mountain, G=grassland, E=empty_grassland, A=arid_varap, V=glade, C=cliff, N=green_mountain
 	var terrain_map = [
 		["G", "G", "E", "E", "F", "F", "F", "G", "G"],  # Row 0
 		["G", "E", "E", "F", "F", "F", "G", "G", "G"],  # Row 1  
@@ -686,7 +803,7 @@ func seed_ref_map_tiles():
 		"M": "mountain", 
 		"N": "green_mountain",
 		"G": "grassland",
-		"E": "empty_green",
+		"E": "empty_grassland",
 		"A": "arid_varap",
 		"V": "glade",
 		"C": "cliff"
@@ -875,7 +992,7 @@ func update_tile_texture_paths() -> bool:
 # Create a simple forest test map for immediate testing
  
 
-func save_character(character_name: String, race_name: String, sex: String, attributes: Dictionary, abilities: Dictionary, skills: Dictionary) -> int:
+func save_character(character_name: String, race_name: String, sex: String, attributes: Dictionary, abilities: Dictionary, competences: Dictionary, skills: Array) -> int:
 	"""Save a character to the database and return the character ID"""
 	print("Saving character: " + character_name)
 	
@@ -887,16 +1004,17 @@ func save_character(character_name: String, race_name: String, sex: String, attr
 	
 	var race_id = race.id
 	
-	# Convert dictionaries to JSON strings
+	# Convert dictionaries to JSON strings for SQLite JSON columns
 	var attributes_json = JSON.stringify(attributes)
 	var abilities_json = JSON.stringify(abilities)
+	var competences_json = JSON.stringify(competences)
 	var skills_json = JSON.stringify(skills)
 	
 	# Insert character into database
 	var insert_query = """
-	INSERT INTO character (name, race_id, sex, attributes, abilities, skills)
-	VALUES ('%s', %d, '%s', '%s', '%s', '%s')
-	""" % [character_name, race_id, sex, attributes_json, abilities_json, skills_json]
+	INSERT INTO character (name, race_id, sex, attributes, abilities, competences, skills)
+	VALUES ('%s', %d, '%s', '%s', '%s', '%s', '%s')
+	""" % [character_name, race_id, sex, attributes_json, abilities_json, competences_json, skills_json]
 	
 	db.query(insert_query)
 	if not is_query_successful():
@@ -927,20 +1045,18 @@ func get_character_by_id(character_id: int) -> Dictionary:
 	if is_query_successful() and db.query_result.size() > 0:
 		var character_data = db.query_result[0]
 		
-		# Parse JSON strings back to dictionaries
-		var json = JSON.new()
-		
+		# JSON columns return parsed objects directly
 		if character_data.attributes:
-			json.parse(character_data.attributes)
-			character_data.attributes_dict = json.data
+			character_data.attributes_dict = character_data.attributes
 		
 		if character_data.abilities:
-			json.parse(character_data.abilities)
-			character_data.abilities_dict = json.data
+			character_data.abilities_dict = character_data.abilities
+		
+		if character_data.competences:
+			character_data.competences_dict = character_data.competences
 		
 		if character_data.skills:
-			json.parse(character_data.skills)
-			character_data.skills_dict = json.data
+			character_data.skills_dict = character_data.skills
 		
 		return character_data
 	else:
@@ -975,3 +1091,36 @@ func delete_character(character_id: int) -> bool:
 	else:
 		print("Error deleting character: " + db.error_message)
 		return false
+
+func get_last_saved_character() -> Dictionary:
+	"""Get the most recently saved character"""
+	var query = """
+	SELECT c.*, r.name as race_name, r.description as race_description
+	FROM character c
+	LEFT JOIN races r ON c.race_id = r.id
+	ORDER BY c.created_at DESC
+	LIMIT 1
+	"""
+	
+	db.query(query)
+	if is_query_successful() and db.query_result.size() > 0:
+		var character_data = db.query_result[0]
+		
+		# JSON columns return parsed objects directly
+		if character_data.attributes:
+			character_data.attributes_dict = character_data.attributes
+		
+		if character_data.abilities:
+			character_data.abilities_dict = character_data.abilities
+		
+		if character_data.competences:
+			character_data.competences_dict = character_data.competences
+		
+		if character_data.skills:
+			character_data.skills_dict = character_data.skills
+		
+		print("Found last saved character: " + character_data.name)
+		return character_data
+	else:
+		print("No saved characters found")
+		return {}

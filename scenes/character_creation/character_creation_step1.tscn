@@ -201,7 +201,7 @@ layout_mode = 2
 [node name="AttributesLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column3"]
 layout_mode = 2
 size_flags_horizontal = 4
-text = "ALLOCATE ATTRIBUTES (6 points)"
+text = "ALLOCATE ATTRIBUTES (5 points)"
 horizontal_alignment = 1
 
 [node name="AttributesSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column3"]
@@ -218,7 +218,7 @@ layout_mode = 2
 [node name="PointsLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Points remaining: 6"
+text = "Points remaining: 5"
 horizontal_alignment = 1
 
 [node name="Spacer4" type="Control" parent="CenterContainer/VBoxContainer"]

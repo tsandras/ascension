@@ -1,5 +1,4 @@
-extends RefCounted
-class_name MapManager
+extends Node
 
 # Current map data
 var current_map_data = null
@@ -13,7 +12,7 @@ var hex_image_height: float = 0
 var hex_horiz_spacing: float = 0
 var hex_vert_spacing: float = 0
 
-func _init():
+func _ready():
 	print("MapManager initialized")
 	# Load the reference tile image to get dimensions
 	load_hex_tile_dimensions()

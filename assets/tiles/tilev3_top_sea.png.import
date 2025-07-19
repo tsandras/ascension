@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cegwqnt8bjmgy"
-path="res://.godot/imported/tilev3_empty_green.png-a502fda21435bd73798fd725f921ead2.ctex"
+uid="uid://cflgbew33b120"
+path="res://.godot/imported/tilev3_top_sea.png-3cd82ce95506e7582214f2765e0d9398.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tiles/tilev3_empty_green.png"
-dest_files=["res://.godot/imported/tilev3_empty_green.png-a502fda21435bd73798fd725f921ead2.ctex"]
+source_file="res://assets/tiles/tilev3_top_sea.png"
+dest_files=["res://.godot/imported/tilev3_top_sea.png-3cd82ce95506e7582214f2765e0d9398.ctex"]
 
 [params]
 

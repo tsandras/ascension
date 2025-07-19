@@ -57,7 +57,8 @@ const LABEL_VALUE_WIDTH = 80
 # ===================
 const CONTAINER_MAIN_MENU = Vector2(500, 600)
 const CONTAINER_CHARACTER_CREATION_STEP1 = Vector2(1000, 650)  # Step 1: 3-column layout (fits in 720px window)
-const CONTAINER_CHARACTER_CREATION_STEP2 = Vector2(1000, 650)  # Step 2: Abilities & Skills (fits in 720px window)
+const CONTAINER_CHARACTER_CREATION_STEP2 = Vector2(1000, 650)  # Step 2: Abilities & Competences (fits in 720px window)
+const CONTAINER_CHARACTER_CREATION_STEP3 = Vector2(1000, 650)  # Step 3: Skills (fits in 720px window)
 
 # ===================
 # SPACING

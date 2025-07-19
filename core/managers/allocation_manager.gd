@@ -28,8 +28,8 @@ func load_item_definitions():
 		items = DatabaseManager.get_all_abilities()
 	elif table_name == "races":
 		items = DatabaseManager.get_all_races()
-	elif table_name == "skills":
-		items = DatabaseManager.get_all_skills()
+	elif table_name == "competences":
+		items = DatabaseManager.get_all_competences()
 	
 	for item in items:
 		if table_name == "races":
@@ -40,7 +40,7 @@ func load_item_definitions():
 				"description": item.description
 			}
 		else:
-			# Attributes, abilities, and skills have base/max values
+			# Attributes, abilities, and competences have base/max values
 			item_definitions[item.name] = {
 				"id": item.id,
 				"base_value": item.base_value,
@@ -60,7 +60,7 @@ func initialize_character_items():
 			# For races, we don't initialize values (selection-based)
 			character_items[item_name] = false  # false = not selected
 		else:
-			# For attributes, abilities, and skills
+			# For attributes, abilities, and competences
 			var base_value = item_definitions[item_name].base_value
 			character_items[item_name] = base_value
 

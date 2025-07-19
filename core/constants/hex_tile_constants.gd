@@ -22,10 +22,10 @@ class_name HexTileConstants
 # ===================
 # TILE DIMENSIONS
 # ===================
-const TILE_WIDTH = 256  # Increased from 150 to reduce scaling
-const TILE_HEIGHT = 256  # Increased from 150 to reduce scaling
+const TILE_WIDTH = 1024  # Use original texture size
+const TILE_HEIGHT = 1024  # Use original texture size
 
-# Source texture dimensions (assets are this size before resize)
+# Source texture dimensions (assets are this size)
 const SOURCE_TEXTURE_WIDTH = 1024
 const SOURCE_TEXTURE_HEIGHT = 1024
 
@@ -36,8 +36,8 @@ const HORIZONTAL_SPACING_MULTIPLIER = 0.85  # 85% of tile width
 const VERTICAL_SPACING_MULTIPLIER = 0.73    # 73% of tile height
 
 # Calculated spacing values (used by MapManager)
-const HORIZONTAL_SPACING = TILE_WIDTH * HORIZONTAL_SPACING_MULTIPLIER   # 127.5px
-const VERTICAL_SPACING = TILE_HEIGHT * VERTICAL_SPACING_MULTIPLIER      # 109.5px
+const HORIZONTAL_SPACING = TILE_WIDTH * HORIZONTAL_SPACING_MULTIPLIER   # 870px
+const VERTICAL_SPACING = TILE_HEIGHT * VERTICAL_SPACING_MULTIPLIER      # 748px
 
 # ===================
 # DEBUG & INTERACTION

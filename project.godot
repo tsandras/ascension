@@ -19,11 +19,12 @@ config/icon="res://icon.svg"
 
 DatabaseManager="*res://core/managers/database_manager.gd"
 CharacterCreation="*res://core/globals/character_creation.gd"
+MapManager="*res://core/managers/map_manager.gd"
 
 [display]
 
-window/size/viewport_width=1280
-window/size/viewport_height=720
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/size/mode=2
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"

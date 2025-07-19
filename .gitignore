@@ -15,3 +15,6 @@ ehthumbs.db
 Thumbs.db
 .AppleDouble
 .LSOverride
+
+# iCloud sync files
+*.icloud
