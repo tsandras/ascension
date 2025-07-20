@@ -5,6 +5,8 @@ class_name AllocationManager
 var item_definitions = {}
 # Store current character item values
 var character_items = {}
+# Store race bonuses (for attributes only)
+var race_bonuses = {}
 # Point allocation constraints
 var total_points: int
 var remaining_points: int
@@ -92,7 +94,14 @@ func get_item_max_value(item_name: String) -> int:
 	if table_name == "races":
 		return 1  # Races have max of 1 (selected or not)
 	if item_definitions.has(item_name):
-		return item_definitions[item_name].max_value
+		var base_max = item_definitions[item_name].max_value
+		
+		# For attributes and competences, add race bonuses to the max value
+		if (table_name == "attributes" or table_name == "competences") and race_bonuses.has(item_name):
+			var race_bonus = race_bonuses[item_name]
+			return base_max + race_bonus
+		
+		return base_max
 	return 0
 
 # Race selection methods
@@ -142,6 +151,12 @@ func can_increase_item(item_name: String) -> bool:
 	var current_value = character_items[item_name]
 	var max_value = get_item_max_value(item_name)
 	
+	# For attributes and competences, check if we have race bonuses that affect the max
+	if (table_name == "attributes" or table_name == "competences") and race_bonuses.has(item_name):
+		var race_bonus = race_bonuses[item_name]
+		var effective_max = max_value + race_bonus
+		return current_value < effective_max and remaining_points > 0
+	
 	return current_value < max_value and remaining_points > 0
 
 func can_decrease_item(item_name: String) -> bool:
@@ -154,6 +169,12 @@ func can_decrease_item(item_name: String) -> bool:
 	
 	var current_value = character_items[item_name]
 	var base_value = get_item_base_value(item_name)
+	
+	# For attributes and competences, check if we have race bonuses that prevent decrease
+	if (table_name == "attributes" or table_name == "competences") and race_bonuses.has(item_name):
+		var race_bonus = race_bonuses[item_name]
+		var minimum_value = base_value + race_bonus
+		return current_value > minimum_value
 	
 	return current_value > base_value
 
@@ -190,7 +211,12 @@ func update_remaining_points():
 	for item_name in character_items:
 		var current_value = character_items[item_name]
 		var base_value = get_item_base_value(item_name)
-		used_points += (current_value - base_value)
+		var race_bonus = race_bonuses.get(item_name, 0)
+		
+		# Calculate points used: current_value - (base_value + race_bonus)
+		# This ensures race bonuses don't count against the allocation pool
+		var effective_base = base_value + race_bonus
+		used_points += (current_value - effective_base)
 	
 	remaining_points = total_points - used_points
 
@@ -198,6 +224,10 @@ func get_remaining_points() -> int:
 	return remaining_points
 
 func get_character_items() -> Dictionary:
+	return character_items.duplicate()
+
+func get_all_item_values() -> Dictionary:
+	"""Get all current item values as a dictionary"""
 	return character_items.duplicate()
 
 func reset_items():
@@ -240,4 +270,23 @@ func decrease_attribute(attr_name: String) -> bool:
 	return decrease_item(attr_name)
 
 func get_character_attributes() -> Dictionary:
-	return get_character_items() 
+	return get_character_items()
+
+func add_free_points(points: int):
+	"""Add free points to the allocation pool (for trait bonuses)"""
+	if table_name == "races":
+		return  # Races don't use points
+	
+	remaining_points += points
+	print("Added %d free points to %s allocation" % [points, item_type])
+
+func set_race_bonuses(bonuses: Dictionary):
+	"""Set race bonuses for attributes or competences (prevents decreasing below bonus level)"""
+	if table_name == "attributes" or table_name == "competences":
+		race_bonuses = bonuses.duplicate()
+		print("Set race bonuses for %s: %s" % [table_name, race_bonuses])
+
+func clear_race_bonuses():
+	"""Clear race bonuses"""
+	race_bonuses.clear()
+	print("Cleared race bonuses") 

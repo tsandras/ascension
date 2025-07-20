@@ -1,0 +1,163 @@
+[gd_scene load_steps=2 format=3 uid="uid://bgxflsq24w5d5"]
+
+[ext_resource type="Script" path="res://scenes/ui/character_sheet.gd" id="1_0x0x0"]
+
+[node name="CharacterSheet" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_0x0x0")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.5)
+
+[node name="SheetContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 400.0
+offset_bottom = 300.0
+
+[node name="Background" type="ColorRect" parent="SheetContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.2, 0.2, 0.2, 0.95)
+
+[node name="Border" type="NinePatchRect" parent="SheetContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SheetContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+
+[node name="HeaderContainer" type="HBoxContainer" parent="SheetContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CharacterInfo" type="VBoxContainer" parent="SheetContainer/VBoxContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CharacterName" type="Label" parent="SheetContainer/VBoxContainer/HeaderContainer/CharacterInfo"]
+layout_mode = 2
+text = "Character Name"
+label_settings = SubResource("LabelSettings_1")
+
+[node name="RaceInfo" type="Label" parent="SheetContainer/VBoxContainer/HeaderContainer/CharacterInfo"]
+layout_mode = 2
+text = "Race (Sex)"
+label_settings = SubResource("LabelSettings_2")
+
+[node name="AvatarContainer" type="VBoxContainer" parent="SheetContainer/VBoxContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 1
+
+[node name="AvatarSprite" type="TextureRect" parent="SheetContainer/VBoxContainer/HeaderContainer/AvatarContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 80)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CloseButton" type="Button" parent="SheetContainer/VBoxContainer/HeaderContainer"]
+layout_mode = 2
+text = "X"
+custom_minimum_size = Vector2(30, 30)
+
+[node name="HSeparator" type="HSeparator" parent="SheetContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="StatsContainer" type="HBoxContainer" parent="SheetContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeftColumn" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AttributesSection" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn"]
+layout_mode = 2
+
+[node name="AttributesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection"]
+layout_mode = 2
+text = "Attributes"
+label_settings = SubResource("LabelSettings_3")
+
+[node name="AttributesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection"]
+layout_mode = 2
+offset_left = 20.0
+
+[node name="AbilitiesSection" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn"]
+layout_mode = 2
+
+[node name="AbilitiesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection"]
+layout_mode = 2
+text = "Abilities"
+label_settings = SubResource("LabelSettings_3")
+
+[node name="AbilitiesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection"]
+layout_mode = 2
+offset_left = 20.0
+
+[node name="RightColumn" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CompetencesSection" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn"]
+layout_mode = 2
+
+[node name="CompetencesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection"]
+layout_mode = 2
+text = "Competences"
+label_settings = SubResource("LabelSettings_3")
+
+[node name="CompetencesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection"]
+layout_mode = 2
+offset_left = 20.0
+
+[node name="SkillsSection" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn"]
+layout_mode = 2
+
+[node name="SkillsTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/SkillsSection"]
+layout_mode = 2
+text = "Skills"
+label_settings = SubResource("LabelSettings_3")
+
+[node name="SkillsList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/SkillsSection"]
+layout_mode = 2
+offset_left = 20.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_1"]
+font_size = 24
+font_color = Color(1, 1, 1, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_2"]
+font_size = 16
+font_color = Color(0.8, 0.8, 0.8, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_3"]
+font_size = 18
+font_color = Color(0.9, 0.9, 0.9, 1) 

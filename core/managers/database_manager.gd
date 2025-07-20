@@ -387,57 +387,87 @@ func seed_traits():
 	
 	print("No existing trait data found, seeding traits...")
 	
-	# Insert Polyvalent trait (Human)
-	var query1 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
-	query1 += "('Polyvalent', 'Humans are adaptable and versatile, gaining small bonuses to all areas of expertise', "
-	query1 += "'[]', "
-	query1 += "'[]', "
-	query1 += "'[{\"name\": \"survival\", \"value\": 1}, {\"name\": \"perception\", \"value\": 1}, {\"name\": \"stealth\", \"value\": 1}, {\"name\": \"knowledge\", \"value\": 1}, {\"name\": \"arcana\", \"value\": 1}, {\"name\": \"sleight_of_hand\", \"value\": 1}, {\"name\": \"persuasion\", \"value\": 1}, {\"name\": \"athletics\", \"value\": 1}]', "
-	query1 += "'[{\"type\": \"damage\", \"value\": 5}, {\"type\": \"endurance\", \"value\": 2}, {\"type\": \"pv\", \"value\": 10}, {\"type\": \"mana\", \"value\": 10}]', 1)"
-	db.query(query1)
-	if is_query_successful():
-		print("Inserted trait: Polyvalent")
-	else:
-		print("Error inserting Polyvalent trait: " + db.error_message)
+	# Define traits data as GDScript objects
+	var traits_data = [
+		{
+			"name": "Polyvalent",
+			"description": "Humans are adaptable and versatile, gaining small bonuses to all areas of expertise",
+			"attribute_bonuses": [],
+			"ability_bonuses": [],
+			"competence_bonuses": [
+				{"name": "free", "value": 1}
+			],
+			"other_bonuses": [
+				{"type": "critical_chance", "value": 5},
+			],
+			"display_order": 1
+		},
+		{
+			"name": "Ancient Wisdom",
+			"description": "Elfs possess centuries of accumulated knowledge and unshakeable mental fortitude",
+			"attribute_bonuses": [
+				{"name": "stamina", "value": -1},
+				{"name": "willpower", "value": 1}
+			],
+			"ability_bonuses": [],
+			"competence_bonuses": [
+				{"name": "knowledge", "value": 2}
+			],
+			"other_bonuses": [
+				{"type": "resistance", "value": 5, "subtype": "magical"}
+			],
+			"display_order": 2
+		},
+		{
+			"name": "Divine Heritage",
+			"description": "Celestial-blooded carry divine blessings, excelling in protection and social grace",
+			"attribute_bonuses": [
+				{"name": "essence", "value": 1}
+			],
+			"ability_bonuses": [],
+			"competence_bonuses": [],
+			"other_bonuses": [
+				{"type": "resistance", "value": 15, "subtype": "fire"},
+				{"type": "resistance", "value": 15, "subtype": "lightning"}
+			],
+			"display_order": 3
+		},
+		{
+			"name": "Infernal Power",
+			"description": "Infernal-blooded channel raw dark power, devastating in combat but consuming",
+			"attribute_bonuses": [
+				{"name": "essence", "value": 1}
+			],
+			"ability_bonuses": [],
+			"competence_bonuses": [],
+			"other_bonuses": [
+				{"type": "resistance", "value": 15, "subtype": "fire"},
+				{"type": "resistance", "value": 15, "subtype": "cold"}
+			],
+			"display_order": 4
+		}
+	]
 	
-	# Insert Ancient Wisdom trait (Elfs)
-	var query2 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
-	query2 += "('Ancient Wisdom', 'Elfs possess centuries of accumulated knowledge and unshakeable mental fortitude', "
-	query2 += "'[{\"name\": \"stamina\", \"value\": -1}, {\"name\": \"willpower\", \"value\": 1}]', "
-	query2 += "'[]', "
-	query2 += "'[{\"name\": \"knowledge\", \"value\": 2}', "
-	query2 += "'[{\"type\": \"resistance\", \"value\": 10, \"subtype\": \"magical\"}]', 2)"
-	db.query(query2)
-	if is_query_successful():
-		print("Inserted trait: Ancient Wisdom")
-	else:
-		print("Error inserting Ancient Wisdom trait: " + db.error_message)
-	
-	# Insert Divine Heritage trait (Celestial-blooded)
-	var query3 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
-	query3 += "('Divine Heritage', 'Celestial-blooded carry divine blessings, excelling in protection and social grace', "
-	query3 += "'[{\"name\": \"essence\", \"value\": 1}]', "
-	query3 += "'[]', "
-	query3 += "'[]', "
-	query3 += "'[{\"type\": \"resistance\", \"value\": 15, \"subtype\": \"magical\"}, {\"type\": \"resistance\", \"value\": 5, \"subtype\": \"physical\"}]', 3)"
-	db.query(query3)
-	if is_query_successful():
-		print("Inserted trait: Divine Heritage")
-	else:
-		print("Error inserting Divine Heritage trait: " + db.error_message)
-	
-	# Insert Infernal Power trait (Infernal-blooded)
-	var query4 = "INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order) VALUES "
-	query4 += "('Infernal Power', 'Infernal-blooded channel raw dark power, devastating in combat but consuming', "
-	query4 += "'[{\"name\": \"essence\", \"value\": 1}]', "
-	query4 += "'[]', "
-	query4 += "'[]', "
-	query4 += "'[{\"type\": \"resistance\", \"value\": 20, \"subtype\": \"fire\"}]', 4)"
-	db.query(query4)
-	if is_query_successful():
-		print("Inserted trait: Infernal Power")
-	else:
-		print("Error inserting Infernal Power trait: " + db.error_message)
+	# Insert each trait
+	for trait_data in traits_data:
+		var insert_query = """
+		INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order)
+		VALUES ('%s', '%s', '%s', '%s', '%s', '%s', %d)
+		""" % [
+			trait_data.name,
+			trait_data.description,
+			JSON.stringify(trait_data.attribute_bonuses),
+			JSON.stringify(trait_data.ability_bonuses),
+			JSON.stringify(trait_data.competence_bonuses),
+			JSON.stringify(trait_data.other_bonuses),
+			trait_data.display_order
+		]
+		
+		db.query(insert_query)
+		if is_query_successful():
+			print("Inserted trait: " + trait_data.name)
+		else:
+			print("Error inserting " + trait_data.name + " trait: " + db.error_message)
 
 func seed_races():
 	# Check if we already have race data

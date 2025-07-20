@@ -26,6 +26,13 @@ func _ready():
 	ability_manager = AllocationManager.new("abilities", "abilities", 3)
 	competences_manager = AllocationManager.new("competences", "competences", 4)  # 4 points for competences
 	
+	# Apply trait bonuses if we have trait data from step 1
+	if CharacterCreation.current_trait_data.size() > 0:
+		# Reset abilities and competences first to clear any previous race bonuses
+		ability_manager.reset_items()
+		competences_manager.reset_items()
+		apply_trait_bonuses()
+	
 	# Generate the UI dynamically
 	generate_ability_ui()
 	generate_competences_ui()
@@ -38,6 +45,69 @@ func _ready():
 	
 	# Update the UI
 	update_ui()
+
+func apply_trait_bonuses():
+	"""Apply trait bonuses to abilities and competences"""
+	print("Applying trait bonuses...")
+	
+	var trait_data = CharacterCreation.current_trait_data
+	var current_abilities = ability_manager.get_all_item_values()
+	var current_competences = competences_manager.get_all_item_values()
+	var current_attributes = {}  # Not used in step 2
+	
+	var modified_data = TraitManager.apply_trait_bonuses(trait_data, current_attributes, current_abilities, current_competences)
+	
+	# Extract competence bonuses for race bonus tracking
+	var competence_bonuses = {}
+	if trait_data.has("competence_bonuses"):
+		for bonus in trait_data.competence_bonuses:
+			if bonus.name != "free":  # Skip free points, only track specific bonuses
+				var comp_name = bonus.name.to_lower()
+				# Find the competence (case-insensitive)
+				for comp in current_competences:
+					if comp.to_lower() == comp_name:
+						competence_bonuses[comp] = bonus.value
+						break
+	
+	# Set competence race bonuses in the allocation manager
+	competences_manager.set_race_bonuses(competence_bonuses)
+	
+	# Apply ability bonuses
+	for ability_name in modified_data.abilities:
+		var base_value = ability_manager.get_item_base_value(ability_name)
+		var target_value = modified_data.abilities[ability_name]
+		var current_value = ability_manager.get_item_value(ability_name)
+		
+		# Adjust points to reach target value
+		var points_needed = target_value - current_value
+		if points_needed > 0:
+			# Add points
+			for i in range(points_needed):
+				ability_manager.increase_item(ability_name)
+		elif points_needed < 0:
+			# Remove points (but don't go below base value)
+			for i in range(-points_needed):
+				if ability_manager.get_item_value(ability_name) > base_value:
+					ability_manager.decrease_item(ability_name)
+	
+	# Apply competence bonuses
+	for competence_name in modified_data.competences:
+		var base_value = competences_manager.get_item_base_value(competence_name)
+		var target_value = modified_data.competences[competence_name]
+		var current_value = competences_manager.get_item_value(competence_name)
+		
+		# Set the value directly (race bonuses don't consume allocation points)
+		competences_manager.character_items[competence_name] = target_value
+	
+	# Add free competence points if any
+	if modified_data.free_points.competences > 0:
+		competences_manager.add_free_points(modified_data.free_points.competences)
+		print("Added %d free competence points from trait" % modified_data.free_points.competences)
+	
+	# Update the remaining points calculation
+	competences_manager.update_remaining_points()
+	
+	print("Trait bonuses applied successfully")
 
 func load_existing_character_data():
 	"""Load existing abilities and competences data if user has previous allocations"""
@@ -215,9 +285,18 @@ func update_ui():
 	# Apply color feedback using UIManager
 	UIManager.apply_color_feedback(points_label, remaining_points)
 	
-	# Update competences points label with color feedback
+	# Update competences points label with color feedback and trait bonus info
 	var competences_remaining_points = competences_manager.get_remaining_points()
-	competences_points_label.text = "Competence Points Remaining: " + str(competences_remaining_points)
+	var trait_info = ""
+	if CharacterCreation.current_trait_data.size() > 0:
+		var trait_data = CharacterCreation.current_trait_data
+		if trait_data.has("competence_bonuses"):
+			for bonus in trait_data.competence_bonuses:
+				if bonus.name == "free":
+					trait_info = " (+%d from trait)" % bonus.value
+					break
+	
+	competences_points_label.text = "Competence Points Remaining: " + str(competences_remaining_points) + trait_info
 	
 	# Apply color feedback using UIManager
 	UIManager.apply_color_feedback(competences_points_label, competences_remaining_points)
@@ -245,6 +324,19 @@ func update_ui():
 		# Update button states using UIManager
 		UIManager.apply_button_state(ui_elements.plus_button, competences_manager.can_increase_item(competence_name))
 		UIManager.apply_button_state(ui_elements.minus_button, competences_manager.can_decrease_item(competence_name))
+		
+		# Add visual feedback for race-bonused competences
+		if competences_manager.race_bonuses.has(competence_name):
+			var race_bonus = competences_manager.race_bonuses[competence_name]
+			var base_value = competences_manager.get_item_base_value(competence_name)
+			var minimum_value = base_value + race_bonus
+			
+			# If current value equals minimum (race bonus level), disable minus button
+			if current_value <= minimum_value:
+				ui_elements.minus_button.disabled = true
+				ui_elements.minus_button.modulate = Color.GRAY
+				# Add visual indicator to value label
+				ui_elements.value_label.text = str(current_value) + " (race bonus)"
 	
 	# Update continue button state using UIManager
 	var continue_button = get_node("CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton")

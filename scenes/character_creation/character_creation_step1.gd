@@ -231,6 +231,49 @@ func _on_attribute_minus_pressed(attribute_name: String):
 
 func _on_race_selected(race_name: String):
 	if race_manager.select_race(race_name):
+		# Get trait data for the selected race
+		var trait_data = TraitManager.get_race_trait(race_name)
+		
+		# Reset attributes to base values first (to clear previous race bonuses)
+		attribute_manager.reset_items()
+		attribute_manager.clear_race_bonuses()
+		
+		# Apply trait bonuses to fresh attribute allocations
+		var current_attributes = attribute_manager.get_all_item_values()
+		var current_abilities = {}  # Will be populated in step 2
+		var current_competences = {}  # Will be populated in step 2
+		
+		var modified_data = TraitManager.apply_trait_bonuses(trait_data, current_attributes, current_abilities, current_competences)
+		
+		# Extract race bonuses for attributes
+		var race_bonuses = {}
+		if trait_data.has("attribute_bonuses"):
+			for bonus in trait_data.attribute_bonuses:
+				var attr_name = bonus.name.to_lower()
+				# Find the attribute (case-insensitive)
+				for attr in current_attributes:
+					if attr.to_lower() == attr_name:
+						race_bonuses[attr] = bonus.value
+						break
+		
+		# Set race bonuses in the allocation manager
+		attribute_manager.set_race_bonuses(race_bonuses)
+		
+		# Apply attribute bonuses to the allocation manager
+		for attr_name in modified_data.attributes:
+			var base_value = attribute_manager.get_item_base_value(attr_name)
+			var target_value = modified_data.attributes[attr_name]
+			var current_value = attribute_manager.get_item_value(attr_name)
+			
+			# Set the value directly (race bonuses don't consume allocation points)
+			attribute_manager.character_items[attr_name] = target_value
+		
+		# Update the remaining points calculation
+		attribute_manager.update_remaining_points()
+		
+		# Store trait data for step 2
+		CharacterCreation.current_trait_data = trait_data
+		
 		update_trait_display(race_name)
 		update_avatar_display()  # Update avatar when race changes
 		update_ui()
@@ -313,40 +356,17 @@ func update_trait_display(race_name: String):
 	if race_data.has(race_name):
 		var race = race_data[race_name]
 		
+		# Get trait data using TraitManager
+		var trait_data = TraitManager.get_race_trait(race_name)
+		
 		# Display trait name
 		trait_name_label.text = race.trait_name if race.trait_name else "No Trait"
 		
 		# Display trait description
 		trait_desc_label.text = race.trait_description if race.trait_description else ""
 		
-		# Build and display trait bonuses
-		var bonuses = []
-		
-		# Parse JSON attribute_bonuses
-		if race.attribute_bonuses and race.attribute_bonuses != "":
-			var attribute_bonuses_text = format_json_bonuses(race.attribute_bonuses, "Attributes")
-			if attribute_bonuses_text != "":
-				bonuses.append(attribute_bonuses_text)
-		
-		# Parse JSON ability_bonuses
-		if race.ability_bonuses and race.ability_bonuses != "":
-			var ability_bonuses_text = format_json_bonuses(race.ability_bonuses, "Abilities")
-			if ability_bonuses_text != "":
-				bonuses.append(ability_bonuses_text)
-		
-		# Parse JSON skill_bonuses
-		if race.skill_bonuses and race.skill_bonuses != "":
-			var skill_bonuses_text = format_json_bonuses(race.skill_bonuses, "Skills")
-			if skill_bonuses_text != "":
-				bonuses.append(skill_bonuses_text)
-		
-		# Parse and format JSON other_bonuses
-		if race.other_bonuses and race.other_bonuses != "":
-			var other_bonuses_text = format_other_bonuses(race.other_bonuses)
-			if other_bonuses_text != "":
-				bonuses.append(other_bonuses_text)
-		
-		trait_bonuses_label.text = "\n".join(bonuses) if bonuses.size() > 0 else ""
+		# Display trait bonuses using TraitManager
+		trait_bonuses_label.text = TraitManager.get_trait_description(trait_data)
 	else:
 		# Reset trait display if no race data found
 		trait_name_label.text = "Select a race to see its trait"
@@ -488,6 +508,19 @@ func update_ui():
 		# Update button states using UIManager
 		UIManager.apply_button_state(ui_elements.plus_button, attribute_manager.can_increase_item(attribute_name))
 		UIManager.apply_button_state(ui_elements.minus_button, attribute_manager.can_decrease_item(attribute_name))
+		
+		# Add visual feedback for race-bonused attributes
+		if attribute_manager.race_bonuses.has(attribute_name):
+			var race_bonus = attribute_manager.race_bonuses[attribute_name]
+			var base_value = attribute_manager.get_item_base_value(attribute_name)
+			var minimum_value = base_value + race_bonus
+			
+			# If current value equals minimum (race bonus level), disable minus button
+			if current_value <= minimum_value:
+				ui_elements.minus_button.disabled = true
+				ui_elements.minus_button.modulate = Color.GRAY
+				# Add visual indicator to value label
+				ui_elements.value_label.text = str(current_value) + " (race bonus)"
 	
 	# Update race button states
 	for race_name in race_ui_elements:

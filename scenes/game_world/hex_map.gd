@@ -17,6 +17,7 @@ extends Control
 @onready var coordinates_label = $InfoPanel/VBoxContainer/CoordinatesLabel
 @onready var character_info_label = $InfoPanel/VBoxContainer/CharacterInfoLabel
 @onready var back_button = $InfoPanel/VBoxContainer/BackButton
+var character_sheet: Control
 
 # Tile rendering
 var hex_tiles = []
@@ -40,6 +41,9 @@ func _ready():
 	
 	# Check if we have a loaded character
 	check_for_loaded_character()
+	
+	# Setup character sheet functionality
+	setup_character_sheet()
 	
 	# Debug GameWorld setup
 	print("GameViewportContainer setup:")
@@ -636,6 +640,321 @@ func update_character_info():
 	else:
 		# Show default character info
 		character_info_label.text = "Character: (%d, %d)" % [character_grid_pos.x, character_grid_pos.y]
+
+func setup_character_sheet():
+	"""Setup character sheet functionality"""
+	# Create character sheet UI directly in code
+	character_sheet = create_character_sheet_ui()
+	add_child(character_sheet)
+	character_sheet.visible = false
+	
+	print("Character sheet created dynamically: ", character_sheet)
+	
+	# Make character avatar clickable
+	character_avatar.mouse_filter = Control.MOUSE_FILTER_STOP
+	character_avatar.gui_input.connect(_on_character_avatar_input)
+	
+	# Add a visual indicator that it's clickable
+	character_avatar.modulate = Color(1.2, 1.2, 1.2)  # Slightly brighter
+	print("Character sheet setup complete - avatar is clickable")
+
+func create_character_sheet_ui() -> Control:
+	"""Create the character sheet UI programmatically"""
+	var sheet = Control.new()
+	sheet.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	
+	# Background
+	var background = ColorRect.new()
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.color = Color(0, 0, 0, 0.5)
+	sheet.add_child(background)
+	
+	# Sheet container
+	var container = Control.new()
+	container.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	container.custom_minimum_size = Vector2(800, 600)
+	container.offset_left = -400  # Center horizontally
+	container.offset_top = -300   # Center vertically
+	sheet.add_child(container)
+	
+	# Container background
+	var container_bg = ColorRect.new()
+	container_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	container_bg.color = Color(0.2, 0.2, 0.2, 0.95)
+	container.add_child(container_bg)
+	
+	# Main layout
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.offset_left = 20
+	vbox.offset_top = 20
+	vbox.offset_right = -20
+	vbox.offset_bottom = -20
+	container.add_child(vbox)
+	
+	# Header
+	var header = HBoxContainer.new()
+	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(header)
+	
+	# Character info
+	var char_info = VBoxContainer.new()
+	char_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(char_info)
+	
+	var char_name = Label.new()
+	char_name.text = "Character Name"
+	char_name.add_theme_font_size_override("font_size", 24)
+	char_info.add_child(char_name)
+	
+	var race_info = Label.new()
+	race_info.text = "Race (Sex)"
+	race_info.add_theme_font_size_override("font_size", 16)
+	char_info.add_child(race_info)
+	
+	# Close button
+	var close_btn = Button.new()
+	close_btn.text = "X"
+	close_btn.custom_minimum_size = Vector2(30, 30)
+	close_btn.pressed.connect(_on_character_sheet_close)
+	header.add_child(close_btn)
+	
+	# Separator
+	var separator = HSeparator.new()
+	vbox.add_child(separator)
+	
+	# Stats container
+	var stats_container = HBoxContainer.new()
+	stats_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(stats_container)
+	
+	# Left column
+	var left_col = VBoxContainer.new()
+	left_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats_container.add_child(left_col)
+	
+	# Attributes section
+	var attr_section = VBoxContainer.new()
+	left_col.add_child(attr_section)
+	
+	var attr_title = Label.new()
+	attr_title.text = "Attributes"
+	attr_title.add_theme_font_size_override("font_size", 18)
+	attr_section.add_child(attr_title)
+	
+	var attr_list = VBoxContainer.new()
+	attr_list.offset_left = 20
+	attr_section.add_child(attr_list)
+	
+	# Abilities section
+	var abil_section = VBoxContainer.new()
+	left_col.add_child(abil_section)
+	
+	var abil_title = Label.new()
+	abil_title.text = "Abilities"
+	abil_title.add_theme_font_size_override("font_size", 18)
+	abil_section.add_child(abil_title)
+	
+	var abil_list = VBoxContainer.new()
+	abil_list.offset_left = 20
+	abil_section.add_child(abil_list)
+	
+	# Right column
+	var right_col = VBoxContainer.new()
+	right_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats_container.add_child(right_col)
+	
+	# Competences section
+	var comp_section = VBoxContainer.new()
+	right_col.add_child(comp_section)
+	
+	var comp_title = Label.new()
+	comp_title.text = "Competences"
+	comp_title.add_theme_font_size_override("font_size", 18)
+	comp_section.add_child(comp_title)
+	
+	var comp_list = VBoxContainer.new()
+	comp_list.offset_left = 20
+	comp_section.add_child(comp_list)
+	
+	# Skills section
+	var skills_section = VBoxContainer.new()
+	right_col.add_child(skills_section)
+	
+	var skills_title = Label.new()
+	skills_title.text = "Skills"
+	skills_title.add_theme_font_size_override("font_size", 18)
+	skills_section.add_child(skills_title)
+	
+	var skills_list = VBoxContainer.new()
+	skills_list.offset_left = 20
+	skills_section.add_child(skills_list)
+	
+	# Store references for later use
+	sheet.set_meta("char_name", char_name)
+	sheet.set_meta("race_info", race_info)
+	sheet.set_meta("attr_list", attr_list)
+	sheet.set_meta("abil_list", abil_list)
+	sheet.set_meta("comp_list", comp_list)
+	sheet.set_meta("skills_list", skills_list)
+	
+	return sheet
+
+func _on_character_sheet_close():
+	"""Handle character sheet close button"""
+	if character_sheet:
+		character_sheet.visible = false
+
+func _on_character_avatar_input(event: InputEvent):
+	"""Handle character avatar input events"""
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		show_character_sheet()
+
+func show_character_sheet():
+	"""Show the character sheet with current character data"""
+	if CharacterCreation.character_name == "":
+		print("No character data available for character sheet")
+		return
+	
+	# Debug character sheet
+	print("Character sheet in show_character_sheet: ", character_sheet)
+	if character_sheet == null:
+		print("ERROR: Character sheet is null in show_character_sheet!")
+		return
+	
+	# Populate the character sheet
+	populate_character_sheet()
+	
+	# Show the sheet
+	character_sheet.visible = true
+	print("Character sheet displayed")
+
+func populate_character_sheet():
+	"""Populate the character sheet with current character data"""
+	# Get UI references
+	var char_name = character_sheet.get_meta("char_name")
+	var race_info = character_sheet.get_meta("race_info")
+	var attr_list = character_sheet.get_meta("attr_list")
+	var abil_list = character_sheet.get_meta("abil_list")
+	var comp_list = character_sheet.get_meta("comp_list")
+	var skills_list = character_sheet.get_meta("skills_list")
+	
+	# Clear existing content
+	clear_container(attr_list)
+	clear_container(abil_list)
+	clear_container(comp_list)
+	clear_container(skills_list)
+	
+	# Set character info
+	char_name.text = CharacterCreation.character_name
+	race_info.text = "%s (%s)" % [CharacterCreation.selected_race, CharacterCreation.selected_sex]
+	
+	# Populate attributes
+	if CharacterCreation.attributes:
+		for attr_name in CharacterCreation.attributes:
+			var value = CharacterCreation.attributes[attr_name]
+			create_stat_row(attr_list, attr_name, value)
+	
+	# Populate abilities (only show those with value > 0)
+	if CharacterCreation.abilities:
+		for ability_name in CharacterCreation.abilities:
+			var value = CharacterCreation.abilities[ability_name]
+			if value > 0:
+				create_stat_row(abil_list, ability_name, value)
+	
+	# Populate competences (only show those with value > 0)
+	if CharacterCreation.competences:
+		for competence_name in CharacterCreation.competences:
+			var value = CharacterCreation.competences[competence_name]
+			if value > 0:
+				create_stat_row(comp_list, competence_name, value)
+	
+	# Populate skills
+	if CharacterCreation.skills:
+		var skills_data = CharacterCreation.skills
+		print("Skills data type: ", typeof(skills_data))
+		print("Skills data: ", skills_data)
+		
+		# Handle skills data - could be string, array, or dictionary
+		if skills_data is String:
+			var json = JSON.new()
+			if json.parse(skills_data) == OK:
+				skills_data = json.data
+				print("Parsed JSON skills data: ", skills_data)
+			else:
+				skills_data = []
+				print("Failed to parse JSON skills data")
+		
+		# Get all skills from database
+		var all_skills = DatabaseManager.get_all_skills()
+		print("All skills from database: ", all_skills.size())
+		
+		if skills_data is Array:
+			print("Processing skills as Array: ", skills_data)
+			var skill_names = []
+			
+			for skill_id in skills_data:
+				print("Looking for skill ID: ", skill_id, " (type: ", typeof(skill_id), ")")
+				for skill in all_skills:
+					print("  Checking skill: ", skill.id, " (type: ", typeof(skill.id), ")")
+					if str(skill.id) == str(skill_id):
+						print("Found skill: ", skill.name)
+						skill_names.append(skill.name)
+						break
+			
+			print("Skill names to display: ", skill_names)
+			for skill_name in skill_names:
+				create_skill_row(skills_list, skill_name)
+		elif skills_data is Dictionary:
+			print("Processing skills as Dictionary: ", skills_data)
+			for skill_id_str in skills_data:
+				print("Looking for skill ID: ", skill_id_str, " (type: ", typeof(skill_id_str), ")")
+				# Convert string key to integer for comparison
+				var skill_id_int = int(float(skill_id_str))
+				print("Converted to int: ", skill_id_int)
+				# Find skill name by ID
+				for skill in all_skills:
+					print("  Checking skill: ", skill.id, " (type: ", typeof(skill.id), ")")
+					if skill.id == skill_id_int:
+						print("Found skill: ", skill.name)
+						create_skill_row(skills_list, skill.name)
+						break
+		else:
+			print("Unknown skills data type: ", typeof(skills_data))
+			# Try to display skills data as-is for debugging
+			if skills_data is String:
+				create_skill_row(skills_list, "Raw: " + skills_data)
+	else:
+		print("No skills data available")
+		create_skill_row(skills_list, "No skills learned")
+
+func create_stat_row(container: VBoxContainer, name: String, value: int):
+	"""Create a stat row with name and value"""
+	var row = HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	var name_label = Label.new()
+	name_label.text = name.capitalize() + ":"
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	var value_label = Label.new()
+	value_label.text = str(value)
+	value_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	
+	row.add_child(name_label)
+	row.add_child(value_label)
+	container.add_child(row)
+
+func create_skill_row(container: VBoxContainer, skill_name: String):
+	"""Create a skill row with just the name"""
+	var row = Label.new()
+	row.text = "• " + skill_name
+	container.add_child(row)
+
+func clear_container(container: VBoxContainer):
+	"""Clear all children from a container"""
+	for child in container.get_children():
+		child.queue_free()
 
 func update_character_avatar():
 	"""Update the character avatar display"""

@@ -8,6 +8,7 @@ var attributes: Dictionary = {}
 var abilities: Dictionary = {}
 var competences: Dictionary = {}
 var skills: Dictionary = {}
+var current_trait_data: Dictionary = {}
 
 func reset_character_data():
 	"""Reset all character creation data"""
@@ -18,6 +19,7 @@ func reset_character_data():
 	abilities.clear()
 	competences.clear()
 	skills.clear()
+	current_trait_data.clear()
 
 func set_step1_data(char_name: String, race: String, sex: String, attr: Dictionary):
 	"""Store data from character creation step 1"""
