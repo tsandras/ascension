@@ -37,6 +37,9 @@ func _ready():
 	generate_ability_ui()
 	generate_competences_ui()
 	
+	# Add cursor functionality to buttons
+	add_cursor_to_buttons()
+	
 	# Wait for UI elements to be added to scene tree
 	await get_tree().process_frame
 	
@@ -45,6 +48,17 @@ func _ready():
 	
 	# Update the UI
 	update_ui()
+
+func add_cursor_to_buttons():
+	"""Add cursor functionality to all buttons"""
+	# Add cursor to navigation buttons
+	var back_button = get_node_or_null("CenterContainer/VBoxContainer/ButtonsContainer/BackButton")
+	var continue_button = get_node_or_null("CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton")
+	
+	if back_button:
+		CursorUtils.add_cursor_to_button(back_button)
+	if continue_button:
+		CursorUtils.add_cursor_to_button(continue_button)
 
 func apply_trait_bonuses():
 	"""Apply trait bonuses to abilities and competences"""
@@ -378,4 +392,6 @@ func _on_continue_button_pressed():
 	# Navigate to step 3 (skills selection)
 	print("Moving to step 3: Skills selection")
 	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step3.tscn")
-		# Could add UI feedback here for the error 
+		# Could add UI feedback here for the error
+
+ 

@@ -28,8 +28,8 @@ class_name UIConstants
 # SCREEN & WINDOW
 # ===================
 # NOTE: These values should match project.godot [display] settings
-const VIEWPORT_WIDTH = 1280
-const VIEWPORT_HEIGHT = 720
+const VIEWPORT_WIDTH = 1920
+const VIEWPORT_HEIGHT = 1080
 
 # ===================
 # FONT SIZES

@@ -30,9 +30,13 @@ var tile_textures = {}
 # Movement animation
 var is_moving = false
 
+# Path preview system
+var path_preview_tiles = []
+var showing_path_preview = false
+var preview_target_grid_pos = Vector2.ZERO
+
 # Camera following
 var camera_follow_enabled = true
-var camera_follow_speed = 5.0  # How fast camera follows character
 
 func _ready():
 	print("HexMap scene loaded")
@@ -82,6 +86,9 @@ func _ready():
 	else:
 		print("Failed to initialize map")
 		show_error_message("Failed to load map data")
+
+	if back_button:
+		CursorUtils.add_cursor_to_button(back_button)
 
 func load_tile_textures():
 	print("Loading tile textures...")
@@ -214,6 +221,10 @@ func setup_camera_following():
 	# Set camera to follow character
 	camera.enabled = true
 	camera.make_current()
+	
+	# Set initial zoom using constants
+	camera.zoom = CameraConstants.INITIAL_ZOOM
+	print("Initial camera zoom set to: ", camera.zoom)
 	
 	# Set initial GameWorld position to center character
 	center_camera_on_character()
@@ -517,6 +528,76 @@ func offset_to_cube(hex: Vector2) -> Vector3:
 	var y = -x - z
 	return Vector3(x, y, z)
 
+func show_path_preview(target_grid_pos: Vector2):
+	"""Show path preview with arrows on each tile"""
+	print("=== PATH PREVIEW ===")
+	print("Target grid position: ", target_grid_pos)
+	print("Current character position: ", character_grid_pos)
+	
+	# Clear any existing preview
+	clear_path_preview()
+	
+	# Find path to target
+	var path = find_path(character_grid_pos, target_grid_pos)
+	if path.size() == 0:
+		print("No path found to target!")
+		return
+	
+	print("Path found with %d steps: %s" % [path.size(), path])
+	
+	# Store preview data
+	showing_path_preview = true
+	preview_target_grid_pos = target_grid_pos
+	
+	# Create path preview tiles
+	for i in range(path.size()):
+		var grid_pos = path[i]
+		var tile = get_tile_at_grid_position(grid_pos)
+		if tile:
+			# Create arrow overlay for this tile
+			create_path_arrow(tile, i, path.size())
+			path_preview_tiles.append(tile)
+	
+	print("Path preview created with %d arrows" % path_preview_tiles.size())
+	print("===================")
+
+func create_path_arrow(tile: Sprite2D, step_index: int, total_steps: int):
+	"""Create an arrow overlay on a tile to show path direction"""
+	# Create a simple arrow using a ColorRect for now
+	var arrow = ColorRect.new()
+	arrow.size = Vector2(100, 100)
+	arrow.color = Color(0, 1, 0, 0.7)  # Semi-transparent green
+	arrow.position = Vector2(-10, -10)  # Center on tile
+	
+	# Add step number label
+	var label = Label.new()
+	label.text = str(step_index + 1)
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.position = Vector2(5, 2)
+	arrow.add_child(label)
+	
+	tile.add_child(arrow)
+	
+	# Store reference to arrow
+	tile.set_meta("path_arrow", arrow)
+
+func clear_path_preview():
+	"""Clear all path preview arrows"""
+	print("Clearing path preview...")
+	
+	for tile in path_preview_tiles:
+		var arrow = tile.get_meta("path_arrow", null)
+		if arrow:
+			arrow.queue_free()
+			tile.set_meta("path_arrow", null)
+	
+	path_preview_tiles.clear()
+	showing_path_preview = false
+	preview_target_grid_pos = Vector2.ZERO
+	
+	print("Path preview cleared")
+
 func move_along_path(path: Array):
 	"""Animate character movement along the given path"""
 	if path.size() == 0:
@@ -604,9 +685,21 @@ func select_tile(tile: Sprite2D):
 	print("Selected tile at grid (%d, %d): %s" % [grid_pos.x, grid_pos.y, tile.get_meta("tile_data")["type_name"]])
 	print("Tile world position: ", tile.position)
 	
-	# Move character to selected tile
-	print("Attempting to move character to grid: ", grid_pos)
-	move_character_to_tile(grid_pos)
+	# Handle path preview or movement
+	if showing_path_preview and grid_pos == preview_target_grid_pos:
+		# Second click on same tile - execute movement
+		print("Second click detected - executing movement to: ", grid_pos)
+		clear_path_preview()
+		move_character_to_tile(grid_pos)
+	elif showing_path_preview and grid_pos != preview_target_grid_pos:
+		# Click on different tile while showing preview - show new preview
+		print("Click on different tile - showing new path preview to: ", grid_pos)
+		show_path_preview(grid_pos)
+	else:
+		# First click - show path preview
+		print("First click detected - showing path preview to: ", grid_pos)
+		show_path_preview(grid_pos)
+	
 	print("=====================")
 
 func update_tile_info(tile_data: Dictionary):
@@ -654,9 +747,29 @@ func setup_character_sheet():
 	character_avatar.mouse_filter = Control.MOUSE_FILTER_STOP
 	character_avatar.gui_input.connect(_on_character_avatar_input)
 	
+	# Setup cursor handling for avatar
+	setup_avatar_cursor()
+	
 	# Add a visual indicator that it's clickable
 	character_avatar.modulate = Color(1.2, 1.2, 1.2)  # Slightly brighter
 	print("Character sheet setup complete - avatar is clickable")
+
+func setup_avatar_cursor():
+	"""Setup cursor handling for character avatar"""
+	if CursorManager:
+		# Connect mouse enter/exit for avatar
+		character_avatar.mouse_entered.connect(_on_avatar_mouse_entered)
+		character_avatar.mouse_exited.connect(_on_avatar_mouse_exited)
+
+func _on_avatar_mouse_entered():
+	"""Handle mouse entering avatar area"""
+	if CursorManager:
+		CursorManager.set_clickable_cursor()
+
+func _on_avatar_mouse_exited():
+	"""Handle mouse leaving avatar area"""
+	if CursorManager:
+		CursorManager.reset_cursor()
 
 func create_character_sheet_ui() -> Control:
 	"""Create the character sheet UI programmatically"""
@@ -717,6 +830,7 @@ func create_character_sheet_ui() -> Control:
 	close_btn.text = "X"
 	close_btn.custom_minimum_size = Vector2(30, 30)
 	close_btn.pressed.connect(_on_character_sheet_close)
+	CursorUtils.add_cursor_to_button(close_btn)
 	header.add_child(close_btn)
 	
 	# Separator
@@ -1025,6 +1139,12 @@ func _on_back_button_pressed():
 
 # Debug functions
 func _input(event):
+	# Cancel path preview with ESC key
+	if event.is_action_pressed("ui_cancel") and showing_path_preview:
+		print("ESC pressed - canceling path preview")
+		clear_path_preview()
+		return
+	
 	# Global input test for debugging
 	if event is InputEventMouseButton and event.pressed:
 		print("=== GLOBAL MOUSE INPUT ===")
@@ -1066,9 +1186,9 @@ func _input(event):
 	# Zoom with mouse wheel
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			zoom_camera(1.2)  # Zoom in
+			zoom_camera(CameraConstants.ZOOM_IN_FACTOR)  # Zoom in
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			zoom_camera(0.8)  # Zoom out
+			zoom_camera(CameraConstants.ZOOM_OUT_FACTOR)  # Zoom out
 	
 	# Keyboard zoom controls
 	if event is InputEventKey and event.pressed:
@@ -1077,9 +1197,9 @@ func _input(event):
 		print("KEY_MINUS: ", KEY_MINUS)
 		match event.keycode:
 			KEY_PLUS, KEY_KP_ADD, 61:  # Plus key or numpad plus
-				zoom_camera(1.2)  # Zoom in
+				zoom_camera(CameraConstants.ZOOM_IN_FACTOR)  # Zoom in
 			KEY_MINUS, KEY_KP_SUBTRACT, 45:  # Minus key or numpad minus
-				zoom_camera(0.8)  # Zoom out
+				zoom_camera(CameraConstants.ZOOM_OUT_FACTOR)  # Zoom out
 			KEY_0, KEY_KP_0, 48:  # Zero key or numpad zero
 				reset_zoom()  # Reset zoom
 
@@ -1092,17 +1212,19 @@ func show_debug_help():
 	print("Mouse wheel - Zoom in/out")
 	print("+ / - keys - Zoom in/out")
 	print("0 key - Reset zoom")
-	print("Click tiles - Move character")
+	print("First click - Show path preview")
+	print("Second click - Execute movement")
+	print("ESC - Cancel path preview")
 	print("==============================")
 
 func reset_zoom():
 	"""Reset zoom to default scale with smooth animation"""
 	var tween = create_tween()
-	tween.tween_property(camera, "zoom", Vector2.ONE, 0.3)
+	tween.tween_property(camera, "zoom", CameraConstants.INITIAL_ZOOM, CameraConstants.ZOOM_ANIMATION_DURATION)
 	
 	# Don't auto-center when resetting zoom - let user control the view
 	
-	print("Zoom reset to default scale")
+	print("Zoom reset to default scale (", CameraConstants.INITIAL_ZOOM, ")")
 
 func toggle_camera_following():
 	"""Toggle GameWorld following on/off"""
@@ -1166,13 +1288,13 @@ func print_debug_info():
 func zoom_camera(zoom_factor: float):
 	"""Zoom the game world by scaling the Camera2D zoom with smooth animation"""
 	var new_zoom = camera.zoom * zoom_factor
-	# Clamp zoom between reasonable values
-	new_zoom.x = clampf(new_zoom.x, 0.1, 5.0)
-	new_zoom.y = clampf(new_zoom.y, 0.1, 5.0)
+	# Clamp zoom using constants
+	new_zoom.x = clampf(new_zoom.x, CameraConstants.MIN_ZOOM, CameraConstants.MAX_ZOOM)
+	new_zoom.y = clampf(new_zoom.y, CameraConstants.MIN_ZOOM, CameraConstants.MAX_ZOOM)
 	
 	# Create smooth zoom animation
 	var tween = create_tween()
-	tween.tween_property(camera, "zoom", new_zoom, 0.3)
+	tween.tween_property(camera, "zoom", new_zoom, CameraConstants.ZOOM_ANIMATION_DURATION)
 	
 	# Don't auto-center when zooming - let user control the view
 	

@@ -92,6 +92,7 @@ static func create_attribute_row_elements() -> Dictionary:
 	var minus_button = Button.new()
 	minus_button.text = "-"
 	minus_button.custom_minimum_size = UIConstants.BUTTON_PLUS_MINUS
+	CursorUtils.add_cursor_to_button(minus_button)
 	elements["minus_button"] = minus_button
 	
 	# Create value label
@@ -104,6 +105,7 @@ static func create_attribute_row_elements() -> Dictionary:
 	var plus_button = Button.new()
 	plus_button.text = "+"
 	plus_button.custom_minimum_size = UIConstants.BUTTON_PLUS_MINUS
+	CursorUtils.add_cursor_to_button(plus_button)
 	elements["plus_button"] = plus_button
 	
 	return elements

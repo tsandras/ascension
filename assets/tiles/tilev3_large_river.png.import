@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cjo8opo4amhoa"
-path="res://.godot/imported/tileset.png-c50288acd069fa293d7940a084811264.ctex"
+uid="uid://by1dedd2c7po4"
+path="res://.godot/imported/tilev3_large_river.png-86908d138cd9afcf905d783ea84db0b7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tileset.png"
-dest_files=["res://.godot/imported/tileset.png-c50288acd069fa293d7940a084811264.ctex"]
+source_file="res://assets/tiles/tilev3_large_river.png"
+dest_files=["res://.godot/imported/tilev3_large_river.png-86908d138cd9afcf905d783ea84db0b7.ctex"]
 
 [params]
 

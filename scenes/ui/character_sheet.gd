@@ -20,6 +20,9 @@ func _ready():
 	# Connect close button
 	close_button.pressed.connect(_on_close_button_pressed)
 	
+	# Add cursor functionality to buttons
+	add_cursor_to_buttons()
+	
 	# Hide the sheet initially
 	visible = false
 
@@ -163,3 +166,8 @@ func clear_container(container: VBoxContainer):
 func _on_close_button_pressed():
 	"""Handle close button press"""
 	hide_sheet() 
+
+func add_cursor_to_buttons():
+	"""Add cursor functionality to all buttons"""
+	if close_button:
+		CursorUtils.add_cursor_to_button(close_button) 

@@ -153,6 +153,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 
 [node name="MaleButton" type="Button" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
+physics_interpolation_mode = 0
 custom_minimum_size = Vector2(80, 40)
 layout_mode = 2
 text = "Male"
@@ -162,6 +163,7 @@ custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
 [node name="FemaleButton" type="Button" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
+physics_interpolation_mode = 0
 custom_minimum_size = Vector2(80, 40)
 layout_mode = 2
 text = "Female"
@@ -230,6 +232,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 
 [node name="BackButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonsContainer"]
+physics_interpolation_mode = 0
 custom_minimum_size = Vector2(100, 40)
 layout_mode = 2
 text = "Back"
@@ -239,6 +242,7 @@ custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 
 [node name="ContinueButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonsContainer"]
+physics_interpolation_mode = 0
 custom_minimum_size = Vector2(100, 40)
 layout_mode = 2
 text = "Continue"

@@ -24,6 +24,9 @@ func _ready():
 	# Generate the UI
 	generate_skills_ui()
 	
+	# Add cursor functionality to buttons
+	add_cursor_to_buttons()
+	
 	# Load existing skills data if returning
 	load_existing_skills_data()
 	
@@ -33,6 +36,14 @@ func _ready():
 	# Connect button signals
 	back_button.pressed.connect(_on_back_button_pressed)
 	continue_button.pressed.connect(_on_continue_button_pressed)
+
+func add_cursor_to_buttons():
+	"""Add cursor functionality to all buttons"""
+	# Add cursor to navigation buttons
+	if back_button:
+		CursorUtils.add_cursor_to_button(back_button)
+	if continue_button:
+		CursorUtils.add_cursor_to_button(continue_button)
 
 func load_available_skills():
 	"""Load all available skills from database"""
@@ -73,6 +84,7 @@ func create_skill_row(skill_data: Dictionary):
 	select_button.text = "Select"
 	select_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	select_button.pressed.connect(_on_skill_select_pressed.bind(skill_data))
+	CursorUtils.add_cursor_to_button(select_button)
 	header_container.add_child(select_button)
 	
 	skill_container.add_child(header_container)
@@ -271,4 +283,6 @@ func _on_continue_button_pressed():
 		print("Loading map...")
 		get_tree().change_scene_to_file("res://scenes/game_world/hex_map.tscn")
 	else:
-		print("Error: Failed to save character. Please try again.") 
+		print("Error: Failed to save character. Please try again.")
+
+ 

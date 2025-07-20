@@ -3,6 +3,24 @@ extends Control
 func _ready():
 	# Apply UI constants to this scene
 	UIManager.setup_main_menu(self)
+	
+	# Add cursor functionality to buttons
+	add_cursor_to_buttons()
+
+func add_cursor_to_buttons():
+	"""Add cursor functionality to all buttons"""
+	var new_game_button = get_node_or_null("CenterContainer/VBoxContainer/NewGameButton")
+	var load_game_button = get_node_or_null("CenterContainer/VBoxContainer/LoadGameButton")
+	var quit_button = get_node_or_null("CenterContainer/VBoxContainer/QuitButton")
+	
+	if new_game_button:
+		CursorUtils.add_cursor_to_button(new_game_button)
+	
+	if load_game_button:
+		CursorUtils.add_cursor_to_button(load_game_button)
+	
+	if quit_button:
+		CursorUtils.add_cursor_to_button(quit_button)
 
 func _on_new_game_button_pressed():
 	# Navigate to character creation step 1 (attributes & race)

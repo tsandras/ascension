@@ -15,6 +15,8 @@ var race_manager: AllocationManager
 @onready var trait_name_label = $CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitNameLabel
 @onready var trait_desc_label = $CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitDescLabel
 @onready var trait_bonuses_label = $CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitBonusesLabel
+@onready var back_button = $CenterContainer/VBoxContainer/ButtonsContainer/BackButton
+@onready var continue_button = $CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton
 
 # Store UI elements for each attribute and race
 var attribute_ui_elements = {}
@@ -49,6 +51,9 @@ func _ready():
 	male_button.pressed.connect(_on_male_button_pressed)
 	female_button.pressed.connect(_on_female_button_pressed)
 	
+	# Add cursor functionality to buttons
+	add_cursor_to_buttons()
+	
 	# Load avatar textures
 	load_avatar_textures()
 	
@@ -62,6 +67,20 @@ func _ready():
 	
 	# Update the UI
 	update_ui()
+
+func add_cursor_to_buttons():
+	"""Add cursor functionality to all buttons"""
+	# Add cursor to sex selection buttons
+	if male_button:
+		CursorUtils.add_cursor_to_button(male_button)
+	if female_button:
+		CursorUtils.add_cursor_to_button(female_button)
+	
+	# Add cursor to navigation buttons
+	if back_button:
+		CursorUtils.add_cursor_to_button(back_button)
+	if continue_button:
+		CursorUtils.add_cursor_to_button(continue_button)
 
 func load_existing_character_data():
 	"""Load existing character data if user is returning from step 2"""
@@ -194,6 +213,7 @@ func create_race_row(race_name: String):
 	race_button.text = race_name
 	race_button.custom_minimum_size = Vector2(200, 40)
 	race_button.pressed.connect(_on_race_selected.bind(race_name))
+	CursorUtils.add_cursor_to_button(race_button)
 	
 	# Add to container
 	h_container.add_child(race_button)
@@ -537,7 +557,6 @@ func update_ui():
 		trait_bonuses_label.text = ""
 	
 	# Update continue button state using UIManager
-	var continue_button = get_node("CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton")
 	var character_name = character_name_input.text.strip_edges()
 	var can_continue = attribute_manager.all_points_spent() and race_manager.all_points_spent() and character_name.length() > 0 and selected_sex != ""
 	UIManager.apply_button_state(continue_button, can_continue)
@@ -579,4 +598,6 @@ func _on_continue_button_pressed():
 	print("Character Name: %s" % character_name)
 	
 	# Navigate to step 2 (abilities & competences allocation)
-	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step2.tscn") 
+	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step2.tscn")
+
+ 
