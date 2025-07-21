@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://bqxvhxqxqxqxq"]
+
+[ext_resource type="Script" uid="uid://cjhrs435aytw0" path="res://tools/map_seeder.gd" id="1_0xqxq"]
+[ext_resource type="Script" uid="uid://dipxrk8feeh8d" path="res://tools/map_seeder_ui.gd" id="2_0xqxq"]
+
+[node name="MapSeeder" type="Node"]
+script = ExtResource("1_0xqxq")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_0xqxq")

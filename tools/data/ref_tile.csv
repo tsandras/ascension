@@ -1,0 +1,19 @@
+type_name,initials,is_walkable,is_top_blocked,is_bottom_blocked,is_middle_blocked,time_to_cross,description
+forest,F,TRUE,FALSE,FALSE,FALSE,2,Dense forest with trees
+mountain,M,TRUE,FALSE,FALSE,FALSE,4,Tall mountains
+green_mountain,GM,TRUE,FALSE,FALSE,FALSE,4,Forested mountains
+grassland,G,TRUE,FALSE,FALSE,FALSE,1,Open grassland plains
+empty_grassland,EG,TRUE,FALSE,FALSE,FALSE,1,Empty green fields
+arid_varap,AV,TRUE,FALSE,FALSE,FALSE,2,Arid wasteland with sparse vegetation
+glade,GL,TRUE,FALSE,FALSE,FALSE,2,Peaceful forest glade
+cliff,C,TRUE,FALSE,TRUE,FALSE,2,Steep rocky cliffs
+ruins,RU,TRUE,FALSE,FALSE,FALSE,1,Ruins of a city
+left_sea,LS,TRUE,FALSE,FALSE,TRUE,999,Left sea
+right_sea,RS,TRUE,FALSE,FALSE,TRUE,999,Right sea
+top_sea,TS,TRUE,TRUE,FALSE,FALSE,999,Top sea
+bottom_sea,BS,TRUE,FALSE,TRUE,FALSE,999,Bottom sea
+large_river,LR,TRUE,FALSE,FALSE,TRUE,1,A large river
+river_2,R2,TRUE,FALSE,FALSE,TRUE,1,A river
+river_3,R3,TRUE,FALSE,TRUE,FALSE,1,A river
+settlement,SE,TRUE,FALSE,FALSE,FALSE,1,Settlement with buildings and people
+empty_arid_land,EA,TRUE,FALSE,FALSE,FALSE,1,Empty arid land

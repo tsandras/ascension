@@ -84,6 +84,15 @@ func setup_default_cursor():
 	print("Setting up default cursor...")
 	set_cursor_state(CursorState.DEFAULT)
 	print("Default cursor setup complete")
+	
+	# Also set the default cursor globally to ensure it's applied everywhere
+	if cursor_textures.has(CursorState.DEFAULT):
+		var default_texture = cursor_textures[CursorState.DEFAULT]
+		var default_hotspot = cursor_hotspots.get(CursorState.DEFAULT, Vector2.ZERO)
+		Input.set_custom_mouse_cursor(default_texture, Input.CURSOR_ARROW, default_hotspot)
+		print("Global default cursor set")
+	else:
+		print("Warning: No default cursor texture available")
 
 func set_cursor_state(state: CursorState):
 	"""Change the cursor to the specified state"""
@@ -98,9 +107,14 @@ func set_cursor_state(state: CursorState):
 	if texture:
 		Input.set_custom_mouse_cursor(texture, Input.CURSOR_ARROW, hotspot)
 	else:
-		# Fallback to default system cursor
-		Input.set_custom_mouse_cursor(null)
-		print("Warning: No texture for cursor state: ", state, " - using system cursor")
+		# Fallback to default cursor texture if available, otherwise system cursor
+		var default_texture = cursor_textures.get(CursorState.DEFAULT)
+		if default_texture:
+			var default_hotspot = cursor_hotspots.get(CursorState.DEFAULT, Vector2.ZERO)
+			Input.set_custom_mouse_cursor(default_texture, Input.CURSOR_ARROW, default_hotspot)
+		else:
+			Input.set_custom_mouse_cursor(null)
+		print("Warning: No texture for cursor state: ", state, " - using default cursor")
 
 func set_clickable_cursor():
 	"""Set cursor to clickable state"""

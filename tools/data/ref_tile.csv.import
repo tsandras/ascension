@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://b3b51iyu712bn"
+
+[deps]
+
+files=["res://tools/data/ref_tile.initials.translation", "res://tools/data/ref_tile.is.translation", "res://tools/data/ref_tile.is.translation", "res://tools/data/ref_tile.is.translation", "res://tools/data/ref_tile.is.translation", "res://tools/data/ref_tile.time.translation", "res://tools/data/ref_tile.description.translation"]
+
+source_file="res://tools/data/ref_tile.csv"
+dest_files=["res://tools/data/ref_tile.initials.translation", "res://tools/data/ref_tile.is.translation", "res://tools/data/ref_tile.is.translation", "res://tools/data/ref_tile.is.translation", "res://tools/data/ref_tile.is.translation", "res://tools/data/ref_tile.time.translation", "res://tools/data/ref_tile.description.translation"]
+
+[params]
+
+compress=true
+delimiter=0

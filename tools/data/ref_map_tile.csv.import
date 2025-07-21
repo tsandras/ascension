@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://drvywdtiw72lq"
+
+[deps]
+
+files=["res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation"]
+
+source_file="res://tools/data/ref_map_tile.csv"
+dest_files=["res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation", "res://tools/data/ref_map_tile.TS.translation"]
+
+[params]
+
+compress=true
+delimiter=0

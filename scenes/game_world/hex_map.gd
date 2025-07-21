@@ -555,32 +555,64 @@ func show_path_preview(target_grid_pos: Vector2):
 		var tile = get_tile_at_grid_position(grid_pos)
 		if tile:
 			# Create arrow overlay for this tile
-			create_path_arrow(tile, i, path.size())
+			create_path_arrow(tile, i, path.size(), path)
 			path_preview_tiles.append(tile)
 	
 	print("Path preview created with %d arrows" % path_preview_tiles.size())
 	print("===================")
 
-func create_path_arrow(tile: Sprite2D, step_index: int, total_steps: int):
+func create_path_arrow(tile: Sprite2D, step_index: int, total_steps: int, path: Array):
 	"""Create an arrow overlay on a tile to show path direction"""
-	# Create a simple arrow using a ColorRect for now
-	var arrow = ColorRect.new()
-	arrow.size = Vector2(100, 100)
-	arrow.color = Color(0, 1, 0, 0.7)  # Semi-transparent green
-	arrow.position = Vector2(-10, -10)  # Center on tile
+	var is_final_tile = (step_index == total_steps - 1)
 	
-	# Add step number label
-	var label = Label.new()
-	label.text = str(step_index + 1)
-	label.add_theme_font_size_override("font_size", 12)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.position = Vector2(5, 2)
-	arrow.add_child(label)
-	
-	tile.add_child(arrow)
-	
-	# Store reference to arrow
-	tile.set_meta("path_arrow", arrow)
+	if is_final_tile:
+		# Create cross for final destination
+		var cross = Sprite2D.new()
+		var cross_texture = load("res://assets/ui/cross.png")
+		if cross_texture:
+			cross.texture = cross_texture
+			cross.scale = Vector2(4, 4)  # Scale up by 4x
+			cross.position = Vector2.ZERO  # Center on tile
+			cross.z_index = 1  # Ensure it appears above the tile
+			tile.add_child(cross)
+			tile.set_meta("path_arrow", cross)
+		else:
+			print("Warning: Could not load cross.png")
+	else:
+		# Create pointer for intermediate tiles
+		var pointer = Sprite2D.new()
+		var pointer_texture = load("res://assets/ui/pointer.png")
+		if pointer_texture:
+			pointer.texture = pointer_texture
+			pointer.scale = Vector2(4, 4)  # Scale up by 4x
+			pointer.position = Vector2.ZERO  # Center on tile
+			pointer.z_index = 1  # Ensure it appears above the tile
+			
+			# Calculate direction to next tile
+			var next_step_index = step_index + 1
+			if next_step_index < total_steps:
+				var current_grid_pos = tile.get_meta("grid_pos")
+				var next_tile = get_tile_at_grid_position(path[next_step_index])
+				if next_tile:
+					var next_grid_pos = next_tile.get_meta("grid_pos")
+					var direction = next_grid_pos - current_grid_pos
+					
+					# Use world positions for more accurate direction calculation
+					var current_world_pos = tile.position
+					var next_world_pos = next_tile.position
+					var world_direction = next_world_pos - current_world_pos
+					
+					# Calculate rotation angle based on world direction
+					var angle = atan2(world_direction.y, world_direction.x)
+					print("  Raw angle: ", angle, " (", rad_to_deg(angle), " degrees)")
+					angle += 3*PI/4
+					
+					pointer.rotation = angle
+			
+			tile.add_child(pointer)
+			tile.set_meta("path_arrow", pointer)
+		else:
+			print("Warning: Could not load pointer.png")
 
 func clear_path_preview():
 	"""Clear all path preview arrows"""
@@ -705,15 +737,15 @@ func select_tile(tile: Sprite2D):
 func update_tile_info(tile_data: Dictionary):
 	var type_name = tile_data.get("type_name", "unknown")
 	var is_walkable = tile_data.get("is_walkable", false)
-	var movement_cost = tile_data.get("movement_cost", 1)
+	var time_to_cross = tile_data.get("time_to_cross", 1)
 	var description = tile_data.get("description", "No description available")
 	
 	var walkable_text = "Walkable" if is_walkable else "Blocked"
 	
-	tile_info_label.text = "%s\n%s (Cost: %d)\n%s" % [
+	tile_info_label.text = "%s\n%s (Time: %d)\n%s" % [
 		type_name.capitalize(),
 		walkable_text,
-		movement_cost,
+		time_to_cross,
 		description
 	]
 

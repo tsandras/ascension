@@ -40,14 +40,14 @@ func initialize_game_map(game_id: int = 1) -> bool:
 		load_current_map(game_id)
 		return true
 	
-	# Create a new game with the Simple Map Test map
-	if DatabaseManager.create_new_game("Simple Map Test", game_id):
+	# Create a new game with the Ezoa map
+	if DatabaseManager.create_new_game("Ezoa", game_id):
 		# Load the newly created map
 		load_current_map(game_id)
 		print("Successfully initialized game map: ", current_map_data["name"])
 		return true
 	else:
-		print("Error: Failed to create simple map test map")
+		print("Error: Failed to create Ezoa map")
 		return false
 
 # Load the current map for the game
@@ -126,16 +126,16 @@ func get_tile_movement_cost(x: int, y: int) -> int:
 	var tile = get_tile_at(x, y)
 	if tile.is_empty():
 		return HexTileConstants.IMPASSABLE_MOVEMENT_COST
-	return tile.get("movement_cost", HexTileConstants.DEFAULT_MOVEMENT_COST)
+	return tile.get("time_to_cross", HexTileConstants.DEFAULT_MOVEMENT_COST)
 
-# Get tile color for rendering
+# Get tile color for rendering (using a default color since color_hex was removed)
 func get_tile_color(x: int, y: int) -> Color:
 	var tile = get_tile_at(x, y)
 	if tile.is_empty():
 		return Color.BLACK
 	
-	var color_hex = tile.get("color_hex", "#FFFFFF")
-	return Color(color_hex)
+	# Use a default color since color_hex was removed from schema
+	return Color.WHITE
 
 # Get tile type name
 func get_tile_type(x: int, y: int) -> String:
