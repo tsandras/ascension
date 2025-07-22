@@ -201,6 +201,25 @@ func create_tables():
 	else:
 		print("Ref_tile table created successfully")
 	
+	# Create ref_overlay table (template overlays)
+	var ref_overlay_query = """
+	CREATE TABLE IF NOT EXISTS ref_overlay (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		initials TEXT NOT NULL UNIQUE,
+		texture_path TEXT NOT NULL,
+		description TEXT,
+		display_order INTEGER NOT NULL DEFAULT 0,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	"""
+	
+	db.query(ref_overlay_query)
+	if not is_query_successful():
+		print("Error creating ref_overlay table: ", db.error_message)
+	else:
+		print("Ref_overlay table created successfully")
+	
 	# Create ref_map_tile table (template tile layouts)
 	var ref_map_tile_query = """
 	CREATE TABLE IF NOT EXISTS ref_map_tile (
@@ -209,8 +228,16 @@ func create_tables():
 		ref_tile_id INTEGER NOT NULL,
 		x INTEGER NOT NULL,
 		y INTEGER NOT NULL,
+		first_overlay_id INTEGER,
+		second_overlay_id INTEGER,
+		first_overlay_x REAL DEFAULT 0.5,
+		first_overlay_y REAL DEFAULT 0.5,
+		second_overlay_x REAL DEFAULT 0.5,
+		second_overlay_y REAL DEFAULT 0.5,
 		FOREIGN KEY (ref_map_id) REFERENCES ref_map(id),
 		FOREIGN KEY (ref_tile_id) REFERENCES ref_tile(id),
+		FOREIGN KEY (first_overlay_id) REFERENCES ref_overlay(id),
+		FOREIGN KEY (second_overlay_id) REFERENCES ref_overlay(id),
 		UNIQUE(ref_map_id, x, y)
 	);
 	"""
@@ -230,6 +257,12 @@ func create_tables():
 		ref_tile_id INTEGER NOT NULL,
 		x INTEGER NOT NULL,
 		y INTEGER NOT NULL,
+		first_overlay_id INTEGER,
+		second_overlay_id INTEGER,
+		first_overlay_x REAL DEFAULT 0.5,
+		first_overlay_y REAL DEFAULT 0.5,
+		second_overlay_x REAL DEFAULT 0.5,
+		second_overlay_y REAL DEFAULT 0.5,
 		is_occupied BOOLEAN DEFAULT 0,
 		character_visited BOOLEAN DEFAULT 0,
 		visit_count INTEGER DEFAULT 0,
@@ -237,6 +270,8 @@ func create_tables():
 		last_visited DATETIME,
 		FOREIGN KEY (ref_map_id) REFERENCES ref_map(id),
 		FOREIGN KEY (ref_tile_id) REFERENCES ref_tile(id),
+		FOREIGN KEY (first_overlay_id) REFERENCES ref_overlay(id),
+		FOREIGN KEY (second_overlay_id) REFERENCES ref_overlay(id),
 		UNIQUE(game_id, x, y)
 	);
 	"""
@@ -249,11 +284,9 @@ func create_tables():
 
 func seed_data():
 	seed_attributes()
-	seed_abilities()
 	seed_traits()       # Seed traits before races (foreign key dependency)
 	seed_races()
 	seed_competences()
-	seed_skills()
 
 
 func seed_attributes():
@@ -293,48 +326,7 @@ func seed_attributes():
 		else:
 			print("Inserted attribute: ", attr.name)
 
-func seed_abilities():
-	# Check if we already have ability data
-	var check_query = "SELECT COUNT(*) as count FROM abilities"
-	db.query(check_query)
-	var result = db.query_result
-	
-	print("Checking existing ability data - query result: ", result)
-	if result.size() > 0:
-		print("Found %d rows, count = %s" % [result.size(), str(result[0]["count"])])
-		if result[0]["count"] > 0:
-			print("Database already contains ability data")
-			return
-	
-	print("No existing ability data found, seeding abilities...")
-	
-	# Insert the 12 abilities
-	var abilities_data = [
-		{"name": "Scoundrel", "description": "Sneaking, thievery, and cunning", "display_order": 1},
-		{"name": "Warrior", "description": "One-handed weapon mastery", "display_order": 2},
-		{"name": "Berserker", "description": "Two-handed weapon expertise", "display_order": 3},
-		{"name": "Ranger", "description": "Bows, crossbows, and throwing weapons", "display_order": 4},
-		{"name": "Juggernaut", "description": "Defensive and armor mastery", "display_order": 5},
-		{"name": "Tactician", "description": "Battlefield strategy", "display_order": 6},
-		{"name": "Pyromancer", "description": "Destructive fire spells and pyromancy", "display_order": 7},
-		{"name": "Aeromancer", "description": "Destructive air spells and aeromancy", "display_order": 8},
-		{"name": "Hydromancer", "description": "Destructive water spells and hydromancy", "display_order": 9},
-		{"name": "Lithomancer", "description": "Destructive earth spells and lithomancy", "display_order": 10},
-		{"name": "Arcanist", "description": "Pure magical energy manipulation", "display_order": 11},
-		{"name": "Bloodmage", "description": "Dark magic using life force", "display_order": 12}
-	]
-	
-	for ability in abilities_data:
-		var insert_query = """
-		INSERT INTO abilities (name, base_value, max_value, display_order, description)
-		VALUES ('%s', 0, 6, %d, '%s')
-		""" % [ability.name, ability.display_order, ability.description]
-		
-		db.query(insert_query)
-		if not is_query_successful():
-			print("Error inserting ability " + ability.name + ": " + db.error_message)
-		else:
-			print("Inserted ability: ", ability.name)
+
 
 func get_all_attributes():
 	var query = "SELECT * FROM attributes ORDER BY display_order"
@@ -567,72 +559,7 @@ func seed_competences():
 		else:
 			print("Inserted competence: ", competence.name)
 
-func seed_skills():
-	"""Seed the skills table with initial data"""
-	var check_query = "SELECT COUNT(*) as count FROM skills"
-	db.query(check_query)
-	
-	if is_query_successful() and db.query_result.size() > 0 and db.query_result[0]["count"] > 0:
-		print("Skills table already has data, skipping seed")
-		return
-	
-	print("No existing skill data found, seeding skills...")
-	
-	# Insert some example skills
-	var skills_data = [
-		{
-			"name": "Fireball",
-			"ability_conditions": '{"pyromancer": 1}',
-			"level": 1,
-			"cost": '{"mana": 10}',
-			"tags": "combat,spell,fire",
-			"cast_conditions": "combat",
-			"effect": "Deal 15 fire damage to target",
-			"description": "A basic fire spell that deals damage to enemies"
-		},
-		{
-			"name": "Heal",
-			"ability_conditions": '{"cleric": 1}',
-			"level": 1,
-			"cost": '{"mana": 15}',
-			"tags": "support,spell,healing",
-			"cast_conditions": "any",
-			"effect": "Restore 20 health to target",
-			"description": "A healing spell that restores health"
-		},
-		{
-			"name": "Sword Strike",
-			"ability_conditions": '{"warrior": 1}',
-			"level": 1,
-			"cost": '{"stamina": 5}',
-			"tags": "combat,melee,physical",
-			"cast_conditions": "combat",
-			"effect": "Deal 12 physical damage with sword",
-			"description": "A basic sword attack"
-		},
-		{
-			"name": "Stealth",
-			"ability_conditions": '{"scoundrel": 1}',
-			"level": 1,
-			"cost": '{"stamina": 8}',
-			"tags": "utility,stealth",
-			"cast_conditions": "out_of_combat",
-			"effect": "Become invisible for 3 turns",
-			"description": "Hide from enemies and move silently"
-		}
-	]
-	
-	for skill in skills_data:
-		var insert_query = """
-		INSERT INTO skills (name, ability_conditions, level, cost, tags, cast_conditions, effect, description)
-		VALUES ('%s', '%s', %d, '%s', '%s', '%s', '%s', '%s')
-		""" % [skill.name, skill.ability_conditions, skill.level, skill.cost, skill.tags, skill.cast_conditions, skill.effect, skill.description]
-		
-		db.query(insert_query)
-		if not is_query_successful():
-			print("Error inserting skill " + skill.name + ": " + db.error_message)
-		else:
-			print("Inserted skill: ", skill.name)
+
 
 func get_all_skills():
 	var query = "SELECT * FROM skills ORDER BY name"
@@ -730,6 +657,37 @@ func get_all_ref_tiles():
 		print("Error fetching ref_tiles: ", db.error_message)
 		return []
 
+func get_all_overlays():
+	var query = "SELECT * FROM ref_overlay ORDER BY display_order, name"
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully fetched %d overlays from database" % db.query_result.size())
+		return db.query_result
+	else:
+		print("Error fetching overlays: ", db.error_message)
+		return []
+
+func get_overlay_by_name(overlay_name: String):
+	var query = "SELECT * FROM ref_overlay WHERE name = '%s'" % overlay_name
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		return result[0]
+	else:
+		return null
+
+func get_overlay_by_id(overlay_id: int):
+	var query = "SELECT * FROM ref_overlay WHERE id = %d" % overlay_id
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		return result[0]
+	else:
+		return null
+
 # Create a new game by copying ref_map_tile to map_tile
 func create_new_game(ref_map_name: String, game_id: int = HexTileConstants.DEFAULT_GAME_ID) -> bool:
 	print("Creating new game with map: %s for game_id: %d" % [ref_map_name, game_id])
@@ -760,8 +718,8 @@ func create_new_game(ref_map_name: String, game_id: int = HexTileConstants.DEFAU
 	
 	# Copy ref_map_tile to map_tile for this game
 	var copy_query = """
-	INSERT INTO map_tile (game_id, ref_map_id, ref_tile_id, x, y)
-	SELECT %d, ref_map_id, ref_tile_id, x, y
+	INSERT INTO map_tile (game_id, ref_map_id, ref_tile_id, x, y, first_overlay_id, second_overlay_id, first_overlay_x, first_overlay_y, second_overlay_x, second_overlay_y)
+	SELECT %d, ref_map_id, ref_tile_id, x, y, first_overlay_id, second_overlay_id, first_overlay_x, first_overlay_y, second_overlay_x, second_overlay_y
 	FROM ref_map_tile
 	WHERE ref_map_id = %d
 	""" % [game_id, ref_map_id]
@@ -802,7 +760,8 @@ func get_current_map_info(game_id: int = 1):
 
 func get_game_map_tiles(game_id: int = 1):
 	var query = """
-	SELECT mt.*, rt.type_name, rt.initials, rt.is_walkable, rt.is_top_blocked, rt.is_bottom_blocked, rt.is_middle_blocked, rt.texture_path, rt.time_to_cross, rt.tileset_x, rt.tileset_y, rt.description, rt.extra_content
+	SELECT mt.*, rt.type_name, rt.initials, rt.is_walkable, rt.is_top_blocked, rt.is_bottom_blocked, rt.is_middle_blocked, rt.texture_path, rt.time_to_cross, rt.tileset_x, rt.tileset_y, rt.description, rt.extra_content,
+		   mt.first_overlay_id, mt.second_overlay_id, mt.first_overlay_x, mt.first_overlay_y, mt.second_overlay_x, mt.second_overlay_y
 	FROM map_tile mt
 	JOIN ref_tile rt ON mt.ref_tile_id = rt.id
 	WHERE mt.game_id = %d
@@ -821,46 +780,6 @@ func close_database():
 	if db:
 		db.close_db()
 
-# Update existing tile texture paths to use new tilev2 files
-func update_tile_texture_paths() -> bool:
-	print("Updating tile texture paths to new tilev2 files...")
-	
-	var updates = [
-		{"type_name": "forest", "new_path": "res://assets/tiles/tilev2_forest.png"},
-		{"type_name": "mountain", "new_path": "res://assets/tiles/tilev2_mountain.png"},
-		{"type_name": "mountain_forest", "new_path": "res://assets/tiles/tilev2_mountain_forest.png"}
-	]
-	
-	var success = true
-	for update in updates:
-		var update_query = """
-		UPDATE ref_tile 
-		SET texture_path = '%s'
-		WHERE type_name = '%s'
-		""" % [update.new_path, update.type_name]
-		
-		db.query(update_query)
-		if is_query_successful():
-			print("Updated texture path for %s to %s" % [update.type_name, update.new_path])
-		else:
-			print("Error updating texture path for " + update.type_name + ": " + db.error_message)
-			success = false
-	
-	# Also fix the typo if it exists
-	var fix_typo_query = """
-	UPDATE ref_tile 
-	SET type_name = 'mountain_forest'
-	WHERE type_name = 'moutain_forest'
-	"""
-	
-	db.query(fix_typo_query)
-	if is_query_successful():
-		print("Fixed mountain_forest typo if it existed")
-	
-	return success
-
-# Create a simple forest test map for immediate testing
- 
 
 func save_character(character_name: String, race_name: String, sex: String, attributes: Dictionary, abilities: Dictionary, competences: Dictionary, skills: Array) -> int:
 	"""Save a character to the database and return the character ID"""
@@ -915,18 +834,34 @@ func get_character_by_id(character_id: int) -> Dictionary:
 	if is_query_successful() and db.query_result.size() > 0:
 		var character_data = db.query_result[0]
 		
-		# JSON columns return parsed objects directly
+		# Parse JSON strings into objects
 		if character_data.attributes:
-			character_data.attributes_dict = character_data.attributes
+			var json = JSON.new()
+			if json.parse(character_data.attributes) == OK:
+				character_data.attributes_dict = json.data
+			else:
+				character_data.attributes_dict = {}
 		
 		if character_data.abilities:
-			character_data.abilities_dict = character_data.abilities
+			var json = JSON.new()
+			if json.parse(character_data.abilities) == OK:
+				character_data.abilities_dict = json.data
+			else:
+				character_data.abilities_dict = {}
 		
 		if character_data.competences:
-			character_data.competences_dict = character_data.competences
+			var json = JSON.new()
+			if json.parse(character_data.competences) == OK:
+				character_data.competences_dict = json.data
+			else:
+				character_data.competences_dict = {}
 		
 		if character_data.skills:
-			character_data.skills_dict = character_data.skills
+			var json = JSON.new()
+			if json.parse(character_data.skills) == OK:
+				character_data.skills_dict = json.data
+			else:
+				character_data.skills_dict = []
 		
 		return character_data
 	else:
@@ -976,18 +911,34 @@ func get_last_saved_character() -> Dictionary:
 	if is_query_successful() and db.query_result.size() > 0:
 		var character_data = db.query_result[0]
 		
-		# JSON columns return parsed objects directly
+		# Parse JSON strings into objects
 		if character_data.attributes:
-			character_data.attributes_dict = character_data.attributes
+			var json = JSON.new()
+			if json.parse(character_data.attributes) == OK:
+				character_data.attributes_dict = json.data
+			else:
+				character_data.attributes_dict = {}
 		
 		if character_data.abilities:
-			character_data.abilities_dict = character_data.abilities
+			var json = JSON.new()
+			if json.parse(character_data.abilities) == OK:
+				character_data.abilities_dict = json.data
+			else:
+				character_data.abilities_dict = {}
 		
 		if character_data.competences:
-			character_data.competences_dict = character_data.competences
+			var json = JSON.new()
+			if json.parse(character_data.competences) == OK:
+				character_data.competences_dict = json.data
+			else:
+				character_data.competences_dict = {}
 		
 		if character_data.skills:
-			character_data.skills_dict = character_data.skills
+			var json = JSON.new()
+			if json.parse(character_data.skills) == OK:
+				character_data.skills_dict = json.data
+			else:
+				character_data.skills_dict = []
 		
 		print("Found last saved character: " + character_data.name)
 		return character_data

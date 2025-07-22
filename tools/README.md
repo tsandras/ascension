@@ -45,6 +45,21 @@ G,G,G,G,G,G,G,G,G
 - **Columns** = X coordinates (left to right)
 - **Cell values** = Tile initials (e.g., G=grassland, F=forest, M=mountain)
 
+### abilities.csv
+```
+name,base_value,max_value,display_order,description
+Scoundrel,0,6,1,Sneaking, thievery, and cunning
+Warrior,0,6,2,One-handed weapon mastery
+```
+
+### skills.csv
+```
+name,ability_conditions,level,cost,tags,cast_conditions,effect,description
+Fireball,"{""pyromancer"": 1}",1,"{""mana"": 10}",combat,spell,fire,combat,Deal 15 fire damage to target,A basic fire spell that deals damage to enemies
+```
+
+**Note**: Skills require specific abilities as prerequisites. The `ability_conditions` field contains JSON that specifies which abilities and levels are required.
+
 ## How to Use
 
 1. **Open the tool**: Load `res://tools/map_seeder.tscn` in Godot
@@ -58,6 +73,8 @@ G,G,G,G,G,G,G,G,G
 - `res://tools/data/maps.csv` - Map definitions
 - `res://tools/data/tiles.csv` - Tile type definitions  
 - `res://tools/data/map_tiles.csv` - Map layout definitions
+- `res://tools/data/abilities.csv` - Ability definitions
+- `res://tools/data/skills.csv` - Skill definitions
 
 ## Tips for Creating Maps
 
@@ -73,6 +90,16 @@ G,G,G,G,G,G,G,G,G
 - Each column represents an X coordinate (left to right)
 - Cell values are tile initials that must match tiles defined in `tiles.csv`
 - The grid size determines the map dimensions
+
+### Abilities
+- Define the 12 core abilities that characters can develop
+- Each ability has a base value, max value, and display order
+- Abilities are prerequisites for skills
+
+### Skills
+- Skills require specific abilities as prerequisites
+- The `ability_conditions` field contains JSON specifying required abilities and levels
+- Skills have costs, tags, cast conditions, and effects
 
 ### Example: Creating a Forest Map
 1. Add forest tiles to `tiles.csv`:
@@ -103,6 +130,18 @@ The tool can export the current database state as GDScript seed functions. This 
 - Version control of your map data
 
 Click "Export Seed Functions" to generate `res://tools/exported_seed_functions.gd`
+
+### overlays.csv
+```
+name,initials,texture_path,description,display_order
+Desert Landmark 1,D1,res://assets/overlays/landmark_desert_1.png,A mysterious desert landmark,1
+Sample Landmark 1,S1,res://assets/overlays/landmark_sample_1.png,A mysterious landmark,6
+```
+
+**Overlay Codes in Map Tiles**: The `initials` field is used to match overlay codes in the map tiles CSV. For example:
+- `"G1-D1"` = grassland tile with desert landmark 1
+- `"F2-S1"` = forest tile with sample landmark 1
+- `"G1-D1-S1"` = grassland tile with desert landmark 1 and sample landmark 1
 
 ## Integration with Database Manager
 

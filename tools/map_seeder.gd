@@ -4,6 +4,9 @@ extends Node
 var maps_csv_path = "res://tools/data/ref_map.csv"
 var tiles_csv_path = "res://tools/data/ref_tile.csv"
 var map_tiles_csv_path = "res://tools/data/ref_map_tile.csv"
+var overlays_csv_path = "res://tools/data/overlays.csv"
+var abilities_csv_path = "res://tools/data/abilities.csv"
+var skills_csv_path = "res://tools/data/skills.csv"
 
 # Database manager reference
 var database_manager: Node
@@ -28,6 +31,8 @@ func _ready():
 	print("  Maps: ", maps_csv_path)
 	print("  Tiles: ", tiles_csv_path)
 	print("  Map Tiles: ", map_tiles_csv_path)
+	print("  Abilities: ", abilities_csv_path)
+	print("  Skills: ", skills_csv_path)
 
 func create_tools_directory():
 	"""Create the tools directory structure"""
@@ -52,17 +57,35 @@ func create_sample_csv_files():
 	else:
 		print("Tiles CSV already exists: ", tiles_csv_path)
 	
+	if not FileAccess.file_exists(overlays_csv_path):
+		create_sample_overlays_csv()
+	else:
+		print("Overlays CSV already exists: ", overlays_csv_path)
+	
 	if not FileAccess.file_exists(map_tiles_csv_path):
 		create_sample_map_tiles_csv()
 	else:
 		print("Map tiles CSV already exists: ", map_tiles_csv_path)
+	
+	if not FileAccess.file_exists(abilities_csv_path):
+		create_sample_abilities_csv()
+	else:
+		print("Abilities CSV already exists: ", abilities_csv_path)
+	
+	if not FileAccess.file_exists(skills_csv_path):
+		create_sample_skills_csv()
+	else:
+		print("Skills CSV already exists: ", skills_csv_path)
 
 func force_create_sample_csv_files():
 	"""Force create sample CSV files (overwrites existing files)"""
 	print("Force creating sample CSV files...")
 	create_sample_maps_csv()
 	create_sample_tiles_csv()
+	create_sample_overlays_csv()
 	create_sample_map_tiles_csv()
+	create_sample_abilities_csv()
+	create_sample_skills_csv()
 	print("Sample CSV files recreated")
 
 func create_sample_maps_csv():
@@ -108,10 +131,11 @@ func create_sample_tiles_csv():
 		print("ERROR: Could not create tiles CSV file")
 
 func create_sample_map_tiles_csv():
-	"""Create a sample map tiles CSV file in grid format"""
+	"""Create a sample map tiles CSV file in grid format with overlay codes"""
 	var file = FileAccess.open(map_tiles_csv_path, FileAccess.WRITE)
 	if file:
-		# Create a 9x9 grid format where each cell is a tile initial
+		# Create a 9x9 grid format where each cell is a tile initial with optional overlay codes
+		# Format: "G" = grassland, "G1" = grassland with overlay 1, "G1-R1" = grassland with overlays 1 and R1
 		# F=forest, M=mountain, G=grassland, E=empty_grassland, A=arid_varap, V=glade, C=cliff, N=green_mountain
 		var terrain_map = [
 			["G", "G", "E", "E", "F", "F", "F", "G", "G"],  # Row 0
@@ -125,6 +149,13 @@ func create_sample_map_tiles_csv():
 			["G", "G", "G", "G", "G", "G", "G", "G", "G"]   # Row 8
 		]
 		
+		# Add some overlay codes to demonstrate the format
+		# G1-R1 means grassland with overlay R1
+		# G1-R1-S1 means grassland with overlays R1 and S1
+		terrain_map[1] = ["G1", "G1-R1", "G1-R1-S1", "F", "F", "F", "G", "G", "G"]
+		terrain_map[3] = ["F", "F", "F", "V1", "A", "A", "A", "C", "M"]
+		terrain_map[5] = ["F", "G1-S1", "G", "A", "A", "V", "V", "N", "G"]
+		
 		# Write each row as a comma-separated line
 		for row in terrain_map:
 			var line = ""
@@ -135,13 +166,100 @@ func create_sample_map_tiles_csv():
 			file.store_line(line)
 		
 		file.close()
-		print("Created sample map tiles CSV file in grid format")
+		print("Created sample map tiles CSV file in grid format with overlay codes")
 	else:
 		print("ERROR: Could not create map tiles CSV file")
+
+func create_sample_abilities_csv():
+	"""Create a sample abilities CSV file"""
+	var file = FileAccess.open(abilities_csv_path, FileAccess.WRITE)
+	if file:
+		# CSV header
+		file.store_line("name,base_value,max_value,display_order,description")
+		# Sample data
+		file.store_line("Scoundrel,0,6,1,Sneaking, thievery, and cunning")
+		file.store_line("Warrior,0,6,2,One-handed weapon mastery")
+		file.store_line("Berserker,0,6,3,Two-handed weapon expertise")
+		file.store_line("Ranger,0,6,4,Bows, crossbows, and throwing weapons")
+		file.store_line("Juggernaut,0,6,5,Defensive and armor mastery")
+		file.store_line("Tactician,0,6,6,Battlefield strategy")
+		file.store_line("Pyromancer,0,6,7,Destructive fire spells and pyromancy")
+		file.store_line("Aeromancer,0,6,8,Destructive air spells and aeromancy")
+		file.store_line("Hydromancer,0,6,9,Destructive water spells and hydromancy")
+		file.store_line("Lithomancer,0,6,10,Destructive earth spells and lithomancy")
+		file.store_line("Arcanist,0,6,11,Pure magical energy manipulation")
+		file.store_line("Bloodmage,0,6,12,Dark magic using life force")
+		file.close()
+		print("Created sample abilities CSV file")
+	else:
+		print("ERROR: Could not create abilities CSV file")
+
+func create_sample_skills_csv():
+	"""Create a sample skills CSV file"""
+	var file = FileAccess.open(skills_csv_path, FileAccess.WRITE)
+	if file:
+		# CSV header
+		file.store_line("name,ability_conditions,level,cost,tags,cast_conditions,effect,description")
+		# Sample data with simple JSON format
+		file.store_line('Fireball,{"pyromancer": 1},1,{"mana": 10},combat,spell,fire,combat,"Deal 15 fire damage to target","A basic fire spell that deals damage to enemies"')
+		file.store_line('Heal,{"cleric": 1},1,{"mana": 15},support,spell,healing,any,"Restore 20 health to target","A healing spell that restores health"')
+		file.store_line('Sword Strike,{"warrior": 1},1,{"stamina": 5},combat,melee,physical,combat,"Deal 12 physical damage with sword","A basic sword attack"')
+		file.store_line('Stealth,{"scoundrel": 1},1,{"stamina": 8},utility,stealth,out_of_combat,"Become invisible for 3 turns","Hide from enemies and move silently"')
+		file.close()
+		print("Created sample skills CSV file")
+	else:
+		print("ERROR: Could not create skills CSV file")
+
+func create_sample_overlays_csv():
+	"""Create a sample overlays CSV file"""
+	var file = FileAccess.open(overlays_csv_path, FileAccess.WRITE)
+	if file:
+		# CSV header
+		file.store_line("name,initials,texture_path,description,display_order")
+		# Sample data based on existing overlay files with initials
+		file.store_line("Desert Landmark 1,D1,res://assets/overlays/landmark_desert_1.png,A mysterious desert landmark,1")
+		file.store_line("Desert Landmark 2,D2,res://assets/overlays/landmark_desert_2.png,An ancient desert structure,2")
+		file.store_line("Desert Landmark 4,D4,res://assets/overlays/landmark_desert_4.png,A weathered desert monument,3")
+		file.store_line("Desert Landmark 7,D7,res://assets/overlays/landmark_desert_7.png,A hidden desert oasis,4")
+		file.store_line("Desert Landmark 9,D9,res://assets/overlays/landmark_desert_9.png,A grand desert temple,5")
+		file.store_line("Sample Landmark 1,S1,res://assets/overlays/landmark_sample_1.png,A mysterious landmark,6")
+		file.store_line("Sample Landmark 4,S4,res://assets/overlays/landmark_sample_4.png,An ancient structure,7")
+		file.store_line("Sample Landmark 5,S5,res://assets/overlays/landmark_sample_5.png,A weathered monument,8")
+		file.close()
+		print("Created sample overlays CSV file")
+	else:
+		print("ERROR: Could not create overlays CSV file")
 
 func generate_texture_path(type_name: String) -> String:
 	"""Generate texture path based on tile type name"""
 	return "res://assets/tiles/tilev3_" + type_name + ".png"
+
+func extract_tile_initial(cell_content: String) -> String:
+	"""Extract tile initial from cell content (e.g., 'G1-R1' -> 'G1')"""
+	if cell_content.is_empty():
+		return ""
+	
+	# Split by '-' to get the tile part (first part)
+	var parts = cell_content.split("-")
+	return parts[0]
+
+func extract_overlay_codes(cell_content: String) -> Array:
+	"""Extract overlay codes from cell content (e.g., 'G1-R1-S1' -> ['R1', 'S1'])"""
+	var codes = []
+	
+	if cell_content.is_empty():
+		return codes
+	
+	# Split by '-' to get all parts
+	var parts = cell_content.split("-")
+	
+	# Skip the first part (tile initial) and collect overlay codes
+	for i in range(1, parts.size()):
+		var code = parts[i]
+		if not code.is_empty():
+			codes.append(code)
+	
+	return codes
 
 func read_csv_file(file_path: String) -> Array:
 	"""Read a CSV file and return an array of dictionaries"""
@@ -289,7 +407,7 @@ func read_grid_csv_file(file_path: String) -> Array:
 	return grid_data
 
 func seed_map_tiles_from_csv():
-	"""Seed map tiles from CSV file in grid format"""
+	"""Seed map tiles from CSV file in grid format with overlay codes"""
 	print("=== SEEDING MAP TILES FROM CSV ===")
 	
 	# Read the grid format CSV file
@@ -325,7 +443,8 @@ func seed_map_tiles_from_csv():
 	# Collect all unique initials from the grid
 	for y in range(grid_data.size()):
 		for x in range(grid_data[y].size()):
-			var initial = grid_data[y][x]
+			var cell_content = grid_data[y][x]
+			var initial = extract_tile_initial(cell_content)
 			if not all_initials.has(initial):
 				all_initials.append(initial)
 	
@@ -341,18 +460,65 @@ func seed_map_tiles_from_csv():
 		tile_ids[initial] = database_manager.db.query_result[0]["id"]
 		print("Found tile ID %d for initial %s" % [tile_ids[initial], initial])
 	
+	# Get all overlay IDs for overlay codes
+	var overlay_ids = {}
+	var all_overlay_codes = []
+	
+	# Collect all unique overlay codes from the grid
+	for y in range(grid_data.size()):
+		for x in range(grid_data[y].size()):
+			var cell_content = grid_data[y][x]
+			var overlay_codes = extract_overlay_codes(cell_content)
+			for code in overlay_codes:
+				if not all_overlay_codes.has(code):
+					all_overlay_codes.append(code)
+	
+	print("Found overlay codes in grid: ", all_overlay_codes)
+	
+	# Get overlay IDs for each overlay code
+	for code in all_overlay_codes:
+		var overlay_query = "SELECT id FROM ref_overlay WHERE initials = '%s'" % code
+		database_manager.db.query(overlay_query)
+		if not database_manager.is_query_successful() or database_manager.db.query_result.size() == 0:
+			print("Warning: Overlay code '" + code + "' not found in database")
+			continue
+		overlay_ids[code] = database_manager.db.query_result[0]["id"]
+		print("Found overlay ID %d for code %s" % [overlay_ids[code], code])
+	
 	# Insert map tiles from grid
 	var inserted_count = 0
 	for y in range(grid_data.size()):
 		for x in range(grid_data[y].size()):
-			var initial = grid_data[y][x]
+			var cell_content = grid_data[y][x]
+			var initial = extract_tile_initial(cell_content)
 			var tile_id = tile_ids.get(initial)
 			
+			# Debug: Print cell processing
+			print("Processing cell at (%d, %d): '%s' -> initial: '%s', tile_id: %s" % [x, y, cell_content, initial, tile_id])
+			
 			if tile_id:
+				# Parse overlay codes
+				var overlay_codes = extract_overlay_codes(cell_content)
+				var first_overlay_id = null
+				var second_overlay_id = null
+				
+				if overlay_codes.size() > 0:
+					first_overlay_id = overlay_ids.get(overlay_codes[0])
+				if overlay_codes.size() > 1:
+					second_overlay_id = overlay_ids.get(overlay_codes[1])
+				
+				# Build insert query with overlay fields
 				var insert_query = """
-				INSERT INTO ref_map_tile (ref_map_id, ref_tile_id, x, y)
-				VALUES (%d, %d, %d, %d)
-				""" % [ref_map_id, tile_id, x, y]
+				INSERT INTO ref_map_tile (ref_map_id, ref_tile_id, x, y, first_overlay_id, second_overlay_id)
+				VALUES (%d, %d, %d, %d, %s, %s)
+				""" % [
+					ref_map_id, 
+					tile_id, 
+					x, 
+					y,
+					"NULL" if first_overlay_id == null else str(first_overlay_id),
+					"NULL" if second_overlay_id == null else str(second_overlay_id)
+				]
 				
 				database_manager.db.query(insert_query)
 				if database_manager.is_query_successful():
@@ -366,6 +532,146 @@ func seed_map_tiles_from_csv():
 	
 	print("Map tiles seeding complete. Inserted %d tiles." % inserted_count)
 
+func seed_abilities_from_csv():
+	"""Seed abilities from CSV file"""
+	print("=== SEEDING ABILITIES FROM CSV ===")
+	
+	var abilities_data = read_csv_file(abilities_csv_path)
+	if abilities_data.size() == 0:
+		print("No abilities data found in CSV")
+		return
+	
+	# Clear existing abilities data
+	var clear_query = "DELETE FROM abilities"
+	database_manager.db.query(clear_query)
+	if not database_manager.is_query_successful():
+		print("Error clearing abilities data: " + database_manager.db.error_message)
+		return
+	print("Cleared existing abilities data")
+	
+	# Insert abilities from CSV
+	for ability_data in abilities_data:
+		var insert_query = """
+		INSERT INTO abilities (name, base_value, max_value, display_order, description)
+		VALUES ('%s', %d, %d, %d, '%s')
+		""" % [ability_data.name, int(ability_data.base_value), int(ability_data.max_value), int(ability_data.display_order), ability_data.description]
+		
+		database_manager.db.query(insert_query)
+		if database_manager.is_query_successful():
+			print("Inserted ability: ", ability_data.name)
+		else:
+			print("Error inserting ability " + ability_data.name + ": " + database_manager.db.error_message)
+	
+	print("Abilities seeding complete")
+
+func seed_skills_from_csv():
+	"""Seed skills from CSV file"""
+	print("=== SEEDING SKILLS FROM CSV ===")
+	
+	var skills_data = read_csv_file(skills_csv_path)
+	if skills_data.size() == 0:
+		print("No skills data found in CSV")
+		return
+	
+	# Clear existing skills data
+	var clear_query = "DELETE FROM skills"
+	database_manager.db.query(clear_query)
+	if not database_manager.is_query_successful():
+		print("Error clearing skills data: " + database_manager.db.error_message)
+		return
+	print("Cleared existing skills data")
+	
+	# Insert skills from CSV
+	for skill_data in skills_data:
+		# Debug: Print raw CSV data
+		print("Raw CSV data for %s:" % skill_data.name)
+		print("  ability_conditions: '%s'" % skill_data.ability_conditions)
+		print("  cost: '%s'" % skill_data.cost)
+		
+		# Parse JSON strings to ensure they're valid JSON before storing
+		var ability_conditions_json = skill_data.ability_conditions
+		var cost_json = skill_data.cost
+		
+		# Validate and format JSON strings
+		var json = JSON.new()
+		if json.parse(ability_conditions_json) == OK:
+			ability_conditions_json = JSON.stringify(json.data)
+		else:
+			print("Warning: Invalid ability_conditions JSON for skill %s: %s" % [skill_data.name, ability_conditions_json])
+			continue
+		
+		if json.parse(cost_json) == OK:
+			cost_json = JSON.stringify(json.data)
+		else:
+			print("Warning: Invalid cost JSON for skill %s: %s" % [skill_data.name, cost_json])
+			continue
+		
+		# Escape single quotes in other string fields for SQL
+		var cast_conditions_escaped = skill_data.cast_conditions.replace("'", "''")
+		var effect_escaped = skill_data.effect.replace("'", "''")
+		var description_escaped = skill_data.description.replace("'", "''")
+		
+		var insert_query = """
+		INSERT INTO skills (name, ability_conditions, level, cost, tags, cast_conditions, effect, description)
+		VALUES ('%s', '%s', %d, '%s', '%s', '%s', '%s', '%s')
+		""" % [
+			skill_data.name,
+			ability_conditions_json,
+			int(skill_data.level),
+			cost_json,
+			skill_data.tags,
+			cast_conditions_escaped,
+			effect_escaped,
+			description_escaped
+		]
+		
+		database_manager.db.query(insert_query)
+		if database_manager.is_query_successful():
+			print("Inserted skill: ", skill_data.name)
+		else:
+			print("Error inserting skill " + skill_data.name + ": " + database_manager.db.error_message)
+	
+	print("Skills seeding complete")
+
+func seed_overlays_from_csv():
+	"""Seed overlays from CSV file"""
+	print("=== SEEDING OVERLAYS FROM CSV ===")
+	
+	# Clear existing overlays data
+	var clear_query = "DELETE FROM ref_overlay"
+	database_manager.db.query(clear_query)
+	if not database_manager.is_query_successful():
+		print("Error clearing overlays data: " + database_manager.db.error_message)
+		return
+	print("Cleared existing overlays data")
+	
+	# Read CSV file
+	var overlays_data = read_csv_file(overlays_csv_path)
+	if overlays_data.size() == 0:
+		print("No overlays data found in CSV")
+		return
+	
+	# Insert overlays
+	for overlay_data in overlays_data:
+		var insert_query = """
+		INSERT INTO ref_overlay (name, initials, texture_path, description, display_order)
+		VALUES ('%s', '%s', '%s', '%s', %d)
+		""" % [
+			overlay_data.get("name", ""),
+			overlay_data.get("initials", ""),
+			overlay_data.get("texture_path", ""),
+			overlay_data.get("description", ""),
+			int(overlay_data.get("display_order", 0))
+		]
+		
+		database_manager.db.query(insert_query)
+		if database_manager.is_query_successful():
+			print("Inserted overlay: ", overlay_data.get("name", ""))
+		else:
+			print("Error inserting overlay " + overlay_data.get("name", "") + ": " + database_manager.db.error_message)
+	
+	print("Overlays seeding complete")
+
 func clear_all_map_data():
 	"""Clear all map-related data from database"""
 	print("=== CLEARING ALL MAP DATA ===")
@@ -378,6 +684,10 @@ func clear_all_map_data():
 	var clear_tiles = "DELETE FROM ref_tile"
 	database_manager.db.query(clear_tiles)
 	print("Cleared ref_tile data")
+	
+	var clear_overlays = "DELETE FROM ref_overlay"
+	database_manager.db.query(clear_overlays)
+	print("Cleared overlay data")
 	
 	var clear_maps = "DELETE FROM ref_map"
 	database_manager.db.query(clear_maps)
@@ -394,85 +704,9 @@ func seed_all_from_csv():
 	
 	seed_maps_from_csv()
 	seed_tiles_from_csv()
+	seed_overlays_from_csv()
 	seed_map_tiles_from_csv()
+	seed_abilities_from_csv()
+	seed_skills_from_csv()
 	
 	print("=== ALL SEEDING COMPLETE ===")
-
-# Export functions for external use
-func export_seed_functions():
-	"""Export the current database state as seed functions"""
-	print("=== EXPORTING SEED FUNCTIONS ===")
-	
-	# Export maps
-	var maps = database_manager.get_all_ref_maps()
-	var maps_code = "func seed_ref_maps():\n"
-	maps_code += "\t# Check if we already have ref_map data\n"
-	maps_code += "\tvar check_query = \"SELECT COUNT(*) as count FROM ref_map\"\n"
-	maps_code += "\tdb.query(check_query)\n"
-	maps_code += "\tvar result = db.query_result\n"
-	maps_code += "\tif result.size() > 0 and result[0][\"count\"] > 0:\n"
-	maps_code += "\t\tprint(\"Database already contains ref_map data\")\n"
-	maps_code += "\t\treturn\n"
-	maps_code += "\tprint(\"No existing ref_map data found, seeding ref_maps...\")\n"
-	maps_code += "\tvar maps_data = [\n"
-	
-	for map in maps:
-		maps_code += "\t\t{\"name\": \"%s\", \"width\": %d, \"height\": %d, \"description\": \"%s\"},\n" % [
-			map.name, map.width, map.height, map.description
-		]
-	
-	maps_code += "\t]\n"
-	maps_code += "\tfor map_data in maps_data:\n"
-	maps_code += "\t\tvar insert_query = \"\"\"\n"
-	maps_code += "\t\tINSERT INTO ref_map (name, width, height, description)\n"
-	maps_code += "\t\tVALUES ('%s', %d, %d, '%s')\n"
-	maps_code += "\t\t\"\"\" % [map_data.name, map_data.width, map_data.height, map_data.description]\n"
-	maps_code += "\t\tdb.query(insert_query)\n"
-	maps_code += "\t\tif is_query_successful():\n"
-	maps_code += "\t\t\tprint(\"Inserted ref_map: \", map_data.name)\n"
-	maps_code += "\t\telse:\n"
-	maps_code += "\t\t\tprint(\"Error inserting ref_map \" + map_data.name + \": \" + db.error_message)\n"
-	
-	# Export tiles
-	var tiles = database_manager.get_all_ref_tiles()
-	var tiles_code = "func seed_ref_tiles():\n"
-	tiles_code += "\t# Check if we already have ref_tile data\n"
-	tiles_code += "\tvar check_query = \"SELECT COUNT(*) as count FROM ref_tile\"\n"
-	tiles_code += "\tdb.query(check_query)\n"
-	tiles_code += "\tvar result = db.query_result\n"
-	tiles_code += "\tif result.size() > 0 and result[0][\"count\"] > 0:\n"
-	tiles_code += "\t\tprint(\"Database already contains ref_tile data\")\n"
-	tiles_code += "\t\treturn\n"
-	tiles_code += "\tprint(\"No existing ref_tile data found, seeding ref_tiles...\")\n"
-	tiles_code += "\tvar tiles_data = [\n"
-	
-	for tile in tiles:
-		tiles_code += "\t\t{\"type_name\": \"%s\", \"is_walkable\": %s, \"color_hex\": \"%s\", \"movement_cost\": %d, \"texture_path\": \"%s\", \"description\": \"%s\"},\n" % [
-			tile.type_name, str(tile.is_walkable).to_lower(), tile.color_hex, tile.movement_cost, tile.texture_path, tile.description
-		]
-	
-	tiles_code += "\t]\n"
-	tiles_code += "\tfor tile_data in tiles_data:\n"
-	tiles_code += "\t\tvar insert_query = \"\"\"\n"
-	tiles_code += "\t\tINSERT INTO ref_tile (type_name, is_walkable, color_hex, movement_cost, texture_path, tileset_x, tileset_y, tile_size, description)\n"
-	tiles_code += "\t\tVALUES ('%s', %s, '%s', %d, '%s', %d, %d, %d, '%s')\n"
-	tiles_code += "\t\t\"\"\" % [tile_data.type_name, str(tile_data.is_walkable).to_lower(), tile_data.color_hex, tile_data.movement_cost, tile_data.texture_path, 0, 0, 50, tile_data.description]\n"
-	tiles_code += "\t\tdb.query(insert_query)\n"
-	tiles_code += "\t\tif is_query_successful():\n"
-	tiles_code += "\t\t\tprint(\"Inserted ref_tile: \", tile_data.type_name)\n"
-	tiles_code += "\t\telse:\n"
-	tiles_code += "\t\t\tprint(\"Error inserting ref_tile \" + tile_data.type_name + \": \" + db.error_message)\n"
-	
-	# Save to file
-	var export_file = FileAccess.open("res://tools/exported_seed_functions.gd", FileAccess.WRITE)
-	if export_file:
-		export_file.store_line("# Exported seed functions from Map Seeder Tool")
-		export_file.store_line("# Generated on: " + Time.get_datetime_string_from_system())
-		export_file.store_line("")
-		export_file.store_line(maps_code)
-		export_file.store_line("")
-		export_file.store_line(tiles_code)
-		export_file.close()
-		print("Exported seed functions to: res://tools/exported_seed_functions.gd")
-	else:
-		print("ERROR: Could not create export file") 

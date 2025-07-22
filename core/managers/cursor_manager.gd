@@ -4,11 +4,7 @@ class_name CursorManagerClass
 # Cursor states
 enum CursorState {
 	DEFAULT,
-	CLICKABLE,
-	MOVE,
-	ATTACK,
-	INTERACT,
-	WAIT
+	CLICKABLE
 }
 
 # Current cursor state
@@ -47,7 +43,7 @@ func load_cursor_textures():
 		print("Loaded clickable cursor texture (scaled to 0.8)")
 	else:
 		print("Warning: Could not load clickable cursor texture")
-
+	
 func scale_texture(texture: Texture2D, scale: float) -> Texture2D:
 	"""Scale a texture by the given factor"""
 	var image = texture.get_image()
@@ -62,22 +58,6 @@ func scale_texture(texture: Texture2D, scale: float) -> Texture2D:
 	# Create a new texture from the scaled image
 	var scaled_texture = ImageTexture.create_from_image(scaled_image)
 	return scaled_texture
-	
-	# # Move cursor
-	# cursor_textures[CursorState.MOVE] = preload("res://assets/cursors/move_cursor.png")
-	# cursor_hotspots[CursorState.MOVE] = Vector2(8, 8)
-	
-	# # Attack cursor
-	# cursor_textures[CursorState.ATTACK] = preload("res://assets/cursors/attack_cursor.png")
-	# cursor_hotspots[CursorState.ATTACK] = Vector2(8, 8)
-	
-	# # Interact cursor
-	# cursor_textures[CursorState.INTERACT] = preload("res://assets/cursors/interact_cursor.png")
-	# cursor_hotspots[CursorState.INTERACT] = Vector2(8, 8)
-	
-	# # Wait cursor
-	# cursor_textures[CursorState.WAIT] = preload("res://assets/cursors/wait_cursor.png")
-	# cursor_hotspots[CursorState.WAIT] = Vector2(8, 8)
 
 func setup_default_cursor():
 	"""Set up the default cursor"""
@@ -119,22 +99,6 @@ func set_cursor_state(state: CursorState):
 func set_clickable_cursor():
 	"""Set cursor to clickable state"""
 	set_cursor_state(CursorState.CLICKABLE)
-
-# func set_move_cursor():
-# 	"""Set cursor to move state"""
-# 	set_cursor_state(CursorState.MOVE)
-
-# func set_attack_cursor():
-# 	"""Set cursor to attack state"""
-# 	set_cursor_state(CursorState.ATTACK)
-
-# func set_interact_cursor():
-# 	"""Set cursor to interact state"""
-# 	set_cursor_state(CursorState.INTERACT)
-
-# func set_wait_cursor():
-# 	"""Set cursor to wait state"""
-# 	set_cursor_state(CursorState.WAIT)
 
 func reset_cursor():
 	"""Reset cursor to default state"""

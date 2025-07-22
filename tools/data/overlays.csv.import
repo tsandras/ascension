@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://tj3kprtaj7kn"
+
+[deps]
+
+files=["res://tools/data/overlays.initials.translation", "res://tools/data/overlays.texture.translation", "res://tools/data/overlays.description.translation", "res://tools/data/overlays.display.translation"]
+
+source_file="res://tools/data/overlays.csv"
+dest_files=["res://tools/data/overlays.initials.translation", "res://tools/data/overlays.texture.translation", "res://tools/data/overlays.description.translation", "res://tools/data/overlays.display.translation"]
+
+[params]
+
+compress=true
+delimiter=0

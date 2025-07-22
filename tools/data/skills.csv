@@ -1,0 +1,5 @@
+name,ability_conditions,level,cost,tags,cast_conditions,effect,description
+Fireball,{"pyromancer": 1},1,{"mana": 10},combat,spell,fire,combat,"Deal 15 fire damage to target","A basic fire spell that deals damage to enemies"
+Heal,{"cleric": 1},1,{"mana": 15},support,spell,healing,any,"Restore 20 health to target","A healing spell that restores health"
+Sword Strike,{"warrior": 1},1,{"stamina": 5},combat,melee,physical,combat,"Deal 12 physical damage with sword","A basic sword attack"
+Stealth,{"scoundrel": 1},1,{"stamina": 8},utility,stealth,out_of_combat,"Become invisible for 3 turns","Hide from enemies and move silently" 

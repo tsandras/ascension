@@ -3,26 +3,10 @@ extends Control
 # Character sheet popup that displays over the map
 class_name CharacterSheet
 
-# UI node references
-@onready var character_name_label = $SheetContainer/VBoxContainer/HeaderContainer/CharacterInfo/CharacterName
-@onready var race_info_label = $SheetContainer/VBoxContainer/HeaderContainer/CharacterInfo/RaceInfo
-@onready var avatar_sprite = $SheetContainer/VBoxContainer/HeaderContainer/AvatarContainer/AvatarSprite
-@onready var close_button = $SheetContainer/VBoxContainer/HeaderContainer/CloseButton
-@onready var attributes_list = $SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection/AttributesList
-@onready var abilities_list = $SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection/AbilitiesList
-@onready var competences_list = $SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection/CompetencesList
-@onready var skills_list = $SheetContainer/VBoxContainer/StatsContainer/RightColumn/SkillsSection/SkillsList
-
-# Character data
-var character_data: Dictionary = {}
+# Character instance
+var character: Character = null
 
 func _ready():
-	# Connect close button
-	close_button.pressed.connect(_on_close_button_pressed)
-	
-	# Add cursor functionality to buttons
-	add_cursor_to_buttons()
-	
 	# Hide the sheet initially
 	visible = false
 
@@ -31,18 +15,26 @@ func _input(event):
 	if event.is_action_pressed("ui_cancel"):
 		hide_sheet()
 
-func show_sheet(character: Dictionary):
+func show_sheet(character_instance: Character = null):
 	"""Display the character sheet with character data"""
-	character_data = character
+	if character_instance == null:
+		# Try to load character from creation or last saved
+		character = Character.load_from_creation()
+		if character == null:
+			character = Character.load_last_saved()
+		if character == null:
+			print("No character data available for character sheet")
+			return
+	else:
+		character = character_instance
+	
 	populate_character_info()
+	populate_character_stats()
 	populate_attributes()
 	populate_abilities()
 	populate_competences()
 	populate_skills()
 	visible = true
-	
-	# Focus the close button for keyboard navigation
-	close_button.grab_focus()
 
 func hide_sheet():
 	"""Hide the character sheet"""
@@ -50,60 +42,81 @@ func hide_sheet():
 
 func populate_character_info():
 	"""Populate the character name, race, and avatar"""
-	if character_data.has("name"):
-		character_name_label.text = character_data.name
-	
-	if character_data.has("race_name") and character_data.has("sex"):
-		race_info_label.text = "%s (%s)" % [character_data.race_name, character_data.sex]
-	
-	# Load avatar
-	if character_data.has("sex") and character_data.has("race_name"):
-		var avatar_path = "res://assets/avatars/%s_%s_1.png" % [
-			character_data.sex, 
-			character_data.race_name.to_lower()
-		]
-		var avatar_texture = load(avatar_path)
-		if avatar_texture:
-			avatar_sprite.texture = avatar_texture
-		else:
-			print("Warning: Could not load avatar: ", avatar_path)
+	if character and character.is_valid():
+		var char_name = get_meta("char_name", null)
+		var race_info = get_meta("race_info", null)
+		
+		if char_name:
+			char_name.text = character.name
+		if race_info:
+			race_info.text = "%s ?? (%s)" % [character.race_name, character.sex]
+
+func populate_character_stats():
+	"""Populate the character stats using the Character class"""
+	if character and character.is_valid():
+		var all_stats = character.get_all_stats()
+		print("DEBUG: All stats: ", all_stats)
+		var stat_values = get_meta("stat_values", [])
+		
+		if stat_values.size() >= 6:
+			stat_values[0].text = str(all_stats.pv_max)
+			stat_values[1].text = str(all_stats.endurance_max)
+			stat_values[2].text = str(all_stats.mana_max)
+			stat_values[3].text = str(all_stats.skill_slots_max)
+			stat_values[4].text = str(all_stats.block_max)
+			stat_values[5].text = str(all_stats.willpower_max)
 
 func populate_attributes():
 	"""Populate the attributes list"""
-	clear_container(attributes_list)
+	var attr_list = get_meta("attr_list", null)
+	if not attr_list:
+		return
+		
+	clear_container(attr_list)
 	
-	if character_data.has("attributes_dict"):
-		var attributes = character_data.attributes_dict
-		for attr_name in attributes:
-			var value = attributes[attr_name]
-			create_stat_row(attributes_list, attr_name, value)
+	if character and character.is_valid():
+		for attr_name in character.attributes:
+			var value = character.attributes[attr_name]
+			create_stat_row(attr_list, attr_name, value)
 
 func populate_abilities():
 	"""Populate the abilities list"""
-	clear_container(abilities_list)
+	var abil_list = get_meta("abil_list", null)
+	if not abil_list:
+		return
+		
+	clear_container(abil_list)
 	
-	if character_data.has("abilities_dict"):
-		var abilities = character_data.abilities_dict
-		for ability_name in abilities:
-			var value = abilities[ability_name]
-			create_stat_row(abilities_list, ability_name, value)
+	if character and character.is_valid():
+		for ability_name in character.abilities:
+			var value = character.abilities[ability_name]
+			if value > 0:  # Only show abilities with value > 0
+				create_stat_row(abil_list, ability_name, value)
 
 func populate_competences():
 	"""Populate the competences list"""
-	clear_container(competences_list)
+	var comp_list = get_meta("comp_list", null)
+	if not comp_list:
+		return
+		
+	clear_container(comp_list)
 	
-	if character_data.has("competences_dict"):
-		var competences = character_data.competences_dict
-		for competence_name in competences:
-			var value = competences[competence_name]
-			create_stat_row(competences_list, competence_name, value)
+	if character and character.is_valid():
+		for competence_name in character.competences:
+			var value = character.competences[competence_name]
+			if value > 0:  # Only show competences with value > 0
+				create_stat_row(comp_list, competence_name, value)
 
 func populate_skills():
 	"""Populate the skills list"""
+	var skills_list = get_meta("skills_list", null)
+	if not skills_list:
+		return
+		
 	clear_container(skills_list)
 	
-	if character_data.has("skills_dict"):
-		var skills_data = character_data.skills_dict
+	if character and character.is_valid():
+		var skills_data = character.skills
 		
 		# Handle skills data - could be string, array, or dictionary
 		if skills_data is String:
@@ -120,20 +133,24 @@ func populate_skills():
 			
 			for skill_id in skills_data:
 				for skill in all_skills:
-					if skill.id == skill_id:
+					if str(skill.id) == str(skill_id):
 						skill_names.append(skill.name)
 						break
 			
 			for skill_name in skill_names:
 				create_skill_row(skills_list, skill_name)
 		elif skills_data is Dictionary:
-			for skill_id in skills_data:
+			for skill_id_str in skills_data:
+				# Convert string key to integer for comparison
+				var skill_id_int = int(float(skill_id_str))
 				# Find skill name by ID
 				var all_skills = DatabaseManager.get_all_skills()
 				for skill in all_skills:
-					if skill.id == skill_id:
+					if skill.id == skill_id_int:
 						create_skill_row(skills_list, skill.name)
 						break
+		else:
+			create_skill_row(skills_list, "No skills learned")
 
 func create_stat_row(container: VBoxContainer, name: String, value: int):
 	"""Create a stat row with name and value"""
@@ -161,13 +178,4 @@ func create_skill_row(container: VBoxContainer, skill_name: String):
 func clear_container(container: VBoxContainer):
 	"""Clear all children from a container"""
 	for child in container.get_children():
-		child.queue_free()
-
-func _on_close_button_pressed():
-	"""Handle close button press"""
-	hide_sheet() 
-
-func add_cursor_to_buttons():
-	"""Add cursor functionality to all buttons"""
-	if close_button:
-		CursorUtils.add_cursor_to_button(close_button) 
+		child.queue_free() 

@@ -41,6 +41,8 @@ render_target_update_mode = 4
 
 [node name="TileLayer" type="Node2D" parent="GameViewport/GameViewport/GameWorld"]
 
+[node name="OverlayLayer" type="Node2D" parent="GameViewport/GameViewport/GameWorld"]
+
 [node name="CharacterLayer" type="Node2D" parent="GameViewport/GameViewport/GameWorld"]
 
 [node name="Character" type="Sprite2D" parent="GameViewport/GameViewport/GameWorld/CharacterLayer"]

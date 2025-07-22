@@ -3,7 +3,7 @@ extends Control
 func _ready():
 	# Apply UI constants to this scene
 	UIManager.setup_main_menu(self)
-	
+
 	# Add cursor functionality to buttons
 	add_cursor_to_buttons()
 
@@ -31,14 +31,12 @@ func _on_load_game_button_pressed():
 	# Load the last saved character and navigate to game world
 	print("Loading last saved game...")
 	
-	# Get the last saved character from database
-	var last_character = DatabaseManager.get_last_saved_character()
+	# Load the last saved character using Character class
+	var last_character = Character.load_last_saved()
 	
-	if last_character:
+	if last_character and last_character.is_valid():
 		print("Found saved character: ", last_character.name)
-		# Load character data into global CharacterCreation
-		CharacterCreation.load_saved_character(last_character)
-		# Navigate to game world
+		# Navigate to game world - hex_map will load the character directly
 		get_tree().change_scene_to_file("res://scenes/game_world/hex_map.tscn")
 	else:
 		print("No saved character found. Please create a new character first.")

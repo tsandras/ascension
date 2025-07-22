@@ -8,6 +8,7 @@ extends Control
 @onready var game_world = $GameViewport/GameViewport/GameWorld
 @onready var camera = $GameViewport/GameViewport/Camera2D
 @onready var tile_layer = $GameViewport/GameViewport/GameWorld/TileLayer
+@onready var overlay_layer = $GameViewport/GameViewport/GameWorld/OverlayLayer
 @onready var character_layer = $GameViewport/GameViewport/GameWorld/CharacterLayer
 @onready var character = $GameViewport/GameViewport/GameWorld/CharacterLayer/Character
 @onready var info_panel = $InfoPanel
@@ -23,9 +24,13 @@ var character_sheet: Control
 var hex_tiles = []
 var selected_tile = null
 var character_grid_pos = Vector2(0, 0)  # Character's grid position
+var current_character: Character = null
 
 # Tile image cache
 var tile_textures = {}
+
+# Overlay system
+var overlay_manager: OverlayManager
 
 # Movement animation
 var is_moving = false
@@ -77,6 +82,21 @@ func _ready():
 	# Preload tile images
 	load_tile_textures()
 	
+	# Initialize overlay system
+	print("=== OVERLAY LAYER DEBUG ===")
+	print("Overlay layer reference: ", overlay_layer)
+	if overlay_layer:
+		print("Overlay layer children: ", overlay_layer.get_child_count())
+		print("Overlay layer visible: ", overlay_layer.visible)
+		print("Overlay layer z_index: ", overlay_layer.z_index)
+		print("Tile layer z_index: ", tile_layer.z_index)
+		print("GameWorld z_index: ", game_world.z_index)
+	else:
+		print("ERROR: Overlay layer is null!")
+	print("===========================")
+	
+	overlay_manager = OverlayManager.new(overlay_layer)
+	
 	# Initialize the game map (MapManager is now global)
 	print("MapManager reference: ", MapManager)
 	if MapManager.initialize_game_map():
@@ -115,6 +135,10 @@ func setup_map_display():
 	for child in tile_layer.get_children():
 		child.queue_free()
 	hex_tiles.clear()
+	
+	# Clear existing overlays
+	if overlay_manager:
+		overlay_manager.clear_all_overlays()
 	
 	# Get map data
 	if MapManager == null:
@@ -175,8 +199,7 @@ func setup_map_display():
 	# Set up camera to follow character
 	setup_camera_following()
 	
-	# Ensure everything fits in the viewport
-	# ensure_proper_viewport_layout()
+
 	
 	# Debug viewport setup
 	print("=== VIEWPORT SETUP ===")
@@ -244,15 +267,20 @@ func center_camera_on_character():
 
 func check_for_loaded_character():
 	"""Check if we have a loaded character and update the UI accordingly"""
-	if CharacterCreation.character_name != "":
+	# Try to load character from creation first, then from database
+	current_character = Character.load_from_creation()
+	if current_character == null:
+		current_character = Character.load_last_saved()
+	
+	if current_character and current_character.is_valid():
 		print("=== LOADED CHARACTER DETECTED ===")
-		print("Character Name: ", CharacterCreation.character_name)
-		print("Character Race: ", CharacterCreation.selected_race)
-		print("Character Sex: ", CharacterCreation.selected_sex)
-		print("Character Attributes: ", CharacterCreation.attributes)
-		print("Character Abilities: ", CharacterCreation.abilities)
-		print("Character Competences: ", CharacterCreation.competences)
-		print("Character Skills: ", CharacterCreation.skills)
+		print("Character Name: ", current_character.name)
+		print("Character Race: ", current_character.race_name)
+		print("Character Sex: ", current_character.sex)
+		print("Character Attributes: ", current_character.attributes)
+		print("Character Abilities: ", current_character.abilities)
+		print("Character Competences: ", current_character.competences)
+		print("Character Skills: ", current_character.skills)
 		print("================================")
 		
 		# Update character info display
@@ -307,6 +335,16 @@ func create_hex_tile(tile_data: Dictionary):
 		if hex_tile.texture:
 			print("  Using fallback texture: ", hex_tile.texture.get_size())
 	
+	# Apply blur shader to the tile
+	if hex_tile.texture:
+		var shader = load("res://shaders/tile_blur.gdshader")
+		if shader:
+			hex_tile.material = ShaderMaterial.new()
+			hex_tile.material.shader = shader
+			print("Applied blur shader to tile: ", tile_type)
+		else:
+			print("Warning: Could not load blur shader")
+	
 	# Position the tile using hexagonal grid layout
 	var world_pos = hex_grid_to_world_position(grid_pos)
 	hex_tile.position = world_pos
@@ -358,6 +396,26 @@ func create_hex_tile(tile_data: Dictionary):
 	# Add to tile layer
 	tile_layer.add_child(hex_tile)
 	hex_tiles.append(hex_tile)
+	
+	# Add overlays to tile based on database data
+	if overlay_manager:
+		overlay_manager.add_overlay_to_tile(hex_tile, tile_data)
+		
+		# Debug: Add a very obvious test overlay to the first tile
+		if hex_tiles.size() == 1:
+			print("=== ADDING TEST OVERLAY ===")
+			var test_overlay = Sprite2D.new()
+			test_overlay.texture = load("res://icon.svg")
+			test_overlay.scale = Vector2(2.0, 2.0)
+			test_overlay.z_index = 100
+			test_overlay.modulate = Color.RED
+			overlay_layer.add_child(test_overlay)
+			test_overlay.global_position = hex_tile.global_position
+			print("Test overlay added at: ", test_overlay.global_position)
+			print("Test overlay visible: ", test_overlay.visible)
+			print("Test overlay z_index: ", test_overlay.z_index)
+			print("==========================")
+	
 	# print("  Tile added to layer. Total tiles: ", hex_tiles.size())
 
 func hex_grid_to_world_position(grid_pos: Vector2) -> Vector2:
@@ -373,7 +431,6 @@ func hex_grid_to_world_position(grid_pos: Vector2) -> Vector2:
 	if int(grid_pos.y) % 2 == 1:
 		world_x += x_offset * 0.5
 	
-	print("Hex grid ", grid_pos, " -> world ", Vector2(world_x, world_y), " (x_offset: ", x_offset, ", y_offset: ", y_offset, ")")
 	return Vector2(world_x, world_y)
 
 func world_position_to_hex_grid(world_pos: Vector2) -> Vector2:
@@ -395,13 +452,8 @@ func world_position_to_hex_grid(world_pos: Vector2) -> Vector2:
 
 func move_character_to_tile(target_grid_pos: Vector2):
 	"""Move character to the specified tile with pathfinding animation"""
-	print("=== CHARACTER PATHFINDING ===")
-	print("Target grid position: ", target_grid_pos)
-	print("Current character grid position: ", character_grid_pos)
-	print("Is moving: ", is_moving)
 	
 	if is_moving:
-		print("Character is already moving")
 		return
 	
 	# Check if the target tile exists and is walkable
@@ -413,9 +465,10 @@ func move_character_to_tile(target_grid_pos: Vector2):
 	var tile_data = target_tile.get_meta("tile_data")
 	print("Target tile walkable: ", tile_data.get("is_walkable", false))
 	
-	# if not tile_data.get("is_walkable", false):
-	# 	print("Cannot move to non-walkable tile: ", tile_data.get("type_name", "unknown"))
-	# 	return
+	# TODO: integrate the blocked path and non-walkable tiles
+	if not tile_data.get("is_walkable", false):
+		print("Cannot move to non-walkable tile: ", tile_data.get("type_name", "unknown"))
+		return
 	
 	# Find path from current position to target
 	var path = find_path(character_grid_pos, target_grid_pos)
@@ -428,11 +481,9 @@ func move_character_to_tile(target_grid_pos: Vector2):
 	# Start moving along the path
 	is_moving = true
 	move_along_path(path)
-	print("=========================")
 
 func find_path(start: Vector2, goal: Vector2) -> Array:
 	"""Find path using A* algorithm for hex grid"""
-	print("Finding path from ", start, " to ", goal)
 	
 	# If start and goal are the same, no movement needed
 	if start == goal:
@@ -476,8 +527,8 @@ func find_path(start: Vector2, goal: Vector2) -> Array:
 			
 			var _neighbor_data = neighbor_tile.get_meta("tile_data")
 			# For now, allow movement to any tile (remove walkable check for testing)
-			# if not _neighbor_data.get("is_walkable", false):
-			# 	continue
+			if not _neighbor_data.get("is_walkable", false):
+				continue
 			
 			var tentative_g = g_score.get(current, INF) + 1  # Each step costs 1
 			
@@ -714,8 +765,8 @@ func select_tile(tile: Sprite2D):
 	var grid_pos = tile.get_meta("grid_pos")
 	coordinates_label.text = "Position: (%d, %d)" % [grid_pos.x, grid_pos.y]
 	
-	print("Selected tile at grid (%d, %d): %s" % [grid_pos.x, grid_pos.y, tile.get_meta("tile_data")["type_name"]])
-	print("Tile world position: ", tile.position)
+	# print("Selected tile at grid (%d, %d): %s" % [grid_pos.x, grid_pos.y, tile.get_meta("tile_data")["type_name"]])
+	# print("Tile world position: ", tile.position)
 	
 	# Handle path preview or movement
 	if showing_path_preview and grid_pos == preview_target_grid_pos:
@@ -751,14 +802,11 @@ func update_tile_info(tile_data: Dictionary):
 
 func update_character_info():
 	"""Update the character info display"""
-	if CharacterCreation.character_name != "":
+	if current_character and current_character.is_valid():
 		# Show loaded character info
-		character_info_label.text = "%s (%s %s)\nPosition: (%d, %d)" % [
-			CharacterCreation.character_name,
-			CharacterCreation.selected_sex,
-			CharacterCreation.selected_race,
-			character_grid_pos.x,
-			character_grid_pos.y
+		character_info_label.text = "%s\n%s" % [
+			current_character.get_display_name(),
+			current_character.get_position_display(character_grid_pos)
 		]
 		# Also update avatar when character info changes
 		update_character_avatar()
@@ -768,7 +816,7 @@ func update_character_info():
 
 func setup_character_sheet():
 	"""Setup character sheet functionality"""
-	# Create character sheet UI directly in code
+	# Create character sheet dynamically to avoid scene parsing issues
 	character_sheet = create_character_sheet_ui()
 	add_child(character_sheet)
 	character_sheet.visible = false
@@ -786,26 +834,9 @@ func setup_character_sheet():
 	character_avatar.modulate = Color(1.2, 1.2, 1.2)  # Slightly brighter
 	print("Character sheet setup complete - avatar is clickable")
 
-func setup_avatar_cursor():
-	"""Setup cursor handling for character avatar"""
-	if CursorManager:
-		# Connect mouse enter/exit for avatar
-		character_avatar.mouse_entered.connect(_on_avatar_mouse_entered)
-		character_avatar.mouse_exited.connect(_on_avatar_mouse_exited)
-
-func _on_avatar_mouse_entered():
-	"""Handle mouse entering avatar area"""
-	if CursorManager:
-		CursorManager.set_clickable_cursor()
-
-func _on_avatar_mouse_exited():
-	"""Handle mouse leaving avatar area"""
-	if CursorManager:
-		CursorManager.reset_cursor()
-
 func create_character_sheet_ui() -> Control:
 	"""Create the character sheet UI programmatically"""
-	var sheet = Control.new()
+	var sheet = CharacterSheet.new()
 	sheet.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	
 	# Background
@@ -868,6 +899,40 @@ func create_character_sheet_ui() -> Control:
 	# Separator
 	var separator = HSeparator.new()
 	vbox.add_child(separator)
+	
+	# Stats section
+	var stats_section = VBoxContainer.new()
+	vbox.add_child(stats_section)
+	
+	var stats_title = Label.new()
+	stats_title.text = "Character Stats"
+	stats_title.add_theme_font_size_override("font_size", 18)
+	stats_section.add_child(stats_title)
+	
+	var stats_grid = GridContainer.new()
+	stats_grid.columns = 3
+	stats_grid.offset_left = 20
+	stats_section.add_child(stats_grid)
+	
+	# Create stat labels and values
+	var stat_names = ["PV Max", "Endurance Max", "Mana Max", "Skill Slots Max", "Block Max", "Willpower Max"]
+	var stat_values = []
+	
+	for stat_name in stat_names:
+		var label = Label.new()
+		label.text = stat_name + ":"
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		stats_grid.add_child(label)
+		
+		var value = Label.new()
+		value.text = "0"
+		value.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		stats_grid.add_child(value)
+		stat_values.append(value)
+	
+	# Separator
+	var separator2 = HSeparator.new()
+	vbox.add_child(separator2)
 	
 	# Stats container
 	var stats_container = HBoxContainer.new()
@@ -943,6 +1008,7 @@ func create_character_sheet_ui() -> Control:
 	sheet.set_meta("abil_list", abil_list)
 	sheet.set_meta("comp_list", comp_list)
 	sheet.set_meta("skills_list", skills_list)
+	sheet.set_meta("stat_values", stat_values)
 	
 	return sheet
 
@@ -951,6 +1017,27 @@ func _on_character_sheet_close():
 	if character_sheet:
 		character_sheet.visible = false
 
+func setup_avatar_cursor():
+	"""Setup cursor handling for character avatar"""
+	if CursorManager:
+		# Connect mouse enter/exit for avatar
+		character_avatar.mouse_entered.connect(_on_avatar_mouse_entered)
+		character_avatar.mouse_exited.connect(_on_avatar_mouse_exited)
+
+func _on_avatar_mouse_entered():
+	"""Handle mouse entering avatar area"""
+	if CursorManager:
+		CursorManager.set_clickable_cursor()
+
+func _on_avatar_mouse_exited():
+	"""Handle mouse leaving avatar area"""
+	if CursorManager:
+		CursorManager.reset_cursor()
+
+
+
+
+
 func _on_character_avatar_input(event: InputEvent):
 	"""Handle character avatar input events"""
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -958,156 +1045,20 @@ func _on_character_avatar_input(event: InputEvent):
 
 func show_character_sheet():
 	"""Show the character sheet with current character data"""
-	if CharacterCreation.character_name == "":
-		print("No character data available for character sheet")
-		return
-	
-	# Debug character sheet
-	print("Character sheet in show_character_sheet: ", character_sheet)
 	if character_sheet == null:
 		print("ERROR: Character sheet is null in show_character_sheet!")
 		return
 	
-	# Populate the character sheet
-	populate_character_sheet()
-	
-	# Show the sheet
-	character_sheet.visible = true
+	# Show the character sheet using the proper show_sheet function
+	character_sheet.show_sheet(current_character)
 	print("Character sheet displayed")
 
-func populate_character_sheet():
-	"""Populate the character sheet with current character data"""
-	# Get UI references
-	var char_name = character_sheet.get_meta("char_name")
-	var race_info = character_sheet.get_meta("race_info")
-	var attr_list = character_sheet.get_meta("attr_list")
-	var abil_list = character_sheet.get_meta("abil_list")
-	var comp_list = character_sheet.get_meta("comp_list")
-	var skills_list = character_sheet.get_meta("skills_list")
-	
-	# Clear existing content
-	clear_container(attr_list)
-	clear_container(abil_list)
-	clear_container(comp_list)
-	clear_container(skills_list)
-	
-	# Set character info
-	char_name.text = CharacterCreation.character_name
-	race_info.text = "%s (%s)" % [CharacterCreation.selected_race, CharacterCreation.selected_sex]
-	
-	# Populate attributes
-	if CharacterCreation.attributes:
-		for attr_name in CharacterCreation.attributes:
-			var value = CharacterCreation.attributes[attr_name]
-			create_stat_row(attr_list, attr_name, value)
-	
-	# Populate abilities (only show those with value > 0)
-	if CharacterCreation.abilities:
-		for ability_name in CharacterCreation.abilities:
-			var value = CharacterCreation.abilities[ability_name]
-			if value > 0:
-				create_stat_row(abil_list, ability_name, value)
-	
-	# Populate competences (only show those with value > 0)
-	if CharacterCreation.competences:
-		for competence_name in CharacterCreation.competences:
-			var value = CharacterCreation.competences[competence_name]
-			if value > 0:
-				create_stat_row(comp_list, competence_name, value)
-	
-	# Populate skills
-	if CharacterCreation.skills:
-		var skills_data = CharacterCreation.skills
-		print("Skills data type: ", typeof(skills_data))
-		print("Skills data: ", skills_data)
-		
-		# Handle skills data - could be string, array, or dictionary
-		if skills_data is String:
-			var json = JSON.new()
-			if json.parse(skills_data) == OK:
-				skills_data = json.data
-				print("Parsed JSON skills data: ", skills_data)
-			else:
-				skills_data = []
-				print("Failed to parse JSON skills data")
-		
-		# Get all skills from database
-		var all_skills = DatabaseManager.get_all_skills()
-		print("All skills from database: ", all_skills.size())
-		
-		if skills_data is Array:
-			print("Processing skills as Array: ", skills_data)
-			var skill_names = []
-			
-			for skill_id in skills_data:
-				print("Looking for skill ID: ", skill_id, " (type: ", typeof(skill_id), ")")
-				for skill in all_skills:
-					print("  Checking skill: ", skill.id, " (type: ", typeof(skill.id), ")")
-					if str(skill.id) == str(skill_id):
-						print("Found skill: ", skill.name)
-						skill_names.append(skill.name)
-						break
-			
-			print("Skill names to display: ", skill_names)
-			for skill_name in skill_names:
-				create_skill_row(skills_list, skill_name)
-		elif skills_data is Dictionary:
-			print("Processing skills as Dictionary: ", skills_data)
-			for skill_id_str in skills_data:
-				print("Looking for skill ID: ", skill_id_str, " (type: ", typeof(skill_id_str), ")")
-				# Convert string key to integer for comparison
-				var skill_id_int = int(float(skill_id_str))
-				print("Converted to int: ", skill_id_int)
-				# Find skill name by ID
-				for skill in all_skills:
-					print("  Checking skill: ", skill.id, " (type: ", typeof(skill.id), ")")
-					if skill.id == skill_id_int:
-						print("Found skill: ", skill.name)
-						create_skill_row(skills_list, skill.name)
-						break
-		else:
-			print("Unknown skills data type: ", typeof(skills_data))
-			# Try to display skills data as-is for debugging
-			if skills_data is String:
-				create_skill_row(skills_list, "Raw: " + skills_data)
-	else:
-		print("No skills data available")
-		create_skill_row(skills_list, "No skills learned")
 
-func create_stat_row(container: VBoxContainer, name: String, value: int):
-	"""Create a stat row with name and value"""
-	var row = HBoxContainer.new()
-	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	var name_label = Label.new()
-	name_label.text = name.capitalize() + ":"
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	var value_label = Label.new()
-	value_label.text = str(value)
-	value_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	
-	row.add_child(name_label)
-	row.add_child(value_label)
-	container.add_child(row)
-
-func create_skill_row(container: VBoxContainer, skill_name: String):
-	"""Create a skill row with just the name"""
-	var row = Label.new()
-	row.text = "• " + skill_name
-	container.add_child(row)
-
-func clear_container(container: VBoxContainer):
-	"""Clear all children from a container"""
-	for child in container.get_children():
-		child.queue_free()
 
 func update_character_avatar():
 	"""Update the character avatar display"""
-	if CharacterCreation.character_name != "" and CharacterCreation.selected_sex != "" and CharacterCreation.selected_race != "":
-		# Construct the avatar path based on sex and race
-		var race_lowercase = CharacterCreation.selected_race.to_lower()
-		var avatar_path = "res://assets/avatars/%s_%s_1.png" % [CharacterCreation.selected_sex, race_lowercase]
+	if current_character and current_character.is_valid():
+		var avatar_path = current_character.get_avatar_path()
 		
 		print("Loading avatar from: ", avatar_path)
 		var avatar_texture = load(avatar_path)
@@ -1140,22 +1091,22 @@ func update_info_panel():
 	update_character_avatar()
 	
 	# Show character info if we have a loaded character
-	if CharacterCreation.character_name != "":
+	if current_character and current_character.is_valid():
 		var character_info = "Character: %s\nRace: %s\nSex: %s" % [
-			CharacterCreation.character_name,
-			CharacterCreation.selected_race,
-			CharacterCreation.selected_sex
+			current_character.name,
+			current_character.race_name,
+			current_character.sex
 		]
 		
 		# Add some key attributes if available
-		if CharacterCreation.attributes.has("strength"):
-			character_info += "\nStrength: " + str(CharacterCreation.attributes.strength)
-		if CharacterCreation.attributes.has("essence"):
-			character_info += "\nEssence: " + str(CharacterCreation.attributes.essence)
+		if current_character.attributes.has("strength"):
+			character_info += "\nStrength: " + str(current_character.attributes.strength)
+		if current_character.attributes.has("essence"):
+			character_info += "\nEssence: " + str(current_character.attributes.essence)
 		
 		# Add skills if available
-		if CharacterCreation.skills.size() > 0:
-			character_info += "\nSkills: " + str(CharacterCreation.skills.size()) + " learned"
+		if current_character.skills.size() > 0:
+			character_info += "\nSkills: " + str(current_character.skills.size()) + " learned"
 		
 		# Update tile info label to show character info instead
 		tile_info_label.text = character_info
@@ -1179,14 +1130,6 @@ func _input(event):
 	
 	# Global input test for debugging
 	if event is InputEventMouseButton and event.pressed:
-		print("=== GLOBAL MOUSE INPUT ===")
-		print("Mouse button pressed: ", event.button_index)
-		print("Mouse position: ", event.position)
-		
-		# Test coordinate transformation
-		var local_mouse_pos = game_world.to_local(event.position)
-		print("Local mouse position in GameWorld: ", local_mouse_pos)
-		
 		# Check if mouse is over any Area2D
 		if hex_tiles.size() > 0:
 			print("Checking first few tiles:")
@@ -1196,8 +1139,7 @@ func _input(event):
 				if area:
 					var area_global_pos = area.global_position
 					var distance = event.position.distance_to(area_global_pos)
-					print("  Tile %d Area2D global pos: %s, distance to mouse: %.1f" % [i, area_global_pos, distance])
-		print("===========================")
+					print("Tile %d Area2D global pos: %s, distance to mouse: %.1f" % [i, area_global_pos, distance])
 	
 	if event.is_action_pressed("ui_accept"):  # Space key or Enter
 		if MapManager != null:
@@ -1214,6 +1156,8 @@ func _input(event):
 				print_debug_info()
 			KEY_C: # Toggle camera following
 				toggle_camera_following()
+			KEY_R: # Regenerate overlays
+				regenerate_overlays()
 	
 	# Zoom with mouse wheel
 	if event is InputEventMouseButton:
@@ -1224,9 +1168,6 @@ func _input(event):
 	
 	# Keyboard zoom controls
 	if event is InputEventKey and event.pressed:
-		print("Keyboard event: ", event.keycode)
-		print("KEY_PLUS: ", KEY_PLUS)
-		print("KEY_MINUS: ", KEY_MINUS)
 		match event.keycode:
 			KEY_PLUS, KEY_KP_ADD, 61:  # Plus key or numpad plus
 				zoom_camera(CameraConstants.ZOOM_IN_FACTOR)  # Zoom in
@@ -1241,6 +1182,7 @@ func show_debug_help():
 	print("Space - Print debug info")
 	print("H - Show this help")
 	print("C - Toggle GameWorld following")
+	print("R - Regenerate overlays")
 	print("Mouse wheel - Zoom in/out")
 	print("+ / - keys - Zoom in/out")
 	print("0 key - Reset zoom")
@@ -1266,42 +1208,6 @@ func toggle_camera_following():
 	if camera_follow_enabled:
 		center_camera_on_character()
 
-func ensure_proper_viewport_layout():
-	"""Ensure the viewport layout is properly configured"""
-	print("=== ENSURING PROPER VIEWPORT LAYOUT ===")
-	
-	# Wait for the scene to be fully ready
-	await get_tree().process_frame
-	
-	# Get the actual sizes
-	var total_width = size.x
-	var total_height = size.y
-	var info_panel_width = 300  # Fixed width for InfoPanel
-	
-	# Calculate available space for GameViewport
-	var available_width = total_width - info_panel_width
-	
-	print("Total viewport: ", total_width, "x", total_height)
-	print("InfoPanel width: ", info_panel_width)
-	print("Available width for GameViewport: ", available_width)
-	
-	# Update SubViewport size to match container exactly
-	game_viewport.size = Vector2i(int(available_width), int(total_height))
-	
-	# Ensure SubViewportContainer size matches and position is correct
-	game_viewport_container.size = Vector2(available_width, total_height)
-	game_viewport_container.position = Vector2.ZERO
-	
-	# Ensure InfoPanel is positioned correctly
-	info_panel.position.x = available_width
-	
-	print("Final layout:")
-	print("  GameViewport: ", game_viewport.size, " at ", game_viewport_container.position)
-	print("  GameViewportContainer: ", game_viewport_container.size)
-	print("  InfoPanel: ", info_panel.size, " at ", info_panel.position)
-	print("=====================================")
-	
-
 func print_debug_info():
 	"""Print current map and character debug information"""
 	print("=== MAP DEBUG INFO ===")
@@ -1311,10 +1217,22 @@ func print_debug_info():
 	print("GameWorld following: ", "ENABLED" if camera_follow_enabled else "DISABLED")
 	print("GameWorld scale: ", game_world.scale)
 	print("Total tiles: ", hex_tiles.size())
+	
+	# Overlay statistics
+	if overlay_manager:
+		var overlay_count = overlay_layer.get_child_count()
+		print("Overlays placed: ", overlay_count)
+		print("Overlay textures loaded: ", overlay_manager.overlay_textures.size())
+	
 	if selected_tile:
 		var tile_data = selected_tile.get_meta("tile_data")
 		print("Selected tile: ", tile_data.get("type_name", "unknown"))
 		print("Selected tile walkable: ", tile_data.get("is_walkable", false))
+		var overlay = selected_tile.get_meta("overlay", null)
+		if overlay:
+			print("Selected tile has overlay: ", overlay.texture.resource_path.get_file())
+		else:
+			print("Selected tile has no overlay")
 	print("=====================")
 
 func zoom_camera(zoom_factor: float):
@@ -1333,15 +1251,37 @@ func zoom_camera(zoom_factor: float):
 	print("Camera zoom: ", camera.zoom, " -> ", new_zoom)
 	print("Zoom factor applied: ", zoom_factor)
 
+func regenerate_overlays():
+	"""Regenerate all overlays for testing"""
+	print("=== REGENERATING OVERLAYS ===")
+	
+	if not overlay_manager:
+		print("Overlay manager not initialized")
+		return
+	
+	# Clear existing overlays
+	overlay_manager.clear_all_overlays()
+	
+	# Remove overlay references from tiles
+	for tile in hex_tiles:
+		tile.set_meta("overlay", null)
+	
+	# Regenerate overlays for all tiles
+	var overlay_count = 0
+	for tile in hex_tiles:
+		var tile_data = tile.get_meta("tile_data")
+		if overlay_manager.should_add_overlay(tile_data):
+			overlay_manager.add_overlay_to_tile(tile, tile_data)
+			overlay_count += 1
+	
+	print("Regenerated %d overlays" % overlay_count)
+	print("=============================")
+
 
 
 func _on_game_world_input(event: InputEvent):
 	"""Direct input handler for GameViewportContainer as backup for Area2D"""
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		print("=== DIRECT TILE CLICK DETECTION ===")
-		print("Click position in GameViewportContainer: ", event.position)
-		print("Camera zoom: ", camera.zoom)
-		
 		# Convert click position to world coordinates using camera
 		var world_click_pos = camera.get_global_mouse_position()
 		print("Click position in world coordinates: ", world_click_pos)
@@ -1353,7 +1293,6 @@ func _on_game_world_input(event: InputEvent):
 			select_tile(clicked_tile)
 		else:
 			print("No tile found at click position")
-		print("===================================")
 
 func find_tile_at_world_position(world_pos: Vector2) -> Sprite2D:
 	"""Find which tile contains the given world position"""

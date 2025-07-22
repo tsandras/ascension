@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://q4x4s0dr5n4f"
+
+[deps]
+
+files=["res://tools/data/abilities.base.translation", "res://tools/data/abilities.max.translation", "res://tools/data/abilities.display.translation", "res://tools/data/abilities.description.translation"]
+
+source_file="res://tools/data/abilities.csv"
+dest_files=["res://tools/data/abilities.base.translation", "res://tools/data/abilities.max.translation", "res://tools/data/abilities.display.translation", "res://tools/data/abilities.description.translation"]
+
+[params]
+
+compress=true
+delimiter=0

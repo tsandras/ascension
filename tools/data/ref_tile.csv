@@ -1,19 +1,39 @@
 type_name,initials,is_walkable,is_top_blocked,is_bottom_blocked,is_middle_blocked,time_to_cross,description
 forest,F,TRUE,FALSE,FALSE,FALSE,2,Dense forest with trees
-mountain,M,TRUE,FALSE,FALSE,FALSE,4,Tall mountains
-green_mountain,GM,TRUE,FALSE,FALSE,FALSE,4,Forested mountains
+forest_2,F2,TRUE,FALSE,FALSE,FALSE,2,forest with trees
+mountain,M,FALSE,FALSE,FALSE,FALSE,4,Tall mountains
+mountain_green,MG,TRUE,FALSE,FALSE,FALSE,4,Forested mountains
+mountain_green_2,MG2,TRUE,FALSE,FALSE,FALSE,2,Mountain with grassland
+mountain_oasis,MO,TRUE,FALSE,FALSE,FALSE,2,Mountain with water
 grassland,G,TRUE,FALSE,FALSE,FALSE,1,Open grassland plains
+grassland_2,G2,TRUE,FALSE,FALSE,FALSE,1,Open grassland plains
 empty_grassland,EG,TRUE,FALSE,FALSE,FALSE,1,Empty green fields
+empty_grassland_2,EG2,TRUE,FALSE,FALSE,FALSE,1,Empty green fields
+grassland_water,GW,TRUE,FALSE,FALSE,FALSE,2,Grassland with water
 arid_varap,AV,TRUE,FALSE,FALSE,FALSE,2,Arid wasteland with sparse vegetation
 glade,GL,TRUE,FALSE,FALSE,FALSE,2,Peaceful forest glade
 cliff,C,TRUE,FALSE,TRUE,FALSE,2,Steep rocky cliffs
 ruins,RU,TRUE,FALSE,FALSE,FALSE,1,Ruins of a city
-left_sea,LS,TRUE,FALSE,FALSE,TRUE,999,Left sea
-right_sea,RS,TRUE,FALSE,FALSE,TRUE,999,Right sea
-top_sea,TS,TRUE,TRUE,FALSE,FALSE,999,Top sea
-bottom_sea,BS,TRUE,FALSE,TRUE,FALSE,999,Bottom sea
+ruins_2,RU2,TRUE,FALSE,FALSE,FALSE,1,Ruins of a city
+sea_left,LS,TRUE,FALSE,FALSE,TRUE,999,Left sea
+sea_left_2,LS2,TRUE,FALSE,FALSE,TRUE,999,Left sea
+sea_right,RS,TRUE,FALSE,FALSE,TRUE,999,Right sea
+sea_right_2,RS2,TRUE,FALSE,FALSE,TRUE,999,Right sea
+sea_right_3,RS3,TRUE,FALSE,FALSE,TRUE,999,Right sea
+sea_right_4,RS4,TRUE,FALSE,FALSE,TRUE,999,Right sea
+sea_top,TS,TRUE,TRUE,FALSE,FALSE,999,Top sea
+sea_bottom,BS,TRUE,FALSE,TRUE,FALSE,999,Bottom sea
 large_river,LR,TRUE,FALSE,FALSE,TRUE,1,A large river
 river_2,R2,TRUE,FALSE,FALSE,TRUE,1,A river
 river_3,R3,TRUE,FALSE,TRUE,FALSE,1,A river
 settlement,SE,TRUE,FALSE,FALSE,FALSE,1,Settlement with buildings and people
 empty_arid_land,EA,TRUE,FALSE,FALSE,FALSE,1,Empty arid land
+river_t2b,R21,TRUE,FALSE,FALSE,TRUE,1,A river
+river_t2b_2,R22,TRUE,FALSE,FALSE,TRUE,1,A river
+empty,E,FALSE,TRUE,TRUE,TRUE,999,-
+lake_arid,LC,TRUE,TRUE,TRUE,TRUE,2,A lake
+lake_1,L1,TRUE,TRUE,TRUE,TRUE,2,A lake
+hill_green,HG,TRUE,TRUE,TRUE,TRUE,2,A hill
+hill_green_2,HG2,TRUE,TRUE,TRUE,TRUE,2,A hill
+rift,RF,FALSE,TRUE,TRUE,TRUE,999,A rift
+rift_2,RF2,FALSE,TRUE,TRUE,TRUE,999,A rift

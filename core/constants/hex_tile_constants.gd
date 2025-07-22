@@ -30,6 +30,17 @@ const SOURCE_TEXTURE_WIDTH = 1024
 const SOURCE_TEXTURE_HEIGHT = 1024
 
 # ===================
+# OVERLAY DIMENSIONS
+# ===================
+const OVERLAY_WIDTH = 1024
+const OVERLAY_HEIGHT = 1024
+
+# ===================
+# OVERLAY SCALE FACTOR
+# ===================
+const OVERLAY_SCALE_FACTOR = 4
+
+# ===================
 # HEXAGONAL SPACING
 # ===================
 const HORIZONTAL_SPACING_MULTIPLIER = 0.85  # 85% of tile width

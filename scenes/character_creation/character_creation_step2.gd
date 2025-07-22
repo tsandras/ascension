@@ -67,9 +67,8 @@ func apply_trait_bonuses():
 	var trait_data = CharacterCreation.current_trait_data
 	var current_abilities = ability_manager.get_all_item_values()
 	var current_competences = competences_manager.get_all_item_values()
-	var current_attributes = {}  # Not used in step 2
 	
-	var modified_data = TraitManager.apply_trait_bonuses(trait_data, current_attributes, current_abilities, current_competences)
+	var modified_data = TraitManager.apply_trait_bonuses(trait_data, {}, current_abilities, current_competences)
 	
 	# Extract competence bonuses for race bonus tracking
 	var competence_bonuses = {}

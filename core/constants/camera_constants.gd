@@ -2,9 +2,9 @@ extends RefCounted
 class_name CameraConstants
 
 # Camera zoom settings
-const INITIAL_ZOOM = Vector2(0.75, 0.75)
+const INITIAL_ZOOM = Vector2(0.4, 0.4)
 const MIN_ZOOM = 0.25  # Maximum zoom out
-const MAX_ZOOM = 1.0  # Maximum zoom in
+const MAX_ZOOM = 0.65  # Maximum zoom in
 const ZOOM_IN_FACTOR = 1.2
 const ZOOM_OUT_FACTOR = 0.8
 

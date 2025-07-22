@@ -32,10 +32,6 @@ func _ready():
 	
 	# Update the UI
 	update_ui()
-	
-	# Connect button signals
-	back_button.pressed.connect(_on_back_button_pressed)
-	continue_button.pressed.connect(_on_continue_button_pressed)
 
 func add_cursor_to_buttons():
 	"""Add cursor functionality to all buttons"""
@@ -134,7 +130,7 @@ func format_ability_conditions(conditions_json) -> String:
 	"""Format ability conditions for display"""
 	var conditions = conditions_json
 	
-	# If it's a string, parse it as JSON
+	# Parse JSON if it's a string
 	if conditions is String:
 		var json = JSON.new()
 		if json.parse(conditions) == OK:
@@ -153,7 +149,7 @@ func format_cost(cost_json) -> String:
 	"""Format cost for display"""
 	var cost = cost_json
 	
-	# If it's a string, parse it as JSON
+	# Parse JSON if it's a string
 	if cost is String:
 		var json = JSON.new()
 		if json.parse(cost) == OK:
@@ -189,7 +185,10 @@ func can_learn_skill(skill_data: Dictionary) -> bool:
 	"""Check if character can learn this skill based on ability requirements"""
 	var requirements = skill_data.ability_conditions
 	
-	# If it's a string, parse it as JSON
+	# Debug: Print the requirements
+	print("Requirements for %s: %s (type: %s)" % [skill_data.name, requirements, typeof(requirements)])
+	
+	# Parse JSON if it's a string
 	if requirements is String:
 		var json = JSON.new()
 		if json.parse(requirements) == OK:
@@ -259,11 +258,17 @@ func _on_back_button_pressed():
 	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step2.tscn")
 
 func _on_continue_button_pressed():
-	# Store step 3 data and save character
+	# Store step 3 data
 	CharacterCreation.set_step3_data(selected_skills)
 	
-	# Save the complete character to database
-	var character_id = CharacterCreation.save_character()
+	# Create a Character instance from the creation data
+	var character = Character.load_from_creation()
+	if character == null:
+		print("Error: Could not create character from creation data")
+		return
+	
+	# Save the character to database
+	var character_id = character.save_to_db()
 	
 	if character_id > 0:
 		# Character creation complete!
@@ -271,15 +276,7 @@ func _on_continue_button_pressed():
 		print("Character saved with ID: %d" % character_id)
 		print("Ready to enter the world of Ascension!")
 		
-		# Load the newly created character
-		var saved_character = DatabaseManager.get_character_by_id(character_id)
-		if saved_character:
-			print("Loading newly created character: ", saved_character.name)
-			CharacterCreation.load_saved_character(saved_character)
-		else:
-			print("Warning: Could not load saved character data")
-		
-		# Navigate to the hexagonal map
+		# Navigate to the hexagonal map - hex_map will load the character directly
 		print("Loading map...")
 		get_tree().change_scene_to_file("res://scenes/game_world/hex_map.tscn")
 	else:
