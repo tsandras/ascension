@@ -28,7 +28,7 @@ func create_overlay_sprite(overlay_data: Dictionary, position: Vector2 = Vector2
 	# Scale overlay to be more visible (make it larger for debugging)
 	var overlay_size = texture.get_size()
 	var max_size = overlay_size.x if overlay_size.x > overlay_size.y else overlay_size.y
-	var scale_factor = (HexTileConstants.OVERLAY_WIDTH / HexTileConstants.OVERLAY_SCALE_FACTOR) / max_size  # Full tile size for debugging
+	var scale_factor = (float(HexTileConstants.OVERLAY_WIDTH) / float(HexTileConstants.OVERLAY_SCALE_FACTOR)) / max_size  # Full tile size for debugging
 	overlay.scale = Vector2(scale_factor, scale_factor)
 	
 	print("Created overlay: ", overlay_data.get("name", ""))

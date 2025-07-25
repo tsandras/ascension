@@ -32,7 +32,7 @@ func _on_load_game_button_pressed():
 	print("Loading last saved game...")
 	
 	# Load the last saved character using Character class
-	var last_character = Character.load_last_saved()
+	var last_character = Character.load_from_db()
 	
 	if last_character and last_character.is_valid():
 		print("Found saved character: ", last_character.name)

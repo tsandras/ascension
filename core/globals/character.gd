@@ -21,10 +21,19 @@ func _init():
 	stats = Stats.new()
 
 # Load character from database by ID
-static func load_from_db(character_id: int) -> Character:
-	var character_data = DatabaseManager.get_character_by_id(character_id)
+static func load_from_db(character_id: int = -1) -> Character:
+	var character_data: Dictionary
+	
+	if character_id > 0:
+		character_data = DatabaseManager.get_character_by_id(character_id)
+	else:
+		character_data = DatabaseManager.get_last_saved_character()
+	
 	if character_data.size() == 0:
-		print("Character not found with ID: ", character_id)
+		if character_id > 0:
+			print("Character not found with ID: ", character_id)
+		else:
+			print("No saved characters found")
 		return null
 	
 	var character = Character.new()
@@ -51,7 +60,10 @@ static func load_from_db(character_id: int) -> Character:
 		else:
 			character.skills = []
 	
-	print("Loaded character: ", character.name)
+	if character_id > 0:
+		print("Loaded character: ", character.name)
+	else:
+		print("Loaded last saved character: ", character.name)
 	return character
 
 # Load character from CharacterCreation globals
@@ -93,40 +105,6 @@ static func load_from_creation() -> Character:
 		character.skills = []
 	
 	print("Loaded character from creation: ", character.name)
-	return character
-
-# Load the most recently saved character
-static func load_last_saved() -> Character:
-	var character_data = DatabaseManager.get_last_saved_character()
-	if character_data.size() == 0:
-		print("No saved characters found")
-		return null
-	
-	var character = Character.new()
-	character.id = character_data.id
-	character.name = character_data.name
-	character.race_name = character_data.race_name
-	character.sex = character_data.sex
-	character.created_at = character_data.created_at
-	
-	# Load JSON data
-	if character_data.has("attributes_dict"):
-		character.attributes = character_data.attributes_dict
-	if character_data.has("abilities_dict"):
-		character.abilities = character_data.abilities_dict
-	if character_data.has("competences_dict"):
-		character.competences = character_data.competences_dict
-	if character_data.has("skills_dict"):
-		# Convert skills_dict to array if needed
-		var skills_data = character_data.skills_dict
-		if skills_data is Dictionary:
-			character.skills = skills_data.keys()
-		elif skills_data is Array:
-			character.skills = skills_data
-		else:
-			character.skills = []
-	
-	print("Loaded last saved character: ", character.name)
 	return character
 
 # Save character to database

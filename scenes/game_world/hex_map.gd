@@ -199,8 +199,6 @@ func setup_map_display():
 	# Set up camera to follow character
 	setup_camera_following()
 	
-
-	
 	# Debug viewport setup
 	print("=== VIEWPORT SETUP ===")
 	print("HexMap size: ", size)
@@ -231,7 +229,6 @@ func initialize_character_position():
 	center_camera_on_character()
 	
 	update_character_info()
-	
 
 
 func setup_camera_following():
@@ -270,7 +267,7 @@ func check_for_loaded_character():
 	# Try to load character from creation first, then from database
 	current_character = Character.load_from_creation()
 	if current_character == null:
-		current_character = Character.load_last_saved()
+		current_character = Character.load_from_db()
 	
 	if current_character and current_character.is_valid():
 		print("=== LOADED CHARACTER DETECTED ===")
@@ -379,19 +376,8 @@ func create_hex_tile(tile_data: Dictionary):
 	collision.shape = shape
 	collision.position = Vector2.ZERO
 	
-	# print("  Collision size: ", shape.size)
-	
 	area.add_child(collision)
 	hex_tile.add_child(area)
-	
-	# print("  Area2D configured - input_pickable: ", area.input_pickable)
-	
-	# Connect Area2D signals for input detection
-	var input_connection = area.input_event.connect(_on_tile_input.bind(hex_tile))
-	var mouse_enter_connection = area.mouse_entered.connect(_on_tile_mouse_entered.bind(hex_tile))
-	var mouse_exit_connection = area.mouse_exited.connect(_on_tile_mouse_exited.bind(hex_tile))
-	
-	# print("  Signal connections - input: ", input_connection == OK, ", mouse_enter: ", mouse_enter_connection == OK, ", mouse_exit: ", mouse_exit_connection == OK)
 	
 	# Add to tile layer
 	tile_layer.add_child(hex_tile)
@@ -642,12 +628,8 @@ func create_path_arrow(tile: Sprite2D, step_index: int, total_steps: int, path: 
 			# Calculate direction to next tile
 			var next_step_index = step_index + 1
 			if next_step_index < total_steps:
-				var current_grid_pos = tile.get_meta("grid_pos")
 				var next_tile = get_tile_at_grid_position(path[next_step_index])
 				if next_tile:
-					var next_grid_pos = next_tile.get_meta("grid_pos")
-					var direction = next_grid_pos - current_grid_pos
-					
 					# Use world positions for more accurate direction calculation
 					var current_world_pos = tile.position
 					var next_world_pos = next_tile.position
@@ -816,12 +798,26 @@ func update_character_info():
 
 func setup_character_sheet():
 	"""Setup character sheet functionality"""
-	# Create character sheet dynamically to avoid scene parsing issues
-	character_sheet = create_character_sheet_ui()
-	add_child(character_sheet)
-	character_sheet.visible = false
+	# Try to load the character sheet scene
+	var character_sheet_scene = load("res://scenes/ui/character_sheet.tscn")
 	
-	print("Character sheet created dynamically: ", character_sheet)
+	if character_sheet_scene == null:
+		print("WARNING: Failed to load character sheet scene, creating instance directly...")
+		# Fallback: create character sheet instance directly
+		character_sheet = CharacterSheet.new()
+		character_sheet.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(character_sheet)
+		character_sheet.visible = false
+		print("Character sheet created directly: ", character_sheet)
+	else:
+		print("Character sheet scene loaded successfully: ", character_sheet_scene)
+		character_sheet = character_sheet_scene.instantiate()
+		if character_sheet == null:
+			print("ERROR: Failed to instantiate character sheet!")
+			return
+		add_child(character_sheet)
+		character_sheet.visible = false
+		print("Character sheet loaded from scene: ", character_sheet)
 	
 	# Make character avatar clickable
 	character_avatar.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -834,183 +830,7 @@ func setup_character_sheet():
 	character_avatar.modulate = Color(1.2, 1.2, 1.2)  # Slightly brighter
 	print("Character sheet setup complete - avatar is clickable")
 
-func create_character_sheet_ui() -> Control:
-	"""Create the character sheet UI programmatically"""
-	var sheet = CharacterSheet.new()
-	sheet.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	
-	# Background
-	var background = ColorRect.new()
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.color = Color(0, 0, 0, 0.5)
-	sheet.add_child(background)
-	
-	# Sheet container
-	var container = Control.new()
-	container.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	container.custom_minimum_size = Vector2(800, 600)
-	container.offset_left = -400  # Center horizontally
-	container.offset_top = -300   # Center vertically
-	sheet.add_child(container)
-	
-	# Container background
-	var container_bg = ColorRect.new()
-	container_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	container_bg.color = Color(0.2, 0.2, 0.2, 0.95)
-	container.add_child(container_bg)
-	
-	# Main layout
-	var vbox = VBoxContainer.new()
-	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	vbox.offset_left = 20
-	vbox.offset_top = 20
-	vbox.offset_right = -20
-	vbox.offset_bottom = -20
-	container.add_child(vbox)
-	
-	# Header
-	var header = HBoxContainer.new()
-	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.add_child(header)
-	
-	# Character info
-	var char_info = VBoxContainer.new()
-	char_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(char_info)
-	
-	var char_name = Label.new()
-	char_name.text = "Character Name"
-	char_name.add_theme_font_size_override("font_size", 24)
-	char_info.add_child(char_name)
-	
-	var race_info = Label.new()
-	race_info.text = "Race (Sex)"
-	race_info.add_theme_font_size_override("font_size", 16)
-	char_info.add_child(race_info)
-	
-	# Close button
-	var close_btn = Button.new()
-	close_btn.text = "X"
-	close_btn.custom_minimum_size = Vector2(30, 30)
-	close_btn.pressed.connect(_on_character_sheet_close)
-	CursorUtils.add_cursor_to_button(close_btn)
-	header.add_child(close_btn)
-	
-	# Separator
-	var separator = HSeparator.new()
-	vbox.add_child(separator)
-	
-	# Stats section
-	var stats_section = VBoxContainer.new()
-	vbox.add_child(stats_section)
-	
-	var stats_title = Label.new()
-	stats_title.text = "Character Stats"
-	stats_title.add_theme_font_size_override("font_size", 18)
-	stats_section.add_child(stats_title)
-	
-	var stats_grid = GridContainer.new()
-	stats_grid.columns = 3
-	stats_grid.offset_left = 20
-	stats_section.add_child(stats_grid)
-	
-	# Create stat labels and values
-	var stat_names = ["PV Max", "Endurance Max", "Mana Max", "Skill Slots Max", "Block Max", "Willpower Max"]
-	var stat_values = []
-	
-	for stat_name in stat_names:
-		var label = Label.new()
-		label.text = stat_name + ":"
-		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		stats_grid.add_child(label)
-		
-		var value = Label.new()
-		value.text = "0"
-		value.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		stats_grid.add_child(value)
-		stat_values.append(value)
-	
-	# Separator
-	var separator2 = HSeparator.new()
-	vbox.add_child(separator2)
-	
-	# Stats container
-	var stats_container = HBoxContainer.new()
-	stats_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(stats_container)
-	
-	# Left column
-	var left_col = VBoxContainer.new()
-	left_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_container.add_child(left_col)
-	
-	# Attributes section
-	var attr_section = VBoxContainer.new()
-	left_col.add_child(attr_section)
-	
-	var attr_title = Label.new()
-	attr_title.text = "Attributes"
-	attr_title.add_theme_font_size_override("font_size", 18)
-	attr_section.add_child(attr_title)
-	
-	var attr_list = VBoxContainer.new()
-	attr_list.offset_left = 20
-	attr_section.add_child(attr_list)
-	
-	# Abilities section
-	var abil_section = VBoxContainer.new()
-	left_col.add_child(abil_section)
-	
-	var abil_title = Label.new()
-	abil_title.text = "Abilities"
-	abil_title.add_theme_font_size_override("font_size", 18)
-	abil_section.add_child(abil_title)
-	
-	var abil_list = VBoxContainer.new()
-	abil_list.offset_left = 20
-	abil_section.add_child(abil_list)
-	
-	# Right column
-	var right_col = VBoxContainer.new()
-	right_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_container.add_child(right_col)
-	
-	# Competences section
-	var comp_section = VBoxContainer.new()
-	right_col.add_child(comp_section)
-	
-	var comp_title = Label.new()
-	comp_title.text = "Competences"
-	comp_title.add_theme_font_size_override("font_size", 18)
-	comp_section.add_child(comp_title)
-	
-	var comp_list = VBoxContainer.new()
-	comp_list.offset_left = 20
-	comp_section.add_child(comp_list)
-	
-	# Skills section
-	var skills_section = VBoxContainer.new()
-	right_col.add_child(skills_section)
-	
-	var skills_title = Label.new()
-	skills_title.text = "Skills"
-	skills_title.add_theme_font_size_override("font_size", 18)
-	skills_section.add_child(skills_title)
-	
-	var skills_list = VBoxContainer.new()
-	skills_list.offset_left = 20
-	skills_section.add_child(skills_list)
-	
-	# Store references for later use
-	sheet.set_meta("char_name", char_name)
-	sheet.set_meta("race_info", race_info)
-	sheet.set_meta("attr_list", attr_list)
-	sheet.set_meta("abil_list", abil_list)
-	sheet.set_meta("comp_list", comp_list)
-	sheet.set_meta("skills_list", skills_list)
-	sheet.set_meta("stat_values", stat_values)
-	
-	return sheet
+
 
 func _on_character_sheet_close():
 	"""Handle character sheet close button"""
@@ -1033,10 +853,6 @@ func _on_avatar_mouse_exited():
 	"""Handle mouse leaving avatar area"""
 	if CursorManager:
 		CursorManager.reset_cursor()
-
-
-
-
 
 func _on_character_avatar_input(event: InputEvent):
 	"""Handle character avatar input events"""

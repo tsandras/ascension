@@ -63,12 +63,14 @@ size_flags_horizontal = 3
 [node name="CharacterName" type="Label" parent="SheetContainer/VBoxContainer/HeaderContainer/CharacterInfo"]
 layout_mode = 2
 text = "Character Name"
-label_settings = SubResource("LabelSettings_1")
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 
 [node name="RaceInfo" type="Label" parent="SheetContainer/VBoxContainer/HeaderContainer/CharacterInfo"]
 layout_mode = 2
 text = "Race (Sex)"
-label_settings = SubResource("LabelSettings_2")
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 
 [node name="AvatarContainer" type="VBoxContainer" parent="SheetContainer/VBoxContainer/HeaderContainer"]
 layout_mode = 2
@@ -96,7 +98,8 @@ layout_mode = 2
 [node name="StatsTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsSection"]
 layout_mode = 2
 text = "Character Stats"
-label_settings = SubResource("LabelSettings_3")
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 
 [node name="StatsGrid" type="GridContainer" parent="SheetContainer/VBoxContainer/StatsSection"]
 layout_mode = 2
@@ -180,7 +183,8 @@ layout_mode = 2
 [node name="AttributesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection"]
 layout_mode = 2
 text = "Attributes"
-label_settings = SubResource("LabelSettings_3")
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 
 [node name="AttributesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection"]
 layout_mode = 2
@@ -192,7 +196,8 @@ layout_mode = 2
 [node name="AbilitiesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection"]
 layout_mode = 2
 text = "Abilities"
-label_settings = SubResource("LabelSettings_3")
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 
 [node name="AbilitiesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection"]
 layout_mode = 2
@@ -208,7 +213,8 @@ layout_mode = 2
 [node name="CompetencesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection"]
 layout_mode = 2
 text = "Competences"
-label_settings = SubResource("LabelSettings_3")
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 
 [node name="CompetencesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection"]
 layout_mode = 2
@@ -220,20 +226,9 @@ layout_mode = 2
 [node name="SkillsTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/SkillsSection"]
 layout_mode = 2
 text = "Skills"
-label_settings = SubResource("LabelSettings_3")
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 
 [node name="SkillsList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/SkillsSection"]
 layout_mode = 2
-offset_left = 20.0
-
-[sub_resource type="LabelSettings" id="LabelSettings_1"]
-font_size = 24
-font_color = Color(1, 1, 1, 1)
-
-[sub_resource type="LabelSettings" id="LabelSettings_2"]
-font_size = 16
-font_color = Color(0.8, 0.8, 0.8, 1)
-
-[sub_resource type="LabelSettings" id="LabelSettings_3"]
-font_size = 18
-font_color = Color(0.9, 0.9, 0.9, 1) 
+offset_left = 20.0 
