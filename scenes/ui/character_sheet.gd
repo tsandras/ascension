@@ -16,7 +16,6 @@ var character: Character = null
 @onready var pv_max_value: Label = $SheetContainer/VBoxContainer/StatsSection/StatsGrid/PVMaxValue
 @onready var endurance_max_value: Label = $SheetContainer/VBoxContainer/StatsSection/StatsGrid/EnduranceMaxValue
 @onready var mana_max_value: Label = $SheetContainer/VBoxContainer/StatsSection/StatsGrid/ManaMaxValue
-@onready var skill_slots_max_value: Label = $SheetContainer/VBoxContainer/StatsSection/StatsGrid/SkillSlotsMaxValue
 @onready var block_max_value: Label = $SheetContainer/VBoxContainer/StatsSection/StatsGrid/BlockMaxValue
 @onready var willpower_max_value: Label = $SheetContainer/VBoxContainer/StatsSection/StatsGrid/WillpowerMaxValue
 
@@ -24,7 +23,6 @@ var character: Character = null
 @onready var attributes_list: VBoxContainer = $SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection/AttributesList
 @onready var abilities_list: VBoxContainer = $SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection/AbilitiesList
 @onready var competences_list: VBoxContainer = $SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection/CompetencesList
-@onready var skills_list: VBoxContainer = $SheetContainer/VBoxContainer/StatsContainer/RightColumn/SkillsSection/SkillsList
 
 func _ready():
 	# Hide the sheet initially
@@ -60,7 +58,6 @@ func show_sheet(character_instance: Character = null):
 	populate_attributes()
 	populate_abilities()
 	populate_competences()
-	populate_skills()
 	visible = true
 
 func hide_sheet():
@@ -95,8 +92,6 @@ func populate_character_stats():
 			endurance_max_value.text = str(all_stats.endurance_max)
 		if mana_max_value:
 			mana_max_value.text = str(all_stats.mana_max)
-		if skill_slots_max_value:
-			skill_slots_max_value.text = str(all_stats.skill_slots_max)
 		if block_max_value:
 			block_max_value.text = str(all_stats.block_max)
 		if willpower_max_value:
@@ -140,50 +135,6 @@ func populate_competences():
 			if value > 0:  # Only show competences with value > 0
 				create_stat_row(competences_list, competence_name, value)
 
-func populate_skills():
-	"""Populate the skills list"""
-	if not skills_list:
-		return
-		
-	clear_container(skills_list)
-	
-	if character and character.is_valid():
-		var skills_data = character.skills
-		
-		# Handle skills data - could be string, array, or dictionary
-		if skills_data is String:
-			var json = JSON.new()
-			if json.parse(skills_data) == OK:
-				skills_data = json.data
-			else:
-				skills_data = []
-		
-		if skills_data is Array:
-			# Convert skill IDs to skill names
-			var all_skills = DatabaseManager.get_all_skills()
-			var skill_names = []
-			
-			for skill_id in skills_data:
-				for skill in all_skills:
-					if str(skill.id) == str(skill_id):
-						skill_names.append(skill.name)
-						break
-			
-			for skill_name in skill_names:
-				create_skill_row(skills_list, skill_name)
-		elif skills_data is Dictionary:
-			for skill_id_str in skills_data:
-				# Convert string key to integer for comparison
-				var skill_id_int = int(float(skill_id_str))
-				# Find skill name by ID
-				var all_skills = DatabaseManager.get_all_skills()
-				for skill in all_skills:
-					if skill.id == skill_id_int:
-						create_skill_row(skills_list, skill.name)
-						break
-		else:
-			create_skill_row(skills_list, "No skills learned")
-
 func create_stat_row(container: VBoxContainer, p_name: String, value: int):
 	"""Create a stat row with name and value"""
 	var row = HBoxContainer.new()
@@ -201,11 +152,7 @@ func create_stat_row(container: VBoxContainer, p_name: String, value: int):
 	row.add_child(value_label)
 	container.add_child(row)
 
-func create_skill_row(container: VBoxContainer, skill_name: String):
-	"""Create a skill row with just the name"""
-	var row = Label.new()
-	row.text = "• " + skill_name
-	container.add_child(row)
+
 
 func clear_container(container: VBoxContainer):
 	"""Clear all children from a container"""

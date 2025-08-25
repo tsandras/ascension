@@ -1,0 +1,17 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<!-- Created using Krita: https://krita.org -->
+<svg xmlns="http://www.w3.org/2000/svg" 
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:krita="http://krita.org/namespaces/svg/krita"
+    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+    width="777.6pt"
+    height="777.6pt"
+    viewBox="0 0 777.6 777.6">
+<defs/>
+<g id="2048a9af-91df-48c8-9379-984aafa8bd2f" transform="matrix(0.72 0 0 0.72 388.8 388.8)" fill="none">
+  <rect id="shape0" transform="translate(-540, -540)" display="none" fill="#ffffff" stroke-opacity="0" stroke="#000000" stroke-width="0" stroke-linecap="square" stroke-linejoin="bevel" width="1080" height="1080"/>
+ </g><g id="0078571c-07b4-462d-b406-2dd429c6fbaa" transform="matrix(0.72 0 0 0.72 388.8 388.8)" fill="none"/><g id="group0" transform="matrix(3.888 0 0 3.888 388.8 388.8)" fill="none">
+  <path id="shape1" transform="translate(-69.28, -80)" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M69.28 0L138.56 40L138.56 120L69.28 160L0 120L0 40Z" sodipodi:nodetypes="ccccccc"/>
+ </g><path id="shape2" transform="translate(121.39746835443, 435.281012658228)" fill="none" stroke="#000000" stroke-width="14.4" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="2" d="M0 109.367L188.111 0" sodipodi:nodetypes="cc"/><path id="shape3" transform="translate(388.253164556962, 79.8379746835443)" fill="none" stroke="#000000" stroke-width="14.4" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="2" d="M1.09367 217.641L0 0" sodipodi:nodetypes="cc"/><path id="shape4" transform="translate(470.278481012658, 439.655696202532)" fill="none" stroke="#000000" stroke-width="14.4" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="2" d="M0 0L187.018 103.899" sodipodi:nodetypes="cc"/><ellipse id="shape5" transform="translate(305.061265822785, 306.510379746835)" rx="86.4" ry="90" cx="86.4" cy="90" fill="none" stroke="#000000" stroke-width="14.4" stroke-linecap="square" stroke-linejoin="bevel"/>
+</svg>

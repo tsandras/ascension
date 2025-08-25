@@ -66,18 +66,7 @@ static func setup_character_creation_step2(scene: Control):
 	back_btn.custom_minimum_size = UIConstants.BUTTON_BACK_CONTINUE
 	continue_btn.custom_minimum_size = UIConstants.BUTTON_BACK_CONTINUE
 
-static func setup_character_creation_step3(scene: Control):
-	"""Apply character creation step 3 styling using UIConstants"""
-	var container = scene.get_node("CenterContainer/VBoxContainer")
-	var back_btn = scene.get_node("CenterContainer/VBoxContainer/ButtonsContainer/BackButton")
-	var continue_btn = scene.get_node("CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton")
-	
-	# Apply container size
-	container.custom_minimum_size = UIConstants.CONTAINER_CHARACTER_CREATION_STEP3
-	
-	# Apply button sizes
-	back_btn.custom_minimum_size = UIConstants.BUTTON_BACK_CONTINUE
-	continue_btn.custom_minimum_size = UIConstants.BUTTON_BACK_CONTINUE
+
 
 static func create_attribute_row_elements() -> Dictionary:
 	"""Create a set of UI elements for an attribute row using constants"""

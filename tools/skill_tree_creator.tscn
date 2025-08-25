@@ -1,0 +1,160 @@
+[gd_scene load_steps=3 format=3 uid="uid://dahq5qjgj5syv"]
+
+[ext_resource type="Script" uid="uid://bcdplfc2an02v" path="res://tools/skill_tree_creator.gd" id="1_0x0x0"]
+[ext_resource type="Script" uid="uid://bijqj7j1us5cx" path="res://tools/skill_tree_editor.gd" id="2_0x0x0"]
+
+[node name="SkillTreeCreator" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0x0x0")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopPanel" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="SkillTreeNameContainer" type="HBoxContainer" parent="VBoxContainer/TopPanel"]
+layout_mode = 2
+
+[node name="SkillTreeNameLabel" type="Label" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
+layout_mode = 2
+text = "Skill Tree Name:"
+
+[node name="SkillTreeNameEdit" type="LineEdit" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
+layout_mode = 2
+placeholder_text = "Enter skill tree name..."
+
+[node name="ControlPanel" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="NodeTypeContainer" type="HBoxContainer" parent="VBoxContainer/ControlPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
+layout_mode = 2
+text = "Node Type:"
+
+[node name="PassiveNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "Passive"
+
+[node name="ActiveNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Active"
+
+[node name="ImprovementNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Improvement"
+
+[node name="MasterAttributeNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Master Attribute"
+
+[node name="AttributeNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Attribute"
+
+[node name="EmptyNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Empty"
+
+[node name="ModeContainer" type="HBoxContainer" parent="VBoxContainer/ControlPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ControlPanel/ModeContainer"]
+layout_mode = 2
+text = "Mode:"
+
+[node name="PlaceModeBtn" type="Button" parent="VBoxContainer/ControlPanel/ModeContainer"]
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "Place Nodes"
+
+[node name="ConnectModeBtn" type="Button" parent="VBoxContainer/ControlPanel/ModeContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Connect Nodes"
+
+[node name="EditModeBtn" type="Button" parent="VBoxContainer/ControlPanel/ModeContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Edit Nodes"
+
+[node name="FilePanel" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="SaveBtn" type="Button" parent="VBoxContainer/FilePanel"]
+layout_mode = 2
+text = "Save Skill Tree"
+
+[node name="LoadBtn" type="Button" parent="VBoxContainer/FilePanel"]
+layout_mode = 2
+text = "Load Skill Tree"
+
+[node name="ClearBtn" type="Button" parent="VBoxContainer/FilePanel"]
+layout_mode = 2
+text = "Clear All"
+
+[node name="SkillTreeEditor" type="Control" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_0x0x0")
+
+[node name="NodeInfoPanel" type="Panel" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/NodeInfoPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/NodeInfoPanel/VBoxContainer"]
+layout_mode = 2
+text = "Node Information"
+horizontal_alignment = 1
+
+[node name="NodeNameContainer" type="HBoxContainer" parent="VBoxContainer/NodeInfoPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="NodeNameLabel" type="Label" parent="VBoxContainer/NodeInfoPanel/VBoxContainer/NodeNameContainer"]
+layout_mode = 2
+text = "Name:"
+
+[node name="NodeNameEdit" type="LineEdit" parent="VBoxContainer/NodeInfoPanel/VBoxContainer/NodeNameContainer"]
+layout_mode = 2
+placeholder_text = "Enter node name..."
+
+[node name="NodeDescContainer" type="HBoxContainer" parent="VBoxContainer/NodeInfoPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="NodeDescLabel" type="Label" parent="VBoxContainer/NodeInfoPanel/VBoxContainer/NodeDescContainer"]
+layout_mode = 2
+text = "Description:"
+
+[node name="NodeDescEdit" type="TextEdit" parent="VBoxContainer/NodeInfoPanel/VBoxContainer/NodeDescContainer"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Enter node description..."

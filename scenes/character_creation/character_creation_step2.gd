@@ -388,9 +388,23 @@ func _on_continue_button_pressed():
 	ability_manager.print_character_stats()
 	competences_manager.print_character_stats()
 	
-	# Navigate to step 3 (skills selection)
-	print("Moving to step 3: Skills selection")
-	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step3.tscn")
-		# Could add UI feedback here for the error
-
- 
+	# Create a Character instance from the creation data
+	var character = Character.load_from_creation()
+	if character == null:
+		print("Error: Could not create character from creation data")
+		return
+	
+	# Save the character to database
+	var character_id = character.save_to_db()
+	
+	if character_id > 0:
+		# Character creation complete!
+		print("Character creation complete!")
+		print("Character saved with ID: %d" % character_id)
+		print("Ready to enter the world of Ascension!")
+		
+		# Navigate to the hexagonal map - hex_map will load the character directly
+		print("Loading map...")
+		get_tree().change_scene_to_file("res://scenes/game_world/hex_map.tscn")
+	else:
+		print("Error: Failed to save character. Please try again.")

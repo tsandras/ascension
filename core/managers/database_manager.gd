@@ -113,26 +113,7 @@ func create_tables():
 	else:
 		print("Competences table created successfully")
 	
-	# Create skills table
-	var skills_query = """
-	CREATE TABLE IF NOT EXISTS skills (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL UNIQUE,
-		ability_conditions JSON NOT NULL DEFAULT '{}',
-		level INTEGER NOT NULL DEFAULT 1,
-		cost JSON NOT NULL DEFAULT '{}',
-		tags TEXT,
-		cast_conditions TEXT,
-		effect TEXT,
-		description TEXT
-	);
-	"""
-	
-	db.query(skills_query)
-	if not is_query_successful():
-		print("Error creating skills table: ", db.error_message)
-	else:
-		print("Skills table created successfully")
+
 
 	# Create character table for persistent character creation
 	var character_query = """
@@ -141,10 +122,11 @@ func create_tables():
 		name TEXT NOT NULL,
 		race_id INTEGER,
 		sex TEXT NOT NULL,
+		portrait TEXT,
+		avatar TEXT,
 		attributes JSON,
 		abilities JSON,
 		competences JSON,
-		skills JSON,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (race_id) REFERENCES races(id)
 	);
@@ -561,26 +543,7 @@ func seed_competences():
 
 
 
-func get_all_skills():
-	var query = "SELECT * FROM skills ORDER BY name"
-	db.query(query)
-	
-	if is_query_successful():
-		print("Successfully fetched %d skills from database" % db.query_result.size())
-		return db.query_result
-	else:
-		print("Error fetching skills: ", db.error_message)
-		return []
 
-func get_skill_by_name(skill_name: String):
-	var query = "SELECT * FROM skills WHERE name = '%s'" % skill_name
-	db.query(query)
-	var result = db.query_result
-	
-	if result.size() > 0:
-		return result[0]
-	else:
-		return null
 
 func get_all_competences():
 	var query = "SELECT * FROM competences ORDER BY display_order"
@@ -781,7 +744,7 @@ func close_database():
 		db.close_db()
 
 
-func save_character(character_name: String, race_name: String, sex: String, attributes: Dictionary, abilities: Dictionary, competences: Dictionary, skills: Array) -> int:
+func save_character(character_name: String, race_name: String, sex: String, portrait: String, avatar: String, attributes: Dictionary, abilities: Dictionary, competences: Dictionary) -> int:
 	"""Save a character to the database and return the character ID"""
 	print("Saving character: " + character_name)
 	
@@ -797,13 +760,12 @@ func save_character(character_name: String, race_name: String, sex: String, attr
 	var attributes_json = JSON.stringify(attributes)
 	var abilities_json = JSON.stringify(abilities)
 	var competences_json = JSON.stringify(competences)
-	var skills_json = JSON.stringify(skills)
 	
 	# Insert character into database
 	var insert_query = """
-	INSERT INTO character (name, race_id, sex, attributes, abilities, competences, skills)
-	VALUES ('%s', %d, '%s', '%s', '%s', '%s', '%s')
-	""" % [character_name, race_id, sex, attributes_json, abilities_json, competences_json, skills_json]
+	INSERT INTO character (name, race_id, sex, portrait, avatar, attributes, abilities, competences)
+	VALUES ('%s', %d, '%s', '%s', '%s', '%s', '%s', '%s')
+	""" % [character_name, race_id, sex, portrait, avatar, attributes_json, abilities_json, competences_json]
 	
 	db.query(insert_query)
 	if not is_query_successful():
@@ -855,13 +817,6 @@ func get_character_by_id(character_id: int) -> Dictionary:
 				character_data.competences_dict = json.data
 			else:
 				character_data.competences_dict = {}
-		
-		if character_data.skills:
-			var json = JSON.new()
-			if json.parse(character_data.skills) == OK:
-				character_data.skills_dict = json.data
-			else:
-				character_data.skills_dict = []
 		
 		return character_data
 	else:
@@ -932,13 +887,6 @@ func get_last_saved_character() -> Dictionary:
 				character_data.competences_dict = json.data
 			else:
 				character_data.competences_dict = {}
-		
-		if character_data.skills:
-			var json = JSON.new()
-			if json.parse(character_data.skills) == OK:
-				character_data.skills_dict = json.data
-			else:
-				character_data.skills_dict = []
 		
 		print("Found last saved character: " + character_data.name)
 		return character_data

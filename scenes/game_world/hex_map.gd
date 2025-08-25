@@ -110,6 +110,8 @@ func _ready():
 	if back_button:
 		CursorUtils.add_cursor_to_button(back_button)
 
+	Dialogic.start('test')
+
 func load_tile_textures():
 	print("Loading tile textures...")
 	
@@ -277,7 +279,7 @@ func check_for_loaded_character():
 		print("Character Attributes: ", current_character.attributes)
 		print("Character Abilities: ", current_character.abilities)
 		print("Character Competences: ", current_character.competences)
-		print("Character Skills: ", current_character.skills)
+	
 		print("================================")
 		
 		# Update character info display
@@ -920,9 +922,7 @@ func update_info_panel():
 		if current_character.attributes.has("essence"):
 			character_info += "\nEssence: " + str(current_character.attributes.essence)
 		
-		# Add skills if available
-		if current_character.skills.size() > 0:
-			character_info += "\nSkills: " + str(current_character.skills.size()) + " learned"
+		
 		
 		# Update tile info label to show character info instead
 		tile_info_label.text = character_info

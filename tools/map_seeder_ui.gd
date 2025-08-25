@@ -104,11 +104,7 @@ func create_ui():
 	seed_abilities_btn.pressed.connect(_on_seed_abilities_pressed)
 	button_container.add_child(seed_abilities_btn)
 	
-	var seed_skills_btn = Button.new()
-	seed_skills_btn.text = "Seed Skills from CSV"
-	seed_skills_btn.custom_minimum_size = Vector2(0, 40)
-	seed_skills_btn.pressed.connect(_on_seed_skills_pressed)
-	button_container.add_child(seed_skills_btn)
+
 	
 	var seed_all_btn = Button.new()
 	seed_all_btn.text = "Seed All from CSV"
@@ -179,11 +175,7 @@ func _on_seed_abilities_pressed():
 	map_seeder.seed_abilities_from_csv()
 	update_status("Abilities seeded from CSV")
 
-func _on_seed_skills_pressed():
-	"""Seed skills from CSV"""
-	print("Seeding skills from CSV...")
-	map_seeder.seed_skills_from_csv()
-	update_status("Skills seeded from CSV")
+
 
 func _on_seed_all_pressed():
 	"""Seed all data from CSV"""

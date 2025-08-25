@@ -25,8 +25,13 @@ var race_ui_elements = {}
 var race_data = {}
 # Store selected sex
 var selected_sex = ""
+# Store selected portrait and avatar
+var selected_portrait = ""
+var selected_avatar = ""
 # Store avatar textures
 var avatar_textures = {}
+# Store portrait textures
+var portrait_textures = {}
 
 func _ready():
 	# Apply UI constants to this scene
@@ -43,6 +48,7 @@ func _ready():
 	# Generate the UI dynamically
 	generate_attribute_ui()
 	generate_race_ui()
+	generate_portrait_avatar_ui()
 	
 	# Connect character name input signal
 	character_name_input.text_changed.connect(_on_character_name_changed)
@@ -54,8 +60,9 @@ func _ready():
 	# Add cursor functionality to buttons
 	add_cursor_to_buttons()
 	
-	# Load avatar textures
+	# Load avatar and portrait textures
 	load_avatar_textures()
+	load_portrait_textures()
 	
 
 	
@@ -105,8 +112,19 @@ func load_existing_character_data():
 	if CharacterCreation.selected_sex != "":
 		selected_sex = CharacterCreation.selected_sex
 		update_sex_buttons()
-		update_avatar_display()
 		print("Loaded selected sex: " + CharacterCreation.selected_sex)
+	
+	# Load selected portrait
+	if CharacterCreation.selected_portrait != "":
+		selected_portrait = CharacterCreation.selected_portrait
+		update_portrait_display()
+		print("Loaded selected portrait: " + CharacterCreation.selected_portrait)
+	
+	# Load selected avatar
+	if CharacterCreation.selected_avatar != "":
+		selected_avatar = CharacterCreation.selected_avatar
+		update_avatar_display()
+		print("Loaded selected avatar: " + CharacterCreation.selected_avatar)
 	
 	# Load attribute allocations
 	if CharacterCreation.attributes.size() > 0:
@@ -162,6 +180,76 @@ func generate_race_ui():
 	# Create UI for each race
 	for race_name in race_names:
 		create_race_row(race_name)
+
+func generate_portrait_avatar_ui():
+	"""Generate UI for portrait and avatar selection"""
+	# Find the avatar container to add portrait selection above it
+	var avatar_container = $CenterContainer/VBoxContainer/ContentContainer/Column2/AvatarContainer
+	
+	# Create portrait selection container
+	var portrait_container = VBoxContainer.new()
+	portrait_container.name = "PortraitContainer"
+	
+	# Create portrait label
+	var portrait_label = Label.new()
+	portrait_label.text = "Portrait:"
+	portrait_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	portrait_container.add_child(portrait_label)
+	
+	# Create clickable portrait area
+	var portrait_area = Button.new()
+	portrait_area.name = "PortraitArea"
+	portrait_area.custom_minimum_size = Vector2(400, 400)
+	portrait_area.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	portrait_area.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	portrait_area.pressed.connect(_on_portrait_area_clicked)
+	
+	# Set button text to indicate it's clickable
+	portrait_area.text = "Click to select\nPortrait"
+	
+	# Add a border/background to make it clear it's clickable
+	var portrait_panel = Panel.new()
+	portrait_panel.name = "PortraitPanel"
+	portrait_panel.add_child(portrait_area)
+	portrait_panel.custom_minimum_size = Vector2(400, 400)
+	
+	portrait_container.add_child(portrait_panel)
+	
+	# Create avatar selection label
+	var avatar_label = Label.new()
+	avatar_label.text = "Avatar:"
+	avatar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	portrait_container.add_child(avatar_label)
+	
+	# Create clickable avatar area
+	var avatar_area = Button.new()
+	avatar_area.name = "AvatarArea"
+	avatar_area.custom_minimum_size = Vector2(200, 400)
+	avatar_area.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	avatar_area.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	avatar_area.pressed.connect(_on_avatar_area_clicked)
+	
+	# Set button text to indicate it's clickable
+	avatar_area.text = "Click to select\nAvatar"
+	
+	# Add a border/background to make it clear it's clickable
+	var avatar_panel = Panel.new()
+	avatar_panel.name = "AvatarPanel"
+	avatar_panel.add_child(avatar_area)
+	avatar_panel.custom_minimum_size = Vector2(200, 400)
+	
+	portrait_container.add_child(avatar_panel)
+	
+	# Insert portrait container before avatar container
+	var parent = avatar_container.get_parent()
+	var avatar_index = parent.get_child_count()
+	for i in range(parent.get_child_count()):
+		if parent.get_child(i) == avatar_container:
+			avatar_index = i
+			break
+	
+	parent.add_child(portrait_container)
+	parent.move_child(portrait_container, avatar_index)
 
 func create_attribute_row(attribute_name: String):
 	# Create horizontal container for this attribute
@@ -309,37 +397,76 @@ func load_avatar_textures():
 	"""Load all available avatar textures"""
 	print("Loading avatar textures...")
 	
-	# Define the races and sexes available
-	var races = DatabaseManager.get_all_races()
-	var sexes = ["male", "female"]
-	
-	for sex in sexes:
-		avatar_textures[sex] = {}
+	# Load all avatar files from the avatars directory
+	var dir = DirAccess.open("res://assets/avatars/")
+	if dir:
+		avatar_textures = {}
 		
-		for race in races:
-			var avatar_path = "res://assets/avatars/%s_%s_1.png" % [sex, race.name.to_lower()]
-			var texture = load(avatar_path)
-			if texture:
-				# Store using the lowercase race name as the key (string, not object)
-				avatar_textures[sex][race.name.to_lower()] = texture
-				print("Loaded avatar: ", sex, "_", race.name.to_lower())
-			else:
-				print("Warning: Failed to load avatar: ", avatar_path)
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		
+		while file_name != "":
+			if file_name.ends_with(".png") and not file_name.ends_with(".import"):
+				var avatar_path = "res://assets/avatars/" + file_name
+				var texture = load(avatar_path)
+				if texture:
+					# Store using the filename without extension as the key
+					var key = file_name.replace(".png", "")
+					avatar_textures[key] = texture
+					print("Loaded avatar: ", key, " - Size: ", texture.get_size(), " - Valid: ", texture != null)
+				else:
+					print("Warning: Failed to load avatar: ", avatar_path)
+			
+			file_name = dir.get_next()
+		
+		dir.list_dir_end()
+	else:
+		print("Error: Could not open avatars directory")
 	
-	print("Avatar loading complete")
+	print("Avatar loading complete. Loaded %d avatars" % avatar_textures.size())
+
+func load_portrait_textures():
+	"""Load all available portrait textures"""
+	print("Loading portrait textures...")
+	
+	# Load all portrait files from the ink_portraits directory
+	var dir = DirAccess.open("res://assets/ink_portraits/")
+	if dir:
+		portrait_textures = {}
+		
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		
+		while file_name != "":
+			if file_name.ends_with(".png") and not file_name.ends_with(".import"):
+				var portrait_path = "res://assets/ink_portraits/" + file_name
+				var texture = load(portrait_path)
+				if texture:
+					# Store using the filename without extension as the key
+					var key = file_name.replace(".png", "")
+					portrait_textures[key] = texture
+					print("Loaded portrait: ", key, " - Size: ", texture.get_size(), " - Valid: ", texture != null)
+				else:
+					print("Warning: Failed to load portrait: ", portrait_path)
+			
+			file_name = dir.get_next()
+		
+		dir.list_dir_end()
+	else:
+		print("Error: Could not open ink_portraits directory")
+	
+	print("Portrait loading complete. Loaded %d portraits" % portrait_textures.size())
 
 func _on_male_button_pressed():
 	"""Handle male button selection"""
 	selected_sex = "male"
 	update_sex_buttons()
-	update_avatar_display()
 	update_ui()
 
 func _on_female_button_pressed():
 	"""Handle female button selection"""
 	selected_sex = "female"
 	update_sex_buttons()
-	update_avatar_display()
 	update_ui()
 
 func update_sex_buttons():
@@ -355,22 +482,281 @@ func update_sex_buttons():
 		female_button.modulate = Color.WHITE
 
 func update_avatar_display():
-	"""Update the avatar display based on selected sex and race"""
-	var selected_race = race_manager.get_selected_race()
-	var race_lowercase = selected_race.to_lower()  # Convert to lowercase for avatar lookup
-	
-	if selected_sex != "" and selected_race != "":
-		if avatar_textures.has(selected_sex) and avatar_textures[selected_sex].has(race_lowercase):
-			avatar_sprite.texture = avatar_textures[selected_sex][race_lowercase]
-			print("Avatar updated: ", selected_sex, "_", race_lowercase)
+	"""Update the avatar display based on selected avatar"""
+	print("update_avatar_display() called with selected_avatar: ", selected_avatar)
+	var avatar_area = get_node_or_null("CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitContainer/AvatarPanel/AvatarArea")
+	print("Avatar area found: ", avatar_area != null)
+	if avatar_area:
+		print("Avatar area text before: ", avatar_area.text)
+		if selected_avatar != "" and avatar_textures.has(selected_avatar):
+			# Create a texture button to display the avatar
+			var avatar_texture = avatar_textures[selected_avatar]
+			print("Setting avatar texture: ", avatar_texture)
+			avatar_area.icon = avatar_texture
+			avatar_area.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			avatar_area.expand_icon = true
+			avatar_area.text = ""
+			print("Avatar updated: ", selected_avatar)
 		else:
-			avatar_sprite.texture = null
-			print("Avatar not found for: ", selected_sex, "_", race_lowercase)
+			avatar_area.icon = null
+			avatar_area.text = "Click to select\nAvatar"
+			print("Avatar not found for: ", selected_avatar)
 	else:
-		avatar_sprite.texture = null
+		print("ERROR: Avatar area not found!")
+		print("Available nodes in PortraitContainer:")
+		var portrait_container = get_node_or_null("CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitContainer")
+		if portrait_container:
+			for i in range(portrait_container.get_child_count()):
+				var child = portrait_container.get_child(i)
+				print("  Child ", i, ": ", child.name, " (", child.get_class(), ")")
+		else:
+			print("  PortraitContainer not found either!")
+
+func update_portrait_display():
+	"""Update the portrait display based on selected portrait"""
+	print("update_portrait_display() called with selected_portrait: ", selected_portrait)
+	var portrait_area = get_node_or_null("CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitContainer/PortraitPanel/PortraitArea")
+	print("Portrait area found: ", portrait_area != null)
+	if portrait_area:
+		print("Portrait area text before: ", portrait_area.text)
+		if selected_portrait != "" and portrait_textures.has(selected_portrait):
+			# Create a texture button to display the portrait
+			var portrait_texture = portrait_textures[selected_portrait]
+			print("Setting portrait texture: ", portrait_texture)
+			portrait_area.icon = portrait_texture
+			portrait_area.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			portrait_area.expand_icon = true
+			portrait_area.text = ""
+			print("Portrait updated: ", selected_portrait)
+		else:
+			portrait_area.icon = null
+			portrait_area.text = "Click to select\nPortrait"
+			print("Portrait not found for: ", selected_portrait)
+	else:
+		print("ERROR: Portrait area not found!")
+		print("Available nodes in PortraitContainer:")
+		var portrait_container = get_node_or_null("CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitContainer")
+		if portrait_container:
+			for i in range(portrait_container.get_child_count()):
+				var child = portrait_container.get_child(i)
+				print("  Child ", i, ": ", child.name, " (", child.get_class(), ")")
+		else:
+			print("  PortraitContainer not found either!")
 
 func get_selected_sex() -> String:
 	return selected_sex
+
+func get_selected_portrait() -> String:
+	return selected_portrait
+
+func get_selected_avatar() -> String:
+	return selected_avatar
+
+func set_selected_portrait(portrait: String):
+	"""Set the selected portrait"""
+	selected_portrait = portrait
+	update_ui()
+
+func set_selected_avatar(avatar: String):
+	"""Set the selected avatar"""
+	selected_avatar = avatar
+	update_avatar_display()
+	update_ui()
+
+func _on_portrait_area_clicked():
+	"""Handle portrait area click - open portrait selection modal"""
+	print("Portrait area clicked!")
+	show_portrait_selection_modal()
+
+func _on_avatar_area_clicked():
+	"""Handle avatar area click - open avatar selection modal"""
+	print("Avatar area clicked!")
+	show_avatar_selection_modal()
+
+func show_portrait_selection_modal():
+	"""Show portrait selection modal dialog"""
+	print("Creating portrait selection modal...")
+	var modal = create_selection_modal("Select Portrait", portrait_textures, selected_portrait, _on_portrait_selected_from_modal)
+	add_child(modal)
+	print("Portrait modal added to scene")
+
+func show_avatar_selection_modal():
+	"""Show avatar selection modal dialog"""
+	print("Creating avatar selection modal...")
+	var modal = create_selection_modal("Select Avatar", avatar_textures, selected_avatar, _on_avatar_selected_from_modal)
+	add_child(modal)
+	print("Avatar modal added to scene")
+
+func create_selection_modal(title: String, textures: Dictionary, current_selection: String, selection_callback: Callable) -> Control:
+	"""Create a modal dialog for selecting textures"""
+	print("Creating selection modal for: ", title)
+	print("Available textures: ", textures.keys())
+	# Create modal background
+	var modal = Control.new()
+	modal.name = "SelectionModal"
+	modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	
+	# Create modal content
+	var modal_content = VBoxContainer.new()
+	modal_content.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	modal_content.custom_minimum_size = Vector2(800, 600)
+	modal_content.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	modal_content.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
+	# Add a background panel to modal_content to make it easier to detect clicks
+	var content_panel = Panel.new()
+	content_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	modal_content.add_child(content_panel)
+	# Move the panel to the back so it's behind all other content
+	modal_content.move_child(content_panel, 0)
+	
+	# Add title
+	var title_label = Label.new()
+	title_label.text = title
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.add_theme_font_size_override("font_size", 24)
+	modal_content.add_child(title_label)
+	
+	# Create scrollable grid for textures
+	var scroll_container = ScrollContainer.new()
+	scroll_container.custom_minimum_size = Vector2(780, 500)
+	modal_content.add_child(scroll_container)
+	
+	var grid_container = GridContainer.new()
+	grid_container.columns = 5
+	scroll_container.add_child(grid_container)
+	
+	# Add "None" option for portraits
+	if title == "Select Portrait":
+		var none_container = VBoxContainer.new()
+		
+		var none_button = TextureButton.new()
+		none_button.custom_minimum_size = Vector2(50, 50)
+		none_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		none_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		none_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT
+		
+		# Highlight current selection
+		# if current_selection == "":
+		# 	none_button.modulate = Color(1.2, 1.2, 0.8)
+		# else:
+		# 	none_button.modulate = Color.WHITE
+		
+		# Connect selection
+		none_button.pressed.connect(selection_callback.bind(""))
+		
+		none_container.add_child(none_button)
+		
+		var none_label = Label.new()
+		none_label.text = "None"
+		none_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		none_label.add_theme_font_size_override("font_size", 12)
+		none_container.add_child(none_label)
+		
+		grid_container.add_child(none_container)
+	
+	# Add texture options
+	var texture_keys = textures.keys()
+	texture_keys.sort()
+	
+	for texture_key in texture_keys:
+		# Create a container for the texture and make it clickable
+		var texture_container = VBoxContainer.new()
+		texture_container.custom_minimum_size = Vector2(60, 60)
+		
+		# Use TextureRect for more reliable texture display
+		var texture_rect = TextureRect.new()
+		texture_rect.custom_minimum_size = Vector2(50, 50)
+		texture_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		texture_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+		texture_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		
+		# Debug: Print texture info
+		print("Setting texture for key: ", texture_key)
+		print("Texture object: ", textures[texture_key])
+		print("Texture size: ", textures[texture_key].get_size() if textures[texture_key] else "null")
+		
+		texture_rect.texture = textures[texture_key]
+		
+		# Ensure default modulate is white for proper texture display
+		# texture_rect.modulate = Color.WHITE
+		
+		# Highlight current selection
+		# if texture_key == current_selection:
+		# 	texture_rect.modulate = Color(1.2, 1.2, 0.8)
+		
+		# Make the entire container clickable
+		texture_container.gui_input.connect(_on_texture_container_input.bind(texture_key, selection_callback))
+		
+		texture_container.add_child(texture_rect)
+		
+		# Add label below texture
+		var name_label = Label.new()
+		name_label.text = texture_key.replace("_", " ").capitalize()
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.add_theme_font_size_override("font_size", 12)
+		texture_container.add_child(name_label)
+		
+		grid_container.add_child(texture_container)
+	
+	# Add close button
+	var close_button = Button.new()
+	close_button.text = "Close"
+	close_button.custom_minimum_size = Vector2(100, 40)
+	close_button.pressed.connect(modal.queue_free)
+	modal_content.add_child(close_button)
+	
+	modal.add_child(modal_content)
+	
+	# Make modal clickable
+	modal.gui_input.connect(_on_modal_input.bind(modal))
+	
+	return modal
+
+func _on_modal_input(event: InputEvent, modal: Control):
+	"""Handle modal input - close on background click"""
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# Get the modal content (the VBoxContainer with the actual content)
+		var modal_content = modal.get_child(0)  # First child should be the VBoxContainer
+		if modal_content:
+			# Convert global mouse position to local position relative to modal content
+			var content_rect = Rect2(modal_content.global_position, modal_content.size)
+			if not content_rect.has_point(event.global_position):
+				# Click is outside the modal content, close the modal
+				modal.queue_free()
+
+func _on_texture_container_input(event: InputEvent, texture_key: String, selection_callback: Callable):
+	"""Handle clicks on texture containers"""
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# Call the selection callback
+		selection_callback.call(texture_key)
+
+
+
+func _on_portrait_selected_from_modal(portrait_key: String):
+	"""Handle portrait selection from modal"""
+	selected_portrait = portrait_key
+	print("Selected portrait from modal: ", selected_portrait)
+	update_portrait_display()
+	update_ui()
+	
+	# Close modal
+	var modal = get_node_or_null("SelectionModal")
+	if modal:
+		modal.queue_free()
+
+func _on_avatar_selected_from_modal(avatar_key: String):
+	"""Handle avatar selection from modal"""
+	selected_avatar = avatar_key
+	print("Selected avatar from modal: ", selected_avatar)
+	update_avatar_display()
+	update_ui()
+	
+	# Close modal
+	var modal = get_node_or_null("SelectionModal")
+	if modal:
+		modal.queue_free()
 
 func update_trait_display(race_name: String):
 	if race_data.has(race_name):
@@ -558,7 +944,7 @@ func update_ui():
 	
 	# Update continue button state using UIManager
 	var character_name = character_name_input.text.strip_edges()
-	var can_continue = attribute_manager.all_points_spent() and race_manager.all_points_spent() and character_name.length() > 0 and selected_sex != ""
+	var can_continue = attribute_manager.all_points_spent() and race_manager.all_points_spent() and character_name.length() > 0 and selected_sex != "" and selected_portrait != "" and selected_avatar != ""
 	UIManager.apply_button_state(continue_button, can_continue)
 
 func _on_back_button_pressed():
@@ -589,6 +975,8 @@ func _on_continue_button_pressed():
 		character_name,
 		race_manager.get_selected_race(),
 		selected_sex,
+		selected_portrait,
+		selected_avatar,
 		attribute_manager.get_character_items()
 	)
 	

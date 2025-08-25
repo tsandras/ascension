@@ -6,7 +6,7 @@ var tiles_csv_path = "res://tools/data/ref_tile.csv"
 var map_tiles_csv_path = "res://tools/data/ref_map_tile.csv"
 var overlays_csv_path = "res://tools/data/overlays.csv"
 var abilities_csv_path = "res://tools/data/abilities.csv"
-var skills_csv_path = "res://tools/data/skills.csv"
+
 
 # Database manager reference
 var database_manager: Node
@@ -32,7 +32,7 @@ func _ready():
 	print("  Tiles: ", tiles_csv_path)
 	print("  Map Tiles: ", map_tiles_csv_path)
 	print("  Abilities: ", abilities_csv_path)
-	print("  Skills: ", skills_csv_path)
+
 
 func create_tools_directory():
 	"""Create the tools directory structure"""
@@ -72,10 +72,7 @@ func create_sample_csv_files():
 	else:
 		print("Abilities CSV already exists: ", abilities_csv_path)
 	
-	if not FileAccess.file_exists(skills_csv_path):
-		create_sample_skills_csv()
-	else:
-		print("Skills CSV already exists: ", skills_csv_path)
+
 
 func force_create_sample_csv_files():
 	"""Force create sample CSV files (overwrites existing files)"""
@@ -85,7 +82,6 @@ func force_create_sample_csv_files():
 	create_sample_overlays_csv()
 	create_sample_map_tiles_csv()
 	create_sample_abilities_csv()
-	create_sample_skills_csv()
 	print("Sample CSV files recreated")
 
 func create_sample_maps_csv():
@@ -194,21 +190,7 @@ func create_sample_abilities_csv():
 	else:
 		print("ERROR: Could not create abilities CSV file")
 
-func create_sample_skills_csv():
-	"""Create a sample skills CSV file"""
-	var file = FileAccess.open(skills_csv_path, FileAccess.WRITE)
-	if file:
-		# CSV header
-		file.store_line("name,ability_conditions,level,cost,tags,cast_conditions,effect,description")
-		# Sample data with simple JSON format
-		file.store_line('Fireball,{"pyromancer": 1},1,{"mana": 10},combat,spell,fire,combat,"Deal 15 fire damage to target","A basic fire spell that deals damage to enemies"')
-		file.store_line('Heal,{"cleric": 1},1,{"mana": 15},support,spell,healing,any,"Restore 20 health to target","A healing spell that restores health"')
-		file.store_line('Sword Strike,{"warrior": 1},1,{"stamina": 5},combat,melee,physical,combat,"Deal 12 physical damage with sword","A basic sword attack"')
-		file.store_line('Stealth,{"scoundrel": 1},1,{"stamina": 8},utility,stealth,out_of_combat,"Become invisible for 3 turns","Hide from enemies and move silently"')
-		file.close()
-		print("Created sample skills CSV file")
-	else:
-		print("ERROR: Could not create skills CSV file")
+
 
 func create_sample_overlays_csv():
 	"""Create a sample overlays CSV file"""
@@ -564,74 +546,9 @@ func seed_abilities_from_csv():
 	
 	print("Abilities seeding complete")
 
-func seed_skills_from_csv():
-	"""Seed skills from CSV file"""
-	print("=== SEEDING SKILLS FROM CSV ===")
+
 	
-	var skills_data = read_csv_file(skills_csv_path)
-	if skills_data.size() == 0:
-		print("No skills data found in CSV")
-		return
-	
-	# Clear existing skills data
-	var clear_query = "DELETE FROM skills"
-	database_manager.db.query(clear_query)
-	if not database_manager.is_query_successful():
-		print("Error clearing skills data: " + database_manager.db.error_message)
-		return
-	print("Cleared existing skills data")
-	
-	# Insert skills from CSV
-	for skill_data in skills_data:
-		# Debug: Print raw CSV data
-		print("Raw CSV data for %s:" % skill_data.name)
-		print("  ability_conditions: '%s'" % skill_data.ability_conditions)
-		print("  cost: '%s'" % skill_data.cost)
-		
-		# Parse JSON strings to ensure they're valid JSON before storing
-		var ability_conditions_json = skill_data.ability_conditions
-		var cost_json = skill_data.cost
-		
-		# Validate and format JSON strings
-		var json = JSON.new()
-		if json.parse(ability_conditions_json) == OK:
-			ability_conditions_json = JSON.stringify(json.data)
-		else:
-			print("Warning: Invalid ability_conditions JSON for skill %s: %s" % [skill_data.name, ability_conditions_json])
-			continue
-		
-		if json.parse(cost_json) == OK:
-			cost_json = JSON.stringify(json.data)
-		else:
-			print("Warning: Invalid cost JSON for skill %s: %s" % [skill_data.name, cost_json])
-			continue
-		
-		# Escape single quotes in other string fields for SQL
-		var cast_conditions_escaped = skill_data.cast_conditions.replace("'", "''")
-		var effect_escaped = skill_data.effect.replace("'", "''")
-		var description_escaped = skill_data.description.replace("'", "''")
-		
-		var insert_query = """
-		INSERT INTO skills (name, ability_conditions, level, cost, tags, cast_conditions, effect, description)
-		VALUES ('%s', '%s', %d, '%s', '%s', '%s', '%s', '%s')
-		""" % [
-			skill_data.name,
-			ability_conditions_json,
-			int(skill_data.level),
-			cost_json,
-			skill_data.tags,
-			cast_conditions_escaped,
-			effect_escaped,
-			description_escaped
-		]
-		
-		database_manager.db.query(insert_query)
-		if database_manager.is_query_successful():
-			print("Inserted skill: ", skill_data.name)
-		else:
-			print("Error inserting skill " + skill_data.name + ": " + database_manager.db.error_message)
-	
-	print("Skills seeding complete")
+
 
 func seed_overlays_from_csv():
 	"""Seed overlays from CSV file"""
@@ -707,6 +624,5 @@ func seed_all_from_csv():
 	seed_overlays_from_csv()
 	seed_map_tiles_from_csv()
 	seed_abilities_from_csv()
-	seed_skills_from_csv()
 	
 	print("=== ALL SEEDING COMPLETE ===")

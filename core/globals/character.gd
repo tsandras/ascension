@@ -7,11 +7,12 @@ var id: int = -1
 var name: String = ""
 var race_name: String = ""
 var sex: String = ""
+var portrait: String = ""
+var avatar: String = ""
 var level: int = 1
 var attributes: Dictionary = {}
 var abilities: Dictionary = {}
 var competences: Dictionary = {}
-var skills: Array = []
 var created_at: String = ""
 
 # Stats instance for calculations
@@ -50,15 +51,6 @@ static func load_from_db(character_id: int = -1) -> Character:
 		character.abilities = character_data.abilities_dict
 	if character_data.has("competences_dict"):
 		character.competences = character_data.competences_dict
-	if character_data.has("skills_dict"):
-		# Convert skills_dict to array if needed
-		var skills_data = character_data.skills_dict
-		if skills_data is Dictionary:
-			character.skills = skills_data.keys()
-		elif skills_data is Array:
-			character.skills = skills_data
-		else:
-			character.skills = []
 	
 	if character_id > 0:
 		print("Loaded character: ", character.name)
@@ -76,6 +68,8 @@ static func load_from_creation() -> Character:
 	character.name = CharacterCreation.character_name
 	character.race_name = CharacterCreation.selected_race
 	character.sex = CharacterCreation.selected_sex
+	character.portrait = CharacterCreation.selected_portrait
+	character.avatar = CharacterCreation.selected_avatar
 	
 	# Handle attributes - ensure it's a Dictionary
 	if CharacterCreation.attributes is Dictionary:
@@ -95,15 +89,6 @@ static func load_from_creation() -> Character:
 	else:
 		character.competences = {}
 	
-	# Convert skills to array if needed
-	var skills_data = CharacterCreation.skills
-	if skills_data is Dictionary:
-		character.skills = skills_data.keys()
-	elif skills_data is Array:
-		character.skills = skills_data
-	else:
-		character.skills = []
-	
 	print("Loaded character from creation: ", character.name)
 	return character
 
@@ -117,10 +102,11 @@ func save_to_db() -> int:
 		name, 
 		race_name, 
 		sex, 
+		portrait, 
+		avatar, 
 		attributes, 
 		abilities, 
-		competences, 
-		skills
+		competences
 	)
 	
 	if character_id > 0:
@@ -138,6 +124,8 @@ static func load_from_db_result(character_data: Dictionary) -> Character:
 	character.name = character_data.name
 	character.race_name = character_data.race_name
 	character.sex = character_data.sex
+	character.portrait = character_data.get("portrait", "")
+	character.avatar = character_data.get("avatar", "")
 	character.created_at = character_data.created_at
 	
 	# Load JSON data
@@ -147,15 +135,6 @@ static func load_from_db_result(character_data: Dictionary) -> Character:
 		character.abilities = character_data.abilities_dict
 	if character_data.has("competences_dict"):
 		character.competences = character_data.competences_dict
-	if character_data.has("skills_dict"):
-		# Convert skills_dict to array if needed
-		var skills_data = character_data.skills_dict
-		if skills_data is Dictionary:
-			character.skills = skills_data.keys()
-		elif skills_data is Array:
-			character.skills = skills_data
-		else:
-			character.skills = []
 	
 	print("Loaded character from database result: ", character.name)
 	return character
@@ -166,11 +145,12 @@ func get_character_data() -> Dictionary:
 		"name": name,
 		"race_name": race_name,
 		"sex": sex,
+		"portrait": portrait,
+		"avatar": avatar,
 		"level": level,
 		"attributes_dict": attributes,
 		"abilities_dict": abilities,
-		"competences_dict": competences,
-		"skills_dict": skills
+		"competences_dict": competences
 	}
 
 # Get attribute value
@@ -200,9 +180,7 @@ func get_competence(competence_name: String) -> int:
 			return competences[comp_name]
 	return 0
 
-# Get skills list
-func get_skills() -> Array:
-	return skills
+
 
 # Calculate character stats
 func get_pv_max() -> int:
@@ -249,8 +227,23 @@ func get_avatar_path() -> String:
 	if not is_valid():
 		return ""
 	
-	var race_lowercase = race_name.to_lower()
-	return "res://assets/avatars/%s_%s_1.png" % [sex, race_lowercase]
+	if avatar != "":
+		return "res://assets/avatars/" + avatar + ".png"
+	else:
+		# Fallback to old race/sex based path
+		var race_lowercase = race_name.to_lower()
+		return "res://assets/avatars/%s_%s_1.png" % [sex, race_lowercase]
+
+# Get portrait path
+func get_portrait_path() -> String:
+	if not is_valid():
+		return ""
+	
+	if portrait != "":
+		return "res://assets/ink_portraits/" + portrait + ".png"
+	else:
+		# Fallback to avatar path
+		return get_avatar_path()
 
 # Get display name with race and sex
 func get_display_name() -> String:
