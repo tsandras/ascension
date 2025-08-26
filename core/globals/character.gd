@@ -21,6 +21,13 @@ var stats: Stats
 func _init():
 	stats = Stats.new()
 
+func get_attribute_value(attribute_name: String) -> int:
+	"""Get the value of a specific attribute"""
+	var normalized_name = attribute_name.to_lower()
+	if attributes.has(normalized_name):
+		return attributes[normalized_name]
+	return 0
+
 # Load character from database by ID
 static func load_from_db(character_id: int = -1) -> Character:
 	var character_data: Dictionary

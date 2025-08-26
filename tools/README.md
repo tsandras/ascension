@@ -1,153 +1,114 @@
-# Map Seeder Tool
+# Tools
 
-This tool helps you create and test different hex tile configurations for your Godot game by reading data from CSV files instead of hardcoded values.
+This directory contains various development and content creation tools for the Ascension game.
 
-## Features
+## Skill Tree Creator
 
-- **CSV-driven configuration**: Edit maps, tiles, and map layouts using simple CSV files
-- **Sample data generation**: Automatically creates sample CSV files to get you started
-- **Database integration**: Directly seeds your game's database with the CSV data
-- **Export functionality**: Export current database state as seed functions for backup
+The Skill Tree Creator is a visual tool for designing and editing skill trees. It has been enhanced with database integration to manage skill tree nodes.
 
-## CSV File Structure
+### Features
 
-### maps.csv
-```
-name,width,height,description,starting_tileset_x,starting_tileset_y
-Simple Map Test,9,9,A diverse world with forests, mountains, arid lands, and varied terrain in a 9x9 grid,0,0
-Tutorial Forest,20,15,A small forest area perfect for learning the basics,0,0
-```
+- **Visual Node Placement**: Place nodes from the database on a canvas
+- **Node Connections**: Connect nodes to create skill tree relationships
+- **Node Editing**: Edit node descriptions and properties
+- **Database Integration**: Store and retrieve nodes and skill trees from the SQLite database
+- **Node Management**: Select existing nodes from the database and add them to skill trees
 
-### tiles.csv
-```
-type_name,initials,is_walkable,is_top_blocked,is_bottom_blocked,is_middle_blocked,time_to_cross,description
-forest,F,true,false,false,false,1,Dense forest with trees
-mountain,M,false,true,true,true,999,Tall impassable mountains
-```
+### Database Integration
 
-**Note**: Texture paths are automatically generated as `res://assets/tiles/tilev3_{type_name}.png`
+The tool now integrates with the game's SQLite database through two main tables:
 
-### map_tiles.csv (Grid Format)
-```
-G,G,E,E,F,F,F,G,G
-G,E,E,F,F,F,G,G,G
-E,E,F,F,V,G,G,C,C
-F,F,F,V,A,A,A,C,M
-F,V,G,G,A,A,A,M,M
-F,G,G,A,A,V,V,N,G
-G,G,G,A,V,V,G,G,G
-G,G,G,G,G,G,G,G,G
-G,G,G,G,G,G,G,G,G
+**Nodes Table:**
+```sql
+CREATE TABLE nodes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    node_type TEXT NOT NULL DEFAULT 'PASSIVE',
+    trait_id INTEGER,
+    skill_id INTEGER,
+    attribute_bonuses JSON,
+    FOREIGN KEY (trait_id) REFERENCES traits(id),
+    FOREIGN KEY (skill_id) REFERENCES abilities(id)
+);
 ```
 
-**Grid Format**: Each cell represents a tile position where:
-- **Rows** = Y coordinates (top to bottom)
-- **Columns** = X coordinates (left to right)
-- **Cell values** = Tile initials (e.g., G=grassland, F=forest, M=mountain)
-
-### abilities.csv
-```
-name,base_value,max_value,display_order,description
-Scoundrel,0,6,1,Sneaking, thievery, and cunning
-Warrior,0,6,2,One-handed weapon mastery
-```
-
-### skills.csv
-```
-name,ability_conditions,level,cost,tags,cast_conditions,effect,description
-Fireball,"{""pyromancer"": 1}",1,"{""mana"": 10}",combat,spell,fire,combat,Deal 15 fire damage to target,A basic fire spell that deals damage to enemies
+**Skill Trees Table:**
+```sql
+CREATE TABLE skill_tree (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    data JSON NOT NULL,
+    parents TEXT
+);
 ```
 
-**Note**: Skills require specific abilities as prerequisites. The `ability_conditions` field contains JSON that specifies which abilities and levels are required.
+### Using the Tool
 
-## How to Use
+1. **Launch the Tool**: Open `skill_tree_creator.tscn` in Godot
+2. **Node Management Panel**: 
+   - **Database Node Selector**: Choose from existing nodes in the database
+   - **Add Button**: Add the selected database node to the skill tree
+   - **Refresh Button**: Refresh the database node list
+3. **Add Database Nodes**:
+   - Select an existing node from the database dropdown
+   - Click "Add Database Node" to add it to the skill tree
+   - The node name is automatically populated from the database
+4. **Visual Editor**:
+   - Use Place mode to add nodes to the canvas
+   - Use Connect mode to create connections between nodes
+   - Use Edit mode to modify existing nodes
+5. **Skill Tree Operations**:
+   - Save skill trees to the database
+   - Load existing skill trees from the database
+   - Clear the current canvas
 
-1. **Open the tool**: Load `res://tools/map_seeder.tscn` in Godot
-2. **Create sample files**: Click "Create Sample CSV Files" to generate initial CSV files
-3. **Edit CSV files**: Modify the CSV files in `res://tools/data/` to create your desired maps
-4. **Seed the database**: Click "Seed All from CSV" to apply your changes to the database
-5. **Test in game**: Run your game to see the new map configurations
+### Node Types
 
-## CSV File Locations
+- **Passive**: Passive abilities that provide constant bonuses
+- **Active**: Active abilities that can be used in combat
+- **Improvement**: Nodes that enhance other abilities
+- **Master Attribute**: Major attribute improvements
+- **Attribute**: Standard attribute bonuses
+- **Empty**: Placeholder nodes for future content
 
-- `res://tools/data/maps.csv` - Map definitions
-- `res://tools/data/tiles.csv` - Tile type definitions  
-- `res://tools/data/map_tiles.csv` - Map layout definitions
-- `res://tools/data/abilities.csv` - Ability definitions
-- `res://tools/data/skills.csv` - Skill definitions
+### Database Methods
 
-## Tips for Creating Maps
+The tool provides several database operations:
 
-### Tile Types
-- Use descriptive names like `forest`, `mountain`, `grassland`
-- Set `is_walkable` to `true` for passable tiles, `false` for obstacles
-- Use `time_to_cross` of `1` for normal tiles, higher values for difficult terrain
-- Set blocking flags (`is_top_blocked`, `is_bottom_blocked`, `is_middle_blocked`) to control pathfinding
-- Texture paths are automatically generated as `res://assets/tiles/tilev3_{type_name}.png`
+- `save_node()`: Create new nodes in the database
+- `get_all_nodes()`: Retrieve all available nodes
+- `get_node_by_id()`: Get specific node by ID
+- `update_node()`: Modify existing nodes
+- `delete_node()`: Remove nodes from database
+- `get_nodes_by_trait()`: Find nodes associated with specific traits
+- `get_nodes_by_skill()`: Find nodes associated with specific skills
 
-### Map Layouts (Grid Format)
-- Each row represents a Y coordinate (top to bottom)
-- Each column represents an X coordinate (left to right)
-- Cell values are tile initials that must match tiles defined in `tiles.csv`
-- The grid size determines the map dimensions
+### Sample Data
 
-### Abilities
-- Define the 12 core abilities that characters can develop
-- Each ability has a base value, max value, and display order
-- Abilities are prerequisites for skills
+The database is automatically seeded with sample nodes including:
+- Combat Mastery (with trait association and damage bonuses)
+- Arcane Knowledge (with skill association and mana bonuses)
+- Stealth Expert (with trait association and dodge bonuses)
+- Leadership (standalone node with willpower bonuses)
 
-### Skills
-- Skills require specific abilities as prerequisites
-- The `ability_conditions` field contains JSON specifying required abilities and levels
-- Skills have costs, tags, cast conditions, and effects
+### Technical Details
 
-### Example: Creating a Forest Map
-1. Add forest tiles to `tiles.csv`:
-   ```
-   dense_forest,DF,true,false,false,false,2,Dense forest
-   light_forest,LF,true,false,false,false,1,Light forest
-   ```
+- Built with Godot 4.x
+- Uses SQLite for persistent storage
+- JSON fields for flexible attribute bonus storage
+- Foreign key relationships with traits and abilities tables
+- Automatic database initialization and seeding
 
-2. Add map definition to `maps.csv`:
-   ```
-   Forest Adventure,15,15,A mysterious forest with varying density
-   ```
+## Map Seeder
 
-3. Add layout to `map_tiles.csv` (grid format):
-   ```
-   DF,LF,DF,LF,DF
-   LF,DF,LF,DF,LF
-   DF,LF,DF,LF,DF
-   LF,DF,LF,DF,LF
-   DF,LF,DF,LF,DF
-   ```
+A tool for creating and managing game maps with tile-based systems.
 
-## Export Functionality
+## Skill Tree Editor
 
-The tool can export the current database state as GDScript seed functions. This is useful for:
-- Backing up your configurations
-- Sharing map designs with others
-- Version control of your map data
+The core visual editing component used by the Skill Tree Creator.
 
-Click "Export Seed Functions" to generate `res://tools/exported_seed_functions.gd`
+## Skill Node
 
-### overlays.csv
-```
-name,initials,texture_path,description,display_order
-Desert Landmark 1,D1,res://assets/overlays/landmark_desert_1.png,A mysterious desert landmark,1
-Sample Landmark 1,S1,res://assets/overlays/landmark_sample_1.png,A mysterious landmark,6
-```
-
-**Overlay Codes in Map Tiles**: The `initials` field is used to match overlay codes in the map tiles CSV. For example:
-- `"G1-D1"` = grassland tile with desert landmark 1
-- `"F2-S1"` = forest tile with sample landmark 1
-- `"G1-D1-S1"` = grassland tile with desert landmark 1 and sample landmark 1
-
-## Integration with Database Manager
-
-The tool integrates with your existing `DatabaseManager` autoload to:
-- Read current database state
-- Clear and reseed tables
-- Export current configurations
-
-This ensures your CSV changes are properly applied to your game's database system. 
+Individual node components used in skill trees. 

@@ -192,27 +192,6 @@ layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ColumnSpacer2" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer"]
-custom_minimum_size = Vector2(40, 0)
-layout_mode = 2
-
-[node name="Column3" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer"]
-custom_minimum_size = Vector2(320, 0)
-layout_mode = 2
-
-[node name="AttributesLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column3"]
-layout_mode = 2
-size_flags_horizontal = 4
-text = "ALLOCATE ATTRIBUTES (5 points)"
-horizontal_alignment = 1
-
-[node name="AttributesSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column3"]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-
-[node name="AttributesContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column3"]
-layout_mode = 2
-
 [node name="Spacer3" type="Control" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 15)
 layout_mode = 2

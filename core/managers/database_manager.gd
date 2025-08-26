@@ -113,8 +113,44 @@ func create_tables():
 	else:
 		print("Competences table created successfully")
 	
-
-
+	# Create nodes table for skill trees
+	var nodes_query = """
+	CREATE TABLE IF NOT EXISTS nodes (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		node_type TEXT NOT NULL DEFAULT 'PASSIVE',
+		trait_id INTEGER,
+		skill_id INTEGER,
+		attribute_bonuses JSON,
+		FOREIGN KEY (trait_id) REFERENCES traits(id),
+		FOREIGN KEY (skill_id) REFERENCES abilities(id)
+	);
+	"""
+	
+	db.query(nodes_query)
+	if not is_query_successful():
+		print("Error creating nodes table: ", db.error_message)
+	else:
+		print("Nodes table created successfully")
+	
+	# Create skill_tree table
+	var skill_tree_query = """
+	CREATE TABLE IF NOT EXISTS skill_tree (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		data JSON NOT NULL,
+		parents TEXT
+	);
+	"""
+	
+	db.query(skill_tree_query)
+	if not is_query_successful():
+		print("Error creating skill_tree table: ", db.error_message)
+	else:
+		print("Skill_tree table created successfully")
+	
 	# Create character table for persistent character creation
 	var character_query = """
 	CREATE TABLE IF NOT EXISTS character (
@@ -269,6 +305,7 @@ func seed_data():
 	seed_traits()       # Seed traits before races (foreign key dependency)
 	seed_races()
 	seed_competences()
+	seed_nodes()        # Seed sample nodes for skill trees
 
 
 func seed_attributes():
@@ -893,3 +930,386 @@ func get_last_saved_character() -> Dictionary:
 	else:
 		print("No saved characters found")
 		return {}
+
+# Node management methods for skill trees
+func save_node(name: String, description: String, node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}) -> int:
+	"""Save a new node to the database"""
+	var json = JSON.new()
+	var bonuses_json = json.stringify(attribute_bonuses) if attribute_bonuses.size() > 0 else ""
+	
+	var insert_query = """
+	INSERT INTO nodes (name, description, node_type, trait_id, skill_id, attribute_bonuses)
+	VALUES ('%s', '%s', '%s', %s, %s, '%s')
+	""" % [
+		name.replace("'", "''"),  # Escape single quotes
+		description.replace("'", "''"),
+		node_type,
+		str(trait_id) if trait_id > 0 else "NULL",
+		str(skill_id) if skill_id > 0 else "NULL",
+		bonuses_json
+	]
+	
+	db.query(insert_query)
+	if is_query_successful():
+		var node_id = db.last_insert_rowid
+		print("Node saved successfully with ID: ", node_id)
+		return node_id
+	else:
+		print("Error saving node: ", db.error_message)
+		return -1
+
+func update_node(node_id: int, name: String, description: String, node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}) -> bool:
+	"""Update an existing node in the database"""
+	var json = JSON.new()
+	var bonuses_json = json.stringify(attribute_bonuses) if attribute_bonuses.size() > 0 else ""
+	
+	var update_query = """
+	UPDATE nodes 
+	SET name = '%s', description = '%s', node_type = '%s', trait_id = %s, skill_id = %s, attribute_bonuses = '%s'
+	WHERE id = %d
+	""" % [
+		name.replace("'", "''"),  # Escape single quotes
+		description.replace("'", "''"),
+		node_type,
+		str(trait_id) if trait_id > 0 else "NULL",
+		str(skill_id) if skill_id > 0 else "NULL",
+		bonuses_json,
+		node_id
+	]
+	
+	db.query(update_query)
+	if is_query_successful():
+		print("Node updated successfully")
+		return true
+	else:
+		print("Error updating node: ", db.error_message)
+		return false
+
+func get_node_by_id(node_id: int) -> Dictionary:
+	"""Get a node by ID"""
+	var query = "SELECT * FROM nodes WHERE id = %d" % node_id
+	db.query(query)
+	
+	if is_query_successful() and db.query_result.size() > 0:
+		var node_data = db.query_result[0]
+		
+		# Parse JSON attribute bonuses
+		if node_data.attribute_bonuses:
+			var json = JSON.new()
+			if json.parse(node_data.attribute_bonuses) == OK:
+				node_data.attribute_bonuses_dict = json.data
+			else:
+				node_data.attribute_bonuses_dict = {}
+		else:
+			node_data.attribute_bonuses_dict = {}
+		
+		return node_data
+	else:
+		print("Node not found with ID: ", node_id)
+		return {}
+
+func get_all_nodes() -> Array:
+	"""Get all nodes from the database"""
+	var query = """
+	SELECT n.*, t.name as trait_name, a.name as skill_name
+	FROM nodes n
+	LEFT JOIN traits t ON n.trait_id = t.id
+	LEFT JOIN abilities a ON n.skill_id = a.id
+	ORDER BY n.name
+	"""
+	
+	db.query(query)
+	if is_query_successful():
+		var nodes = []
+		for node_data in db.query_result:
+			# Parse JSON attribute bonuses
+			if node_data.attribute_bonuses:
+				var json = JSON.new()
+				if json.parse(node_data.attribute_bonuses) == OK:
+					node_data.attribute_bonuses_dict = json.data
+				else:
+					node_data.attribute_bonuses_dict = {}
+			else:
+				node_data.attribute_bonuses_dict = {}
+			
+			nodes.append(node_data)
+		
+		print("Successfully fetched %d nodes from database" % nodes.size())
+		return nodes
+	else:
+		print("Error fetching nodes: ", db.error_message)
+		return []
+
+func delete_node(node_id: int) -> bool:
+	"""Delete a node by ID"""
+	var delete_query = "DELETE FROM nodes WHERE id = %d" % node_id
+	db.query(delete_query)
+	
+	if is_query_successful():
+		print("Node deleted successfully")
+		return true
+	else:
+		print("Error deleting node: ", db.error_message)
+		return false
+
+func get_nodes_by_trait(trait_id: int) -> Array:
+	"""Get all nodes associated with a specific trait"""
+	var query = "SELECT * FROM nodes WHERE trait_id = %d ORDER BY name" % trait_id
+	db.query(query)
+	
+	if is_query_successful():
+		var nodes = []
+		for node_data in db.query_result:
+			# Parse JSON attribute bonuses
+			if node_data.attribute_bonuses:
+				var json = JSON.new()
+				if json.parse(node_data.attribute_bonuses) == OK:
+					node_data.attribute_bonuses_dict = json.data
+				else:
+					node_data.attribute_bonuses_dict = {}
+			else:
+				node_data.attribute_bonuses_dict = {}
+			
+			nodes.append(node_data)
+		
+		return nodes
+	else:
+		print("Error fetching nodes by trait: ", db.error_message)
+		return []
+
+func get_nodes_by_skill(skill_id: int) -> Array:
+	"""Get all nodes associated with a specific skill"""
+	var query = "SELECT * FROM nodes WHERE skill_id = %d ORDER BY name" % skill_id
+	db.query(query)
+	
+	if is_query_successful():
+		var nodes = []
+		for node_data in db.query_result:
+			# Parse JSON attribute bonuses
+			if node_data.attribute_bonuses:
+				var json = JSON.new()
+				if json.parse(node_data.attribute_bonuses) == OK:
+					node_data.attribute_bonuses_dict = json.data
+				else:
+					node_data.attribute_bonuses_dict = {}
+			else:
+				node_data.attribute_bonuses_dict = {}
+			
+			nodes.append(node_data)
+		
+		return nodes
+	else:
+		print("Error fetching nodes by skill: ", db.error_message)
+		return []
+
+# Skill Tree management methods
+func save_skill_tree(name: String, description: String, data: Dictionary, parents: String = "") -> int:
+	"""Save a skill tree to the database"""
+	var json = JSON.new()
+	var data_json = json.stringify(data)
+	
+	var insert_query = """
+	INSERT INTO skill_tree (name, description, data, parents)
+	VALUES ('%s', '%s', '%s', '%s')
+	""" % [
+		name.replace("'", "''"),  # Escape single quotes
+		description.replace("'", "''"),
+		data_json,
+		parents.replace("'", "''")
+	]
+	
+	db.query(insert_query)
+	if is_query_successful():
+		var tree_id = db.last_insert_rowid
+		print("Skill tree saved successfully with ID: ", tree_id)
+		return tree_id
+	else:
+		print("Error saving skill tree: ", db.error_message)
+		return -1
+
+func update_skill_tree(tree_id: int, name: String, description: String, data: Dictionary, parents: String = "") -> bool:
+	"""Update an existing skill tree in the database"""
+	var json = JSON.new()
+	var data_json = json.stringify(data)
+	
+	var update_query = """
+	UPDATE skill_tree 
+	SET name = '%s', description = '%s', data = '%s', parents = '%s'
+	WHERE id = %d
+	""" % [
+		name.replace("'", "''"),  # Escape single quotes
+		description.replace("'", "''"),
+		data_json,
+		parents.replace("'", "''"),
+		tree_id
+	]
+	
+	db.query(update_query)
+	if is_query_successful():
+		print("Skill tree updated successfully")
+		return true
+	else:
+		print("Error updating skill tree: ", db.error_message)
+		return false
+
+func get_skill_tree_by_id(tree_id: int) -> Dictionary:
+	"""Get a skill tree by ID"""
+	var query = "SELECT * FROM skill_tree WHERE id = %d" % tree_id
+	db.query(query)
+	
+	if is_query_successful() and db.query_result.size() > 0:
+		var tree_data = db.query_result[0]
+		
+		# Parse JSON data
+		if tree_data.data:
+			var json = JSON.new()
+			if json.parse(tree_data.data) == OK:
+				tree_data.data_dict = json.data
+			else:
+				tree_data.data_dict = {}
+		else:
+			tree_data.data_dict = {}
+		
+		return tree_data
+	else:
+		print("Skill tree not found with ID: ", tree_id)
+		return {}
+
+func get_all_skill_trees() -> Array:
+	"""Get all skill trees from the database"""
+	var query = "SELECT * FROM skill_tree ORDER BY name"
+	
+	db.query(query)
+	if is_query_successful():
+		var trees = []
+		for tree_data in db.query_result:
+			# Parse JSON data
+			if tree_data.data:
+				var json = JSON.new()
+				if json.parse(tree_data.data) == OK:
+					tree_data.data_dict = json.data
+				else:
+					tree_data.data_dict = {}
+			else:
+				tree_data.data_dict = {}
+			
+			trees.append(tree_data)
+		
+		print("Successfully fetched %d skill trees from database" % trees.size())
+		return trees
+	else:
+		print("Error fetching skill trees: ", db.error_message)
+		return []
+
+func delete_skill_tree(tree_id: int) -> bool:
+	"""Delete a skill tree by ID"""
+	var delete_query = "DELETE FROM skill_tree WHERE id = %d" % tree_id
+	db.query(delete_query)
+	
+	if is_query_successful():
+		print("Skill tree deleted successfully")
+		return true
+	else:
+		print("Error deleting skill tree: ", db.error_message)
+		return false
+
+func get_skill_tree_by_name(name: String) -> Dictionary:
+	"""Get a skill tree by name"""
+	var query = "SELECT * FROM skill_tree WHERE name = '%s'" % name.replace("'", "''")
+	db.query(query)
+	
+	if is_query_successful() and db.query_result.size() > 0:
+		var tree_data = db.query_result[0]
+		
+		# Parse JSON data
+		if tree_data.data:
+			var json = JSON.new()
+			if json.parse(tree_data.data) == OK:
+				tree_data.data_dict = json.data
+			else:
+				tree_data.data_dict = {}
+		else:
+			tree_data.data_dict = {}
+		
+		return tree_data
+	else:
+		print("Skill tree not found with name: ", name)
+		return {}
+
+func seed_nodes():
+	"""Seed the database with sample skill tree nodes"""
+	# Check if we already have node data
+	var check_query = "SELECT COUNT(*) as count FROM nodes"
+	db.query(check_query)
+	var result = db.query_result
+	
+	if result.size() > 0 and result[0]["count"] > 0:
+		print("Database already contains node data")
+		return
+	
+	print("No existing node data found, seeding nodes...")
+	
+	# Get some trait and ability IDs for foreign key references
+	var traits = get_all_traits()
+	var abilities = get_all_abilities()
+	
+	var trait_id = -1
+	var ability_id = -1
+	
+	if traits.size() > 0:
+		trait_id = traits[0].id
+	if abilities.size() > 0:
+		ability_id = abilities[0].id
+	
+	# Sample nodes data
+	var nodes_data = [
+		{
+			"name": "Combat Mastery",
+			"description": "Master of all combat techniques",
+			"node_type": "MASTER_ATTRIBUTE",
+			"trait_id": trait_id,
+			"skill_id": -1,
+			"attribute_bonuses": {"damage": 15, "critical_chance": 10}
+		},
+		{
+			"name": "Arcane Knowledge",
+			"description": "Deep understanding of magical arts",
+			"node_type": "IMPROVEMENT",
+			"trait_id": -1,
+			"skill_id": ability_id,
+			"attribute_bonuses": {"mana": 20, "resistance": 15}
+		},
+		{
+			"name": "Stealth Expert",
+			"description": "Master of stealth and subterfuge",
+			"node_type": "PASSIVE",
+			"trait_id": trait_id,
+			"skill_id": -1,
+			"attribute_bonuses": {"dodge": 20, "accuracy": 10}
+		},
+		{
+			"name": "Leadership",
+			"description": "Natural leader and commander",
+			"node_type": "ACTIVE",
+			"trait_id": -1,
+			"skill_id": -1,
+			"attribute_bonuses": {"willpower": 15, "endurance": 10}
+		}
+	]
+	
+	for node in nodes_data:
+		var node_id = save_node(
+			node.name,
+			node.description,
+			node.node_type,
+			node.trait_id,
+			node.skill_id,
+			node.attribute_bonuses
+		)
+		
+		if node_id > 0:
+			print("Seeded node: ", node.name)
+		else:
+			print("Failed to seed node: ", node.name)
+	
+	print("Node seeding complete")

@@ -125,6 +125,11 @@ func _place_node(position: Vector2):
 	node.setup(current_node_type, position)
 	node.position = position
 	
+	# Set default metadata (these will be placeholder nodes)
+	node.set_meta("database_id", -1)  # -1 indicates a placeholder node
+	node.set_meta("node_type", current_node_type)
+	node.set_meta("is_placeholder", true)
+	
 	# Connect node signals
 	node.node_selected.connect(_on_node_selected)
 	node.node_dragged.connect(_on_node_dragged)
@@ -306,23 +311,38 @@ func _draw():
 func get_nodes_data() -> Array:
 	var nodes_data = []
 	for node in nodes:
-		nodes_data.append({
+		var node_data = {
 			"type": node.get_node_type(),
 			"position": node.position,
 			"name": node.get_node_name(),
 			"description": node.get_node_description()
-		})
+		}
+		
+		# Add database metadata if available
+		if node.has_meta("database_id"):
+			node_data["database_id"] = node.get_meta("database_id")
+		if node.has_meta("node_type"):
+			node_data["node_type"] = node.get_meta("node_type")
+		if node.has_meta("is_placeholder"):
+			node_data["is_placeholder"] = node.get_meta("is_placeholder")
+		
+		nodes_data.append(node_data)
 	return nodes_data
 
 func get_connections_data() -> Array:
 	var connections_data = []
 	for connection in connections:
-		var from_index = nodes.find(connection.from_node)
-		var to_index = nodes.find(connection.to_node)
-		if from_index != -1 and to_index != -1:
+		var from_node = connection.from_node
+		var to_node = connection.to_node
+		
+		# Get database IDs if available, otherwise use array indices as fallback
+		var from_id = from_node.get_meta("database_id") if from_node.has_meta("database_id") else nodes.find(from_node)
+		var to_id = to_node.get_meta("database_id") if to_node.has_meta("database_id") else nodes.find(to_node)
+		
+		if from_id != -1 and to_id != -1:
 			connections_data.append({
-				"from": from_index,
-				"to": to_index
+				"from_node_id": from_id,
+				"to_node_id": to_id
 			})
 	return connections_data
 
@@ -332,32 +352,130 @@ func load_skill_tree_data(skill_tree_data: Dictionary):
 	var nodes_data = skill_tree_data.get("nodes", [])
 	var connections_data = skill_tree_data.get("connections", [])
 	
-	# Load nodes
+	print("Loading skill tree data: ", skill_tree_data)
+	print("Nodes data: ", nodes_data)
+	print("Connections data: ", connections_data)
+	
+	# Load nodes - we need to fetch full node data from database
 	for node_data in nodes_data:
-		var node_scene = NODE_SCENES[node_data.type]
-		var node = node_scene.instantiate()
+		var node_id = node_data.get("node_id", -1)
+		var position = node_data.get("position", Vector2.ZERO)
 		
-		node.setup(node_data.type, node_data.position)
-		node.position = node_data.position
-		node.set_node_name(node_data.name)
-		node.set_node_description(node_data.description)
+		# Ensure node_id is an integer
+		var int_node_id = int(node_id) if node_id is float else node_id
 		
-		# Connect node signals
-		node.node_selected.connect(_on_node_selected)
-		node.node_dragged.connect(_on_node_dragged)
-		
-		add_child(node)
-		nodes.append(node)
+		if int_node_id > 0:
+			# Fetch full node data from database
+			var full_node_data = {}
+			if DatabaseManager:
+				full_node_data = DatabaseManager.get_node_by_id(node_id)
+			else:
+				print("Warning: DatabaseManager not available")
+				continue
+			
+			if full_node_data.size() > 0:
+				print("Full node data: ", full_node_data)
+				var node_type = full_node_data.get("node_type", "PASSIVE")
+				print("Node type: ", node_type, " (type: ", typeof(node_type), ")")
+				print("Raw position from skill tree data: ", position, " (type: ", typeof(position), ")")
+				
+				# Ensure node_type is a string
+				if not node_type is String:
+					print("Warning: node_type is not a string, converting: ", node_type)
+					node_type = str(node_type)
+				
+				# Convert position to Vector2 - handle different formats
+				var final_position = Vector2.ZERO
+				if position is Vector2:
+					final_position = position
+				elif position is Array and position.size() >= 2:
+					final_position = Vector2(position[0], position[1])
+					print("Converted array position to Vector2: ", final_position)
+				elif position is Dictionary and position.has("x") and position.has("y"):
+					final_position = Vector2(position.x, position.y)
+					print("Converted dictionary position to Vector2: ", final_position)
+				elif position is String:
+					# Handle string representation like "(781.2963, 273.0097)"
+					var cleaned_string = position.replace("(", "").replace(")", "")
+					var parts = cleaned_string.split(",")
+					if parts.size() >= 2:
+						var x = float(parts[0].strip_edges())
+						var y = float(parts[1].strip_edges())
+						final_position = Vector2(x, y)
+						print("Converted string position to Vector2: ", final_position)
+					else:
+						print("Warning: Invalid string position format: ", position)
+						final_position = Vector2.ZERO
+				else:
+					print("Warning: Unknown position format, using Vector2.ZERO")
+					final_position = Vector2.ZERO
+				
+				print("Final position: ", final_position)
+				
+				var node_scene = NODE_SCENES.get(node_type, NODE_SCENES["PASSIVE"])
+				var node = node_scene.instantiate()
+				
+				print("Calling node.setup(", node_type, ", ", final_position, ")")
+				node.setup(node_type, final_position)
+				node.position = final_position
+				node.set_node_name(full_node_data.name)
+				node.set_node_description(full_node_data.description)
+				
+				# Set database metadata
+				node.set_meta("database_id", int_node_id)
+				node.set_meta("node_type", node_type)
+				node.set_meta("is_placeholder", false)
+				
+				# Connect node signals
+				node.node_selected.connect(_on_node_selected)
+				node.node_dragged.connect(_on_node_dragged)
+				
+				add_child(node)
+				nodes.append(node)
+				
+				print("Loaded node: ", full_node_data.name, " at position: ", position)
+			else:
+				print("Warning: Could not fetch node data for ID: ", node_id)
+		else:
+			print("Warning: Invalid node ID: ", node_id)
 	
 	# Load connections
+	print("Loading connections...")
 	for connection_data in connections_data:
-		var from_index = connection_data.from
-		var to_index = connection_data.to
+		var from_id = connection_data.get("from_node_id", -1)
+		var to_id = connection_data.get("to_node_id", -1)
 		
-		if from_index < nodes.size() and to_index < nodes.size():
-			var from_node = nodes[from_index]
-			var to_node = nodes[to_index]
+		# Convert IDs to integers if they're floats
+		var int_from_id = int(from_id) if from_id is float else from_id
+		var int_to_id = int(to_id) if to_id is float else to_id
+		
+		print("Processing connection: from_id=", int_from_id, " to_id=", int_to_id)
+		
+		# Find nodes by database ID
+		var from_node = null
+		var to_node = null
+		
+		if int_from_id > 0 and int_to_id > 0:
+			# Try to find by database ID
+			for node in nodes:
+				if node.has_meta("database_id") and node.get_meta("database_id") == int_from_id:
+					from_node = node
+					print("Found from_node: ", node.get_node_name())
+				if node.has_meta("database_id") and node.get_meta("database_id") == int_to_id:
+					to_node = node
+					print("Found to_node: ", node.get_node_name())
+		else:
+			print("Warning: Invalid connection IDs: from=", from_id, " to=", to_id)
+			continue
+		
+		if from_node and to_node:
+			print("Creating connection between: ", from_node.get_node_name(), " -> ", to_node.get_node_name())
 			_create_connection(from_node, to_node)
+		else:
+			print("Warning: Could not find nodes for connection: from=", from_id, " to=", to_id)
+	
+	print("Skill tree loading complete. Loaded ", nodes.size(), " nodes and ", connections.size(), " connections")
+	queue_redraw()
 
 func clear_all():
 	# Clear connections
@@ -384,3 +502,52 @@ func update_selected_node_name(name: String):
 func update_selected_node_description(description: String):
 	if selected_node:
 		selected_node.set_node_description(description)
+
+func add_database_node(node_data: Dictionary):
+	"""Add a node from the database to the skill tree"""
+	if node_data.size() == 0:
+		print("Error: Invalid node data provided")
+		return
+	
+	# Get the node type from database, default to PASSIVE if not specified
+	var node_type = node_data.get("node_type", "PASSIVE")
+	print("Adding database node - node_type: ", node_type, " (type: ", typeof(node_type), ")")
+	
+	# Ensure node_type is a string
+	if not node_type is String:
+		print("Warning: node_type is not a string, converting: ", node_type)
+		node_type = str(node_type)
+	
+	# Create a new node instance based on the node type from database
+	var node_scene = NODE_SCENES.get(node_type, NODE_SCENES["PASSIVE"])
+	var node = node_scene.instantiate()
+	
+	# Set up the node with database data
+	print("Calling node.setup(", node_type, ", Vector2(100, 100))")
+	node.setup(node_type, Vector2(100, 100))
+	node.set_node_name(node_data.name)
+	node.set_node_description(node_data.description)
+	
+	# Store the database node data for reference
+	node.set_meta("database_id", node_data.id)
+	node.set_meta("node_type", node_type)
+	node.set_meta("trait_id", node_data.trait_id)
+	node.set_meta("skill_id", node_data.skill_id)
+	node.set_meta("attribute_bonuses", node_data.attribute_bonuses_dict)
+	
+	# Connect node signals
+	node.node_selected.connect(_on_node_selected)
+	node.node_dragged.connect(_on_node_dragged)
+	
+	# Add to scene and nodes array
+	add_child(node)
+	nodes.append(node)
+	
+	# Update node info display
+	if skill_tree_creator:
+		skill_tree_creator.update_node_info(node_data.name, node_data.description)
+	
+	print("Added database node: ", node_data.name, " (Type: ", node_type, ") at position: ", node.position)
+	
+	# Redraw to show the new node
+	queue_redraw()

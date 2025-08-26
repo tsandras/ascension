@@ -3,6 +3,7 @@ extends Control
 # Manager instances
 var attribute_manager: AllocationManager
 var race_manager: AllocationManager
+var attributes_display: AttributesDisplay
 
 # UI node references
 @onready var points_label = $CenterContainer/VBoxContainer/PointsLabel
@@ -10,7 +11,7 @@ var race_manager: AllocationManager
 @onready var male_button = $CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer/MaleButton
 @onready var female_button = $CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer/FemaleButton
 @onready var avatar_sprite = $CenterContainer/VBoxContainer/ContentContainer/Column2/AvatarContainer/AvatarSprite
-@onready var attributes_container = $CenterContainer/VBoxContainer/ContentContainer/Column3/AttributesContainer
+
 @onready var race_container = $CenterContainer/VBoxContainer/ContentContainer/Column1/RaceContainer
 @onready var trait_name_label = $CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitNameLabel
 @onready var trait_desc_label = $CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitDescLabel
@@ -18,8 +19,10 @@ var race_manager: AllocationManager
 @onready var back_button = $CenterContainer/VBoxContainer/ButtonsContainer/BackButton
 @onready var continue_button = $CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton
 
-# Store UI elements for each attribute and race
-var attribute_ui_elements = {}
+# Store the attributes area for reuse
+var attributes_area_node: Control
+
+# Store UI elements for each race
 var race_ui_elements = {}
 # Store race data with trait information
 var race_data = {}
@@ -44,9 +47,9 @@ func _ready():
 	# Initialize the managers
 	attribute_manager = AllocationManager.new("attributes", "attributes", 5)
 	race_manager = AllocationManager.new("races", "races", 0)  # Races don't use points
+	attributes_display = AttributesDisplay.new()
 	
 	# Generate the UI dynamically
-	generate_attribute_ui()
 	generate_race_ui()
 	generate_portrait_avatar_ui()
 	
@@ -112,19 +115,19 @@ func load_existing_character_data():
 	if CharacterCreation.selected_sex != "":
 		selected_sex = CharacterCreation.selected_sex
 		update_sex_buttons()
-		print("Loaded selected sex: " + CharacterCreation.selected_sex)
+		print("Loaded selected sex: " + selected_sex)
 	
 	# Load selected portrait
 	if CharacterCreation.selected_portrait != "":
 		selected_portrait = CharacterCreation.selected_portrait
 		update_portrait_display()
-		print("Loaded selected portrait: " + CharacterCreation.selected_portrait)
+		print("Loaded selected portrait: " + selected_portrait)
 	
 	# Load selected avatar
 	if CharacterCreation.selected_avatar != "":
 		selected_avatar = CharacterCreation.selected_avatar
 		update_avatar_display()
-		print("Loaded selected avatar: " + CharacterCreation.selected_avatar)
+		print("Loaded selected avatar: " + selected_avatar)
 	
 	# Load attribute allocations
 	if CharacterCreation.attributes.size() > 0:
@@ -143,21 +146,6 @@ func load_existing_character_data():
 			print("Loaded %s: %d (added %d points)" % [attribute_name, value, points_to_add])
 	
 	print("Character data loading complete")
-
-func generate_attribute_ui():
-	# Clear existing children
-	for child in attributes_container.get_children():
-		child.queue_free()
-	
-	# Wait for children to be freed
-	await get_tree().process_frame
-	
-	# Get all attribute names in order
-	var attribute_names = attribute_manager.get_item_names()
-	
-	# Create UI for each attribute
-	for attribute_name in attribute_names:
-		create_attribute_row(attribute_name)
 
 func generate_race_ui():
 	# Clear existing children
@@ -250,46 +238,54 @@ func generate_portrait_avatar_ui():
 	
 	parent.add_child(portrait_container)
 	parent.move_child(portrait_container, avatar_index)
+	
+	# Create attributes area with SVG symbols and add to Column1 (left side)
+	# Create a character object to pass to the attributes display
+	var character = Character.new()
+	character.name = character_name_input.text if character_name_input else ""
+	character.race_name = race_manager.get_selected_race() if race_manager else ""
+	character.sex = selected_sex
+	character.portrait = selected_portrait
+	character.avatar = selected_avatar
+	character.attributes = attribute_manager.get_character_items() if attribute_manager else {}
+	
+	# Debug: Print character data
+	print("Creating character for attributes display:")
+	print("  Name: ", character.name)
+	print("  Race: ", character.race_name)
+	print("  Sex: ", character.sex)
+	print("  Attributes: ", character.attributes)
+	
+	attributes_area_node = attributes_display.create_attributes_area(character)
+	var column1 = $CenterContainer/VBoxContainer/ContentContainer/Column1
+	column1.add_child(attributes_area_node)
+	print("Attributes area created and added to Column1 (left side)")
 
-func create_attribute_row(attribute_name: String):
-	# Create horizontal container for this attribute
-	var h_container = HBoxContainer.new()
-	h_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	
-	# Create UI elements using UIManager
-	var elements = UIManager.create_attribute_row_elements()
-	
-	# Configure the label
-	elements.label.text = attribute_name + ":"
-	
-	# Set initial value
-	elements.value_label.text = str(attribute_manager.get_item_value(attribute_name))
-	
-	# Connect button signals
-	elements.minus_button.pressed.connect(_on_attribute_minus_pressed.bind(attribute_name))
-	elements.plus_button.pressed.connect(_on_attribute_plus_pressed.bind(attribute_name))
-	
-	# Add all elements to the container
-	h_container.add_child(elements.label)
-	h_container.add_child(elements.minus_button)
-	h_container.add_child(elements.value_label)
-	h_container.add_child(elements.plus_button)
-	
-	# Add to attributes container
-	attributes_container.add_child(h_container)
-	
-	# Store references for easy access
-	attribute_ui_elements[attribute_name] = {
-		"container": h_container,
-		"label": elements.label,
-		"minus_button": elements.minus_button,
-		"value_label": elements.value_label,
-		"plus_button": elements.plus_button
-	}
-	
-	# Set initial button states using UIManager
-	UIManager.apply_button_state(elements.plus_button, attribute_manager.can_increase_item(attribute_name))
-	UIManager.apply_button_state(elements.minus_button, attribute_manager.can_decrease_item(attribute_name))
+func get_attributes_area() -> Control:
+	"""Get the attributes area node - useful for other parts of the game"""
+	return attributes_area_node
+
+func update_attributes_display():
+	"""Update the attributes display with current character data"""
+	if attributes_area_node and attribute_manager:
+		# Remove the old attributes area
+		var column1 = $CenterContainer/VBoxContainer/ContentContainer/Column1
+		column1.remove_child(attributes_area_node)
+		attributes_area_node.queue_free()
+		
+		# Create a new character object with current data
+		var character = Character.new()
+		character.name = character_name_input.text if character_name_input else ""
+		character.race_name = race_manager.get_selected_race() if race_manager else ""
+		character.sex = selected_sex
+		character.portrait = selected_portrait
+		character.avatar = selected_avatar
+		character.attributes = attribute_manager.get_character_items()
+		
+		# Create new attributes area with updated character data
+		attributes_area_node = attributes_display.create_attributes_area(character)
+		column1.add_child(attributes_area_node)
+		print("Attributes display updated with current character data")
 
 func create_race_row(race_name: String):
 	# Create horizontal container for this race
@@ -328,14 +324,6 @@ func update_race_button_state(race_name: String):
 	else:
 		race_button.text = race_name
 		race_button.disabled = false
-
-func _on_attribute_plus_pressed(attribute_name: String):
-	if attribute_manager.increase_item(attribute_name):
-		update_ui()
-
-func _on_attribute_minus_pressed(attribute_name: String):
-	if attribute_manager.decrease_item(attribute_name):
-		update_ui()
 
 func _on_race_selected(race_name: String):
 	if race_manager.select_race(race_name):
@@ -903,30 +891,8 @@ func update_ui():
 	# Apply color feedback using UIManager
 	UIManager.apply_color_feedback(points_label, remaining_points)
 	
-	# Update each attribute's value and button states
-	for attribute_name in attribute_ui_elements:
-		var ui_elements = attribute_ui_elements[attribute_name]
-		var current_value = attribute_manager.get_item_value(attribute_name)
-		
-		# Update value display
-		ui_elements.value_label.text = str(current_value)
-		
-		# Update button states using UIManager
-		UIManager.apply_button_state(ui_elements.plus_button, attribute_manager.can_increase_item(attribute_name))
-		UIManager.apply_button_state(ui_elements.minus_button, attribute_manager.can_decrease_item(attribute_name))
-		
-		# Add visual feedback for race-bonused attributes
-		if attribute_manager.race_bonuses.has(attribute_name):
-			var race_bonus = attribute_manager.race_bonuses[attribute_name]
-			var base_value = attribute_manager.get_item_base_value(attribute_name)
-			var minimum_value = base_value + race_bonus
-			
-			# If current value equals minimum (race bonus level), disable minus button
-			if current_value <= minimum_value:
-				ui_elements.minus_button.disabled = true
-				ui_elements.minus_button.modulate = Color.GRAY
-				# Add visual indicator to value label
-				ui_elements.value_label.text = str(current_value) + " (race bonus)"
+	# Update the attributes display area if it exists
+	update_attributes_display()
 	
 	# Update race button states
 	for race_name in race_ui_elements:
@@ -987,5 +953,3 @@ func _on_continue_button_pressed():
 	
 	# Navigate to step 2 (abilities & competences allocation)
 	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step2.tscn")
-
- 

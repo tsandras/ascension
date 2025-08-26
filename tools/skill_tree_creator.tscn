@@ -26,54 +26,38 @@ layout_mode = 2
 [node name="SkillTreeNameContainer" type="HBoxContainer" parent="VBoxContainer/TopPanel"]
 layout_mode = 2
 
+[node name="SkillTreeSelectorLabel" type="Label" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
+layout_mode = 2
+text = "Load Skill Tree:"
+
+[node name="SkillTreeSelector" type="OptionButton" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LoadSkillTreeBtn" type="Button" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
+layout_mode = 2
+text = "Load Selected"
+
 [node name="SkillTreeNameLabel" type="Label" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
 layout_mode = 2
 text = "Skill Tree Name:"
 
 [node name="SkillTreeNameEdit" type="LineEdit" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 placeholder_text = "Enter skill tree name..."
+
+[node name="Spacer" type="Control" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SaveNewNodeBtn" type="Button" parent="VBoxContainer/TopPanel/SkillTreeNameContainer"]
+layout_mode = 2
+text = "Save New Skill Tree"
 
 [node name="ControlPanel" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
-
-[node name="NodeTypeContainer" type="HBoxContainer" parent="VBoxContainer/ControlPanel"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
-layout_mode = 2
-text = "Node Type:"
-
-[node name="PassiveNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
-layout_mode = 2
-toggle_mode = true
-button_pressed = true
-text = "Passive"
-
-[node name="ActiveNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
-layout_mode = 2
-toggle_mode = true
-text = "Active"
-
-[node name="ImprovementNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
-layout_mode = 2
-toggle_mode = true
-text = "Improvement"
-
-[node name="MasterAttributeNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
-layout_mode = 2
-toggle_mode = true
-text = "Master Attribute"
-
-[node name="AttributeNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
-layout_mode = 2
-toggle_mode = true
-text = "Attribute"
-
-[node name="EmptyNodeBtn" type="Button" parent="VBoxContainer/ControlPanel/NodeTypeContainer"]
-layout_mode = 2
-toggle_mode = true
-text = "Empty"
 
 [node name="ModeContainer" type="HBoxContainer" parent="VBoxContainer/ControlPanel"]
 layout_mode = 2
@@ -142,9 +126,9 @@ layout_mode = 2
 layout_mode = 2
 text = "Name:"
 
-[node name="NodeNameEdit" type="LineEdit" parent="VBoxContainer/NodeInfoPanel/VBoxContainer/NodeNameContainer"]
+[node name="NodeNameValue" type="Label" parent="VBoxContainer/NodeInfoPanel/VBoxContainer/NodeNameContainer"]
 layout_mode = 2
-placeholder_text = "Enter node name..."
+text = "Select a node from database"
 
 [node name="NodeDescContainer" type="HBoxContainer" parent="VBoxContainer/NodeInfoPanel/VBoxContainer"]
 layout_mode = 2
@@ -158,3 +142,93 @@ custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "Enter node description..."
+
+[node name="NodeManagementPanel" type="Panel" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/NodeManagementPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/NodeManagementPanel/VBoxContainer"]
+layout_mode = 2
+text = "Node Management"
+horizontal_alignment = 1
+
+[node name="DatabaseNodeContainer" type="HBoxContainer" parent="VBoxContainer/NodeManagementPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="DatabaseNodeLabel" type="Label" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/DatabaseNodeContainer"]
+layout_mode = 2
+text = "Database Node:"
+
+[node name="DatabaseNodeSelect" type="OptionButton" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/DatabaseNodeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AddDatabaseNodeBtn" type="Button" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/DatabaseNodeContainer"]
+layout_mode = 2
+text = "Add"
+
+[node name="RefreshDatabaseBtn" type="Button" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/DatabaseNodeContainer"]
+layout_mode = 2
+text = "Refresh"
+
+[node name="NodeFormContainer" type="VBoxContainer" parent="VBoxContainer/NodeManagementPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="NodeFormLabel" type="Label" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer"]
+layout_mode = 2
+text = "Create New Node:"
+horizontal_alignment = 1
+
+[node name="NewNodeNameContainer" type="HBoxContainer" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer"]
+layout_mode = 2
+
+[node name="NewNodeNameLabel" type="Label" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer/NewNodeNameContainer"]
+layout_mode = 2
+text = "Name:"
+
+[node name="NewNodeNameValue" type="Label" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer/NewNodeNameContainer"]
+layout_mode = 2
+text = "Auto-generated from database"
+
+[node name="NewNodeDescContainer" type="HBoxContainer" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer"]
+layout_mode = 2
+
+[node name="NewNodeDescLabel" type="Label" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer/NewNodeDescContainer"]
+layout_mode = 2
+text = "Description:"
+
+[node name="NewNodeDescEdit" type="TextEdit" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer/NewNodeDescContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter node description..."
+
+[node name="NewNodeTraitContainer" type="HBoxContainer" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer"]
+layout_mode = 2
+
+[node name="NewNodeTraitLabel" type="Label" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer/NewNodeTraitContainer"]
+layout_mode = 2
+text = "Trait:"
+
+[node name="NewNodeTraitSelect" type="OptionButton" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer/NewNodeTraitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NewNodeSkillContainer" type="HBoxContainer" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer"]
+layout_mode = 2
+
+[node name="NewNodeSkillLabel" type="Label" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer/NewNodeSkillContainer"]
+layout_mode = 2
+text = "Skill:"
+
+[node name="NewNodeSkillSelect" type="OptionButton" parent="VBoxContainer/NodeManagementPanel/VBoxContainer/NodeFormContainer/NewNodeSkillContainer"]
+layout_mode = 2
+size_flags_horizontal = 3

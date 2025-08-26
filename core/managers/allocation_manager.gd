@@ -21,11 +21,66 @@ func _init(p_table_name: String, p_item_type: String, total_points_to_distribute
 	load_item_definitions()
 	initialize_character_items()
 
+func get_custom_attributes():
+	"""Return the custom attribute list with Intelligence, Strength, Ruse, Agility, Resolution, Vitality"""
+	var custom_attributes = [
+		{
+			"name": "Intelligence",
+			"id": 1,
+			"base_value": 3,
+			"max_value": 8,
+			"display_order": 1,
+			"description": "Mental acuity and problem-solving ability"
+		},
+		{
+			"name": "Strength",
+			"id": 2,
+			"base_value": 3,
+			"max_value": 8,
+			"display_order": 2,
+			"description": "Physical power and muscle strength"
+		},
+		{
+			"name": "Ruse",
+			"id": 3,
+			"base_value": 3,
+			"max_value": 8,
+			"display_order": 3,
+			"description": "Cunning and deception skills"
+		},
+		{
+			"name": "Agility",
+			"id": 4,
+			"base_value": 3,
+			"max_value": 8,
+			"display_order": 4,
+			"description": "Speed, reflexes, and coordination"
+		},
+		{
+			"name": "Resolution",
+			"id": 5,
+			"base_value": 3,
+			"max_value": 8,
+			"display_order": 5,
+			"description": "Willpower and mental fortitude"
+		},
+		{
+			"name": "Vitality",
+			"id": 6,
+			"base_value": 3,
+			"max_value": 8,
+			"display_order": 6,
+			"description": "Health, stamina, and endurance"
+		}
+	]
+	return custom_attributes
+
 func load_item_definitions():
 	# Get all items from database based on table name
 	var items = []
 	if table_name == "attributes":
-		items = DatabaseManager.get_all_attributes()
+		# Use custom attribute list instead of database
+		items = get_custom_attributes()
 	elif table_name == "abilities":
 		items = DatabaseManager.get_all_abilities()
 	elif table_name == "races":
