@@ -4,68 +4,62 @@ extends Node
 class_name TraitManager
 
 static func get_race_trait(race_name: String) -> Dictionary:
-	"""Get the trait data for a given race"""
+	"""Get the trait data for a given race by combining race bonuses and trait bonuses"""
 	var races = DatabaseManager.get_all_races()
+	var race_data = null
+	
+	# Find the race
 	for race in races:
 		if race.name == race_name:
-			# Parse trait data from JSON columns
-			var trait_data = {}
-			
-			# Parse attribute bonuses
-			if race.has("attribute_bonuses") and race.attribute_bonuses:
-				if race.attribute_bonuses is String:
-					var json = JSON.new()
-					if json.parse(race.attribute_bonuses) == OK:
-						trait_data["attribute_bonuses"] = json.data
-					else:
-						trait_data["attribute_bonuses"] = []
-				else:
-					trait_data["attribute_bonuses"] = race.attribute_bonuses
-			else:
-				trait_data["attribute_bonuses"] = []
-			
-			# Parse ability bonuses
-			if race.has("ability_bonuses") and race.ability_bonuses:
-				if race.ability_bonuses is String:
-					var json = JSON.new()
-					if json.parse(race.ability_bonuses) == OK:
-						trait_data["ability_bonuses"] = json.data
-					else:
-						trait_data["ability_bonuses"] = []
-				else:
-					trait_data["ability_bonuses"] = race.ability_bonuses
-			else:
-				trait_data["ability_bonuses"] = []
-			
-			# Parse competence bonuses
-			if race.has("skill_bonuses") and race.skill_bonuses:
-				if race.skill_bonuses is String:
-					var json = JSON.new()
-					if json.parse(race.skill_bonuses) == OK:
-						trait_data["competence_bonuses"] = json.data
-					else:
-						trait_data["competence_bonuses"] = []
-				else:
-					trait_data["competence_bonuses"] = race.skill_bonuses
-			else:
-				trait_data["competence_bonuses"] = []
-			
-			# Parse other bonuses
-			if race.has("other_bonuses") and race.other_bonuses:
-				if race.other_bonuses is String:
-					var json = JSON.new()
-					if json.parse(race.other_bonuses) == OK:
-						trait_data["other_bonuses"] = json.data
-					else:
-						trait_data["other_bonuses"] = []
-				else:
-					trait_data["other_bonuses"] = race.other_bonuses
-			else:
-				trait_data["other_bonuses"] = []
-			
-			return trait_data
+			race_data = race
+			break
 	
-	return {}
+	if not race_data:
+		return {}
+	
+	# Get traits for this race
+	var traits = DatabaseManager.get_race_traits(race_name)
+	
+	# Combine race attribute bonuses with trait bonuses
+	var combined_trait_data = {
+		"attribute_bonuses": [],
+		"ability_bonuses": [],
+		"competence_bonuses": [],
+		"other_bonuses": []
+	}
+	
+	# Add race attribute bonuses
+	if race_data.has("race_attribute_bonuses_dict") and race_data.race_attribute_bonuses_dict.size() > 0:
+		for attr_name in race_data.race_attribute_bonuses_dict:
+			var bonus_value = int(race_data.race_attribute_bonuses_dict[attr_name])  # Ensure bonus value is an integer
+			combined_trait_data.attribute_bonuses.append({
+				"name": attr_name,
+				"value": bonus_value
+			})
+	
+	# Add trait bonuses from all traits
+	for vtrait in traits:
+		# Add attribute bonuses from trait
+		if vtrait.has("attribute_bonuses_dict") and vtrait.attribute_bonuses_dict.size() > 0:
+			for bonus in vtrait.attribute_bonuses_dict:
+				combined_trait_data.attribute_bonuses.append(bonus)
+		
+		# Add ability bonuses from trait
+		if vtrait.has("ability_bonuses_dict") and vtrait.ability_bonuses_dict.size() > 0:
+			for bonus in vtrait.ability_bonuses_dict:
+				combined_trait_data.ability_bonuses.append(bonus)
+		
+		# Add competence bonuses from trait
+		if vtrait.has("skill_bonuses_dict") and vtrait.skill_bonuses_dict.size() > 0:
+			for bonus in vtrait.skill_bonuses_dict:
+				combined_trait_data.competence_bonuses.append(bonus)
+		
+		# Add other bonuses from trait
+		if vtrait.has("other_bonuses_dict") and vtrait.other_bonuses_dict.size() > 0:
+			for bonus in vtrait.other_bonuses_dict:
+				combined_trait_data.other_bonuses.append(bonus)
+	
+	return combined_trait_data
 
 static func apply_trait_bonuses(trait_data: Dictionary, attributes: Dictionary, abilities: Dictionary, competences: Dictionary) -> Dictionary:
 	"""Apply trait bonuses to character data and return modified data"""
@@ -84,7 +78,7 @@ static func apply_trait_bonuses(trait_data: Dictionary, attributes: Dictionary, 
 	if trait_data.has("attribute_bonuses"):
 		for bonus in trait_data.attribute_bonuses:
 			var attr_name = bonus.name.to_lower()
-			var bonus_value = bonus.value
+			var bonus_value = int(bonus.value)  # Ensure bonus value is an integer
 			
 			# Find the attribute (case-insensitive)
 			for attr in result.attributes:
@@ -97,7 +91,7 @@ static func apply_trait_bonuses(trait_data: Dictionary, attributes: Dictionary, 
 	if trait_data.has("ability_bonuses"):
 		for bonus in trait_data.ability_bonuses:
 			var ability_name = bonus.name.to_lower()
-			var bonus_value = bonus.value
+			var bonus_value = int(bonus.value)  # Ensure bonus value is an integer
 			
 			# Find the ability (case-insensitive)
 			for ability in result.abilities:
@@ -110,7 +104,7 @@ static func apply_trait_bonuses(trait_data: Dictionary, attributes: Dictionary, 
 	if trait_data.has("competence_bonuses"):
 		for bonus in trait_data.competence_bonuses:
 			var competence_name = bonus.name.to_lower()
-			var bonus_value = bonus.value
+			var bonus_value = int(bonus.value)  # Ensure bonus value is an integer
 			
 			if competence_name == "free":
 				# This is a free point bonus

@@ -172,7 +172,8 @@ func create_attribute_circles(svg_container: Control, character: Character = nul
 			var attribute_value = 0
 			if character.attributes.has(attribute_names[i]):
 				attribute_value = character.attributes[attribute_names[i]]
-			value_label.text = str(attribute_value)
+			# Ensure the value is displayed as an integer
+			value_label.text = str(int(attribute_value))
 			value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			value_label.add_theme_font_size_override("font_size", 12)
 			value_label.size_flags_horizontal = Control.SIZE_FILL

@@ -6,13 +6,13 @@ class_name Character
 var id: int = -1
 var name: String = ""
 var race_name: String = ""
+var background_name: String = ""
 var sex: String = ""
 var portrait: String = ""
 var avatar: String = ""
 var level: int = 1
 var attributes: Dictionary = {}
 var abilities: Dictionary = {}
-var competences: Dictionary = {}
 var created_at: String = ""
 
 # Stats instance for calculations
@@ -48,6 +48,7 @@ static func load_from_db(character_id: int = -1) -> Character:
 	character.id = character_data.id
 	character.name = character_data.name
 	character.race_name = character_data.race_name
+	character.background_name = character_data.background_name if character_data.has("background_name") else ""
 	character.sex = character_data.sex
 	character.created_at = character_data.created_at
 	
@@ -56,8 +57,6 @@ static func load_from_db(character_id: int = -1) -> Character:
 		character.attributes = character_data.attributes_dict
 	if character_data.has("abilities_dict"):
 		character.abilities = character_data.abilities_dict
-	if character_data.has("competences_dict"):
-		character.competences = character_data.competences_dict
 	
 	if character_id > 0:
 		print("Loaded character: ", character.name)
@@ -74,6 +73,7 @@ static func load_from_creation() -> Character:
 	var character = Character.new()
 	character.name = CharacterCreation.character_name
 	character.race_name = CharacterCreation.selected_race
+	character.background_name = CharacterCreation.selected_background
 	character.sex = CharacterCreation.selected_sex
 	character.portrait = CharacterCreation.selected_portrait
 	character.avatar = CharacterCreation.selected_avatar
@@ -90,11 +90,7 @@ static func load_from_creation() -> Character:
 	else:
 		character.abilities = {}
 	
-	# Handle competences - ensure it's a Dictionary
-	if CharacterCreation.competences is Dictionary:
-		character.competences = CharacterCreation.competences
-	else:
-		character.competences = {}
+
 	
 	print("Loaded character from creation: ", character.name)
 	return character
@@ -108,12 +104,12 @@ func save_to_db() -> int:
 	var character_id = DatabaseManager.save_character(
 		name, 
 		race_name, 
+		background_name, 
 		sex, 
 		portrait, 
 		avatar, 
 		attributes, 
-		abilities, 
-		competences
+		abilities
 	)
 	
 	if character_id > 0:
@@ -130,6 +126,7 @@ static func load_from_db_result(character_data: Dictionary) -> Character:
 	character.id = character_data.id
 	character.name = character_data.name
 	character.race_name = character_data.race_name
+	character.background_name = character_data.background_name if character_data.has("background_name") else ""
 	character.sex = character_data.sex
 	character.portrait = character_data.get("portrait", "")
 	character.avatar = character_data.get("avatar", "")
@@ -140,8 +137,6 @@ static func load_from_db_result(character_data: Dictionary) -> Character:
 		character.attributes = character_data.attributes_dict
 	if character_data.has("abilities_dict"):
 		character.abilities = character_data.abilities_dict
-	if character_data.has("competences_dict"):
-		character.competences = character_data.competences_dict
 	
 	print("Loaded character from database result: ", character.name)
 	return character
@@ -151,13 +146,13 @@ func get_character_data() -> Dictionary:
 	return {
 		"name": name,
 		"race_name": race_name,
+		"background_name": background_name,
 		"sex": sex,
 		"portrait": portrait,
 		"avatar": avatar,
 		"level": level,
 		"attributes_dict": attributes,
-		"abilities_dict": abilities,
-		"competences_dict": competences
+		"abilities_dict": abilities
 	}
 
 # Get attribute value
@@ -178,14 +173,7 @@ func get_ability(ability_name: String) -> int:
 			return abilities[abil_name]
 	return 0
 
-# Get competence value
-func get_competence(competence_name: String) -> int:
-	# Make competence lookup case-insensitive
-	var search_name = competence_name.to_lower()
-	for comp_name in competences:
-		if comp_name.to_lower() == search_name:
-			return competences[comp_name]
-	return 0
+
 
 
 

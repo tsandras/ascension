@@ -22,7 +22,6 @@ var character: Character = null
 # Lists UI References
 @onready var attributes_list: VBoxContainer = $SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection/AttributesList
 @onready var abilities_list: VBoxContainer = $SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection/AbilitiesList
-@onready var competences_list: VBoxContainer = $SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection/CompetencesList
 
 func _ready():
 	# Hide the sheet initially
@@ -57,7 +56,6 @@ func show_sheet(character_instance: Character = null):
 	populate_character_stats()
 	populate_attributes()
 	populate_abilities()
-	populate_competences()
 	visible = true
 
 func hide_sheet():
@@ -65,12 +63,15 @@ func hide_sheet():
 	visible = false
 
 func populate_character_info():
-	"""Populate the character name, race, and avatar"""
+	"""Populate the character name, race, background, and avatar"""
 	if character and character.is_valid():
 		if character_name_label:
 			character_name_label.text = character.name
 		if race_info_label:
-			race_info_label.text = "%s (%s)" % [character.race_name, character.sex]
+			var background_text = ""
+			if character.background_name != "":
+				background_text = " - " + character.background_name
+			race_info_label.text = "%s%s (%s)" % [character.race_name, background_text, character.sex]
 		
 		# Load avatar
 		if avatar_sprite:
@@ -122,18 +123,7 @@ func populate_abilities():
 			if value > 0:  # Only show abilities with value > 0
 				create_stat_row(abilities_list, ability_name, value)
 
-func populate_competences():
-	"""Populate the competences list"""
-	if not competences_list:
-		return
-		
-	clear_container(competences_list)
-	
-	if character and character.is_valid():
-		for competence_name in character.competences:
-			var value = character.competences[competence_name]
-			if value > 0:  # Only show competences with value > 0
-				create_stat_row(competences_list, competence_name, value)
+
 
 func create_stat_row(container: VBoxContainer, p_name: String, value: int):
 	"""Create a stat row with name and value"""

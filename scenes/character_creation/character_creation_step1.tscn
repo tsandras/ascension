@@ -70,127 +70,103 @@ layout_mode = 2
 custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 
-[node name="RaceLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
-layout_mode = 2
-size_flags_horizontal = 4
-text = "SELECT RACE"
-horizontal_alignment = 1
-
-[node name="RaceSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-
 [node name="RaceContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
 layout_mode = 2
 
-[node name="TraitSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
-custom_minimum_size = Vector2(0, 20)
+[node name="BackgroundContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
 layout_mode = 2
-
-[node name="TraitLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
-layout_mode = 2
-size_flags_horizontal = 4
-text = "RACIAL TRAIT"
-horizontal_alignment = 1
-
-[node name="TraitPanel" type="Panel" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
-custom_minimum_size = Vector2(0, 120)
-layout_mode = 2
-
-[node name="TraitContent" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="TraitMargin" type="MarginContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="TraitInfo" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin"]
-layout_mode = 2
-
-[node name="TraitNameLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
-layout_mode = 2
-text = "Select a race to see its trait"
-horizontal_alignment = 1
-
-[node name="TraitDescLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="TraitBonusesLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column1/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
 
 [node name="ColumnSpacer1" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer"]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 
 [node name="Column2" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer"]
-custom_minimum_size = Vector2(280, 0)
+custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
-[node name="SexLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
+[node name="PortraitAvatarContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
 layout_mode = 2
 size_flags_horizontal = 4
-text = "SELECT SEX"
+
+[node name="PortraitSubColumn" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="PortraitLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/PortraitSubColumn"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "PORTRAIT"
 horizontal_alignment = 1
 
-[node name="SexSpacer1" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
-custom_minimum_size = Vector2(0, 20)
+[node name="PortraitSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/PortraitSubColumn"]
+custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
-[node name="SexContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
+[node name="PortraitContainer" type="CenterContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/PortraitSubColumn"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+
+[node name="AvatarSubColumn" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="MaleButton" type="Button" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
-physics_interpolation_mode = 0
-custom_minimum_size = Vector2(80, 40)
-layout_mode = 2
-text = "Male"
-
-[node name="SexButtonSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
-custom_minimum_size = Vector2(20, 0)
-layout_mode = 2
-
-[node name="FemaleButton" type="Button" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
-physics_interpolation_mode = 0
-custom_minimum_size = Vector2(80, 40)
-layout_mode = 2
-text = "Female"
-
-[node name="SexSpacer2" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-
-[node name="AvatarLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
+[node name="AvatarLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/AvatarSubColumn"]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "AVATAR"
 horizontal_alignment = 1
 
-[node name="AvatarSpacer1" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
+[node name="AvatarSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/AvatarSubColumn"]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
-[node name="AvatarContainer" type="CenterContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
-custom_minimum_size = Vector2(0, 120)
+[node name="AvatarContainer" type="CenterContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/AvatarSubColumn"]
+custom_minimum_size = Vector2(200, 200)
 layout_mode = 2
 
-[node name="AvatarSprite" type="TextureRect" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/AvatarContainer"]
+[node name="AvatarSprite" type="TextureRect" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/AvatarSubColumn/AvatarContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
+
+[node name="SexSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="SexContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SexLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "SELECT SEX"
+horizontal_alignment = 1
+
+[node name="SexSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="SexButtonsContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="MaleButton" type="Button" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer/SexButtonsContainer"]
+physics_interpolation_mode = 0
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+text = "Male"
+
+[node name="SexButtonSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer/SexButtonsContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="FemaleButton" type="Button" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer/SexButtonsContainer"]
+physics_interpolation_mode = 0
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+text = "Female"
 
 [node name="Spacer3" type="Control" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 15)
@@ -203,6 +179,65 @@ text = "Points remaining: 5"
 horizontal_alignment = 1
 
 [node name="Spacer4" type="Control" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+
+[node name="TraitsSection" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="TraitsLabel" type="Label" parent="CenterContainer/VBoxContainer/TraitsSection"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "TRAITS"
+horizontal_alignment = 1
+
+[node name="TraitsSpacer" type="Control" parent="CenterContainer/VBoxContainer/TraitsSection"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="TraitsContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/TraitsSection"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="TraitPanel" type="Panel" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+
+[node name="TraitContent" type="VBoxContainer" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TraitMargin" type="MarginContainer" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="TraitInfo" type="VBoxContainer" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin"]
+layout_mode = 2
+
+[node name="TraitNameLabel" type="Label" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
+layout_mode = 2
+text = "Select a race to see its trait"
+horizontal_alignment = 1
+
+[node name="TraitDescLabel" type="Label" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="TraitBonusesLabel" type="Label" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="TraitsSpacer2" type="Control" parent="CenterContainer/VBoxContainer/TraitsSection"]
 custom_minimum_size = Vector2(0, 15)
 layout_mode = 2
 

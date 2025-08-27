@@ -62,10 +62,9 @@ func create_tables():
 	CREATE TABLE IF NOT EXISTS races (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
-		trait_id INTEGER,
 		display_order INTEGER NOT NULL DEFAULT 0,
 		description TEXT,
-		FOREIGN KEY (trait_id) REFERENCES traits(id)
+		attribute_bonuses JSON
 	);
 	"""
 	
@@ -74,6 +73,24 @@ func create_tables():
 		print("Error creating races table: ", db.error_message)
 	else:
 		print("Races table created successfully")
+	
+	# Create races_traits join table
+	var races_traits_query = """
+	CREATE TABLE IF NOT EXISTS races_traits (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		race_id INTEGER NOT NULL,
+		trait_id INTEGER NOT NULL,
+		FOREIGN KEY (race_id) REFERENCES races(id),
+		FOREIGN KEY (trait_id) REFERENCES traits(id),
+		UNIQUE(race_id, trait_id)
+	);
+	"""
+	
+	db.query(races_traits_query)
+	if not is_query_successful():
+		print("Error creating races_traits table: ", db.error_message)
+	else:
+		print("Races_traits table created successfully")
 	
 	# Create traits table
 	var traits_query = """
@@ -95,23 +112,7 @@ func create_tables():
 	else:
 		print("Traits table created successfully")
 	
-	# Create competences table
-	var competences_query = """
-	CREATE TABLE IF NOT EXISTS competences (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL UNIQUE,
-		base_value INTEGER NOT NULL DEFAULT 0,
-		max_value INTEGER NOT NULL DEFAULT 6,
-		display_order INTEGER NOT NULL DEFAULT 0,
-		description TEXT
-	);
-	"""
-	
-	db.query(competences_query)
-	if not is_query_successful():
-		print("Error creating competences table: ", db.error_message)
-	else:
-		print("Competences table created successfully")
+	# Note: competences table removed - using abilities table instead
 	
 	# Create nodes table for skill trees
 	var nodes_query = """
@@ -151,20 +152,38 @@ func create_tables():
 	else:
 		print("Skill_tree table created successfully")
 	
+	# Create backgrounds table
+	var backgrounds_query = """
+	CREATE TABLE IF NOT EXISTS backgrounds (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		ability_bonuses JSON,
+		display_order INTEGER NOT NULL DEFAULT 0
+	);
+	"""
+	
+	db.query(backgrounds_query)
+	if not is_query_successful():
+		print("Error creating backgrounds table: ", db.error_message)
+	else:
+		print("Backgrounds table created successfully")
+	
 	# Create character table for persistent character creation
 	var character_query = """
 	CREATE TABLE IF NOT EXISTS character (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL,
 		race_id INTEGER,
+		background_id INTEGER,
 		sex TEXT NOT NULL,
 		portrait TEXT,
 		avatar TEXT,
 		attributes JSON,
 		abilities JSON,
-		competences JSON,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY (race_id) REFERENCES races(id)
+		FOREIGN KEY (race_id) REFERENCES races(id),
+		FOREIGN KEY (background_id) REFERENCES backgrounds(id)
 	);
 	"""
 	
@@ -304,7 +323,8 @@ func seed_data():
 	seed_attributes()
 	seed_traits()       # Seed traits before races (foreign key dependency)
 	seed_races()
-	seed_competences()
+	seed_backgrounds()  # Seed backgrounds
+	seed_abilities()    # Seed abilities (includes old competences)
 	seed_nodes()        # Seed sample nodes for skill trees
 
 
@@ -495,39 +515,77 @@ func seed_races():
 	
 	print("No existing race data found, seeding races...")
 	
-	# Insert the 4 races with their corresponding trait IDs
+	# Insert the 4 races with their attribute bonuses
 	var races_data = [
-		{"name": "Human", "description": "The most adaptable and common race", "display_order": 1, "trait_id": 1},
-		{"name": "Elf", "description": "Ancient and wise beings with extended lifespans", "display_order": 2, "trait_id": 2},
-		{"name": "Celestial-blooded", "description": "Descendants of celestial beings with divine heritage", "display_order": 3, "trait_id": 3},
-		{"name": "Infernal-blooded", "description": "Descendants of infernal beings with dark heritage", "display_order": 4, "trait_id": 4}
+		{
+			"name": "Human", 
+			"description": "The most adaptable and common race", 
+			"display_order": 1, 
+			"attribute_bonuses": {}
+		},
+		{
+			"name": "Elf", 
+			"description": "Ancient and wise beings with extended lifespans", 
+			"display_order": 2, 
+			"attribute_bonuses": {"stamina": -1, "resolution": 1}
+		},
+		{
+			"name": "Celestial-blooded", 
+			"description": "Descendants of celestial beings with divine heritage", 
+			"display_order": 3, 
+			"attribute_bonuses": {"agility": 1}
+		},
+		{
+			"name": "Infernal-blooded", 
+			"description": "Descendants of infernal beings with dark heritage", 
+			"display_order": 4, 
+			"attribute_bonuses": {"agility": 1}
+		}
 	]
 	
 	for race_data in races_data:
+		var json = JSON.new()
+		var bonuses_json = json.stringify(race_data.attribute_bonuses)
+		
 		var insert_query = """
-		INSERT INTO races (name, trait_id, display_order, description)
-		VALUES ('%s', %d, %d, '%s')
-		""" % [race_data.name, race_data.trait_id, race_data.display_order, race_data.description]
+		INSERT INTO races (name, display_order, description, attribute_bonuses)
+		VALUES ('%s', %d, '%s', '%s')
+		""" % [race_data.name, race_data.display_order, race_data.description, bonuses_json]
 		
 		db.query(insert_query)
 		if not is_query_successful():
 			print("Error inserting race " + race_data.name + ": " + db.error_message)
 		else:
 			print("Inserted race: ", race_data.name)
+	
+	# Now seed the races_traits relationships
+	seed_races_traits()
 
 func get_all_races():
 	var query = """
-	SELECT r.*, t.name as trait_name, t.description as trait_description, 
-		   t.attribute_bonuses, t.ability_bonuses, t.skill_bonuses, t.other_bonuses
+	SELECT r.*, r.attribute_bonuses as race_attribute_bonuses
 	FROM races r
-	LEFT JOIN traits t ON r.trait_id = t.id
 	ORDER BY r.display_order
 	"""
 	db.query(query)
 	
 	if is_query_successful():
-		print("Successfully fetched %d races from database" % db.query_result.size())
-		return db.query_result
+		var races = []
+		for race_data in db.query_result:
+			# Parse JSON attribute bonuses
+			if race_data.race_attribute_bonuses:
+				var json = JSON.new()
+				if json.parse(race_data.race_attribute_bonuses) == OK:
+					race_data.race_attribute_bonuses_dict = json.data
+				else:
+					race_data.race_attribute_bonuses_dict = {}
+			else:
+				race_data.race_attribute_bonuses_dict = {}
+			
+			races.append(race_data)
+		
+		print("Successfully fetched %d races from database" % races.size())
+		return races
 	else:
 		print("Error fetching races: ", db.error_message)
 		return []
@@ -542,20 +600,42 @@ func get_race_by_name(race_name: String):
 	else:
 		return null
 
-func seed_competences():
-	# Check if we already have competence data
-	var check_query = "SELECT COUNT(*) as count FROM competences"
+func get_background_by_name(background_name: String):
+	var query = "SELECT * FROM backgrounds WHERE name = '%s'" % background_name
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		var background_data = result[0]
+		
+		# Parse JSON ability bonuses (same as get_all_backgrounds)
+		if background_data.ability_bonuses:
+			var json = JSON.new()
+			if json.parse(background_data.ability_bonuses) == OK:
+				background_data.ability_bonuses_dict = json.data
+			else:
+				background_data.ability_bonuses_dict = {}
+		else:
+			background_data.ability_bonuses_dict = {}
+		
+		return background_data
+	else:
+		return null
+
+func seed_abilities():
+	# Check if we already have ability data
+	var check_query = "SELECT COUNT(*) as count FROM abilities"
 	db.query(check_query)
 	var result = db.query_result
 	
 	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains competence data")
+		print("Database already contains ability data")
 		return
 	
-	print("No existing competence data found, seeding competences...")
+	print("No existing ability data found, seeding abilities...")
 	
-	# Insert the 8 competences as specified
-	var competences_data = [
+	# Insert the 8 abilities (formerly competences) as specified
+	var abilities_data = [
 		{"name": "Survival", "description": "Ability to survive in the wilderness", "display_order": 1},
 		{"name": "Perception", "description": "Awareness and ability to notice details", "display_order": 2},
 		{"name": "Stealth", "description": "Ability to move silently and remain hidden", "display_order": 3},
@@ -566,42 +646,23 @@ func seed_competences():
 		{"name": "Athletics", "description": "Physical prowess and bodily coordination", "display_order": 8}
 	]
 	
-	for competence in competences_data:
+	for ability in abilities_data:
 		var insert_query = """
-		INSERT INTO competences (name, base_value, max_value, display_order, description)
+		INSERT INTO abilities (name, base_value, max_value, display_order, description)
 		VALUES ('%s', 0, 6, %d, '%s')
-		""" % [competence.name, competence.display_order, competence.description]
+		""" % [ability.name, ability.display_order, ability.description]
 		
 		db.query(insert_query)
 		if not is_query_successful():
-			print("Error inserting competence " + competence.name + ": " + db.error_message)
+			print("Error inserting ability " + ability.name + ": " + db.error_message)
 		else:
-			print("Inserted competence: ", competence.name)
+			print("Inserted ability: ", ability.name)
 
 
 
 
 
-func get_all_competences():
-	var query = "SELECT * FROM competences ORDER BY display_order"
-	db.query(query)
-	
-	if is_query_successful():
-		print("Successfully fetched %d competences from database" % db.query_result.size())
-		return db.query_result
-	else:
-		print("Error fetching competences: ", db.error_message)
-		return []
-
-func get_competence_by_name(competence_name: String):
-	var query = "SELECT * FROM competences WHERE name = '%s'" % competence_name
-	db.query(query)
-	var result = db.query_result
-	
-	if result.size() > 0:
-		return result[0]
-	else:
-		return null
+# Note: competences functions removed - using abilities functions instead
 
 func get_all_traits():
 	var query = "SELECT * FROM traits ORDER BY display_order"
@@ -781,7 +842,7 @@ func close_database():
 		db.close_db()
 
 
-func save_character(character_name: String, race_name: String, sex: String, portrait: String, avatar: String, attributes: Dictionary, abilities: Dictionary, competences: Dictionary) -> int:
+func save_character(character_name: String, race_name: String, background_name: String, sex: String, portrait: String, avatar: String, attributes: Dictionary, abilities: Dictionary) -> int:
 	"""Save a character to the database and return the character ID"""
 	print("Saving character: " + character_name)
 	
@@ -793,16 +854,23 @@ func save_character(character_name: String, race_name: String, sex: String, port
 	
 	var race_id = race.id
 	
+	# Get background ID from background name
+	var background = get_background_by_name(background_name)
+	if not background:
+		print("Error: Background not found: " + background_name)
+		return -1
+	
+	var background_id = background.id
+	
 	# Convert dictionaries to JSON strings for SQLite JSON columns
 	var attributes_json = JSON.stringify(attributes)
 	var abilities_json = JSON.stringify(abilities)
-	var competences_json = JSON.stringify(competences)
 	
 	# Insert character into database
 	var insert_query = """
-	INSERT INTO character (name, race_id, sex, portrait, avatar, attributes, abilities, competences)
-	VALUES ('%s', %d, '%s', '%s', '%s', '%s', '%s', '%s')
-	""" % [character_name, race_id, sex, portrait, avatar, attributes_json, abilities_json, competences_json]
+	INSERT INTO character (name, race_id, background_id, sex, portrait, avatar, attributes, abilities)
+	VALUES ('%s', %d, %d, '%s', '%s', '%s', '%s', '%s')
+	""" % [character_name, race_id, background_id, sex, portrait, avatar, attributes_json, abilities_json]
 	
 	db.query(insert_query)
 	if not is_query_successful():
@@ -821,11 +889,12 @@ func save_character(character_name: String, race_name: String, sex: String, port
 		return -1
 
 func get_character_by_id(character_id: int) -> Dictionary:
-	"""Retrieve a character by ID with race information"""
+	"""Retrieve a character by ID with race and background information"""
 	var query = """
-	SELECT c.*, r.name as race_name, r.description as race_description
+	SELECT c.*, r.name as race_name, r.description as race_description, b.name as background_name, b.description as background_description
 	FROM character c
 	LEFT JOIN races r ON c.race_id = r.id
+	LEFT JOIN backgrounds b ON c.background_id = b.id
 	WHERE c.id = %d
 	""" % character_id
 	
@@ -848,24 +917,18 @@ func get_character_by_id(character_id: int) -> Dictionary:
 			else:
 				character_data.abilities_dict = {}
 		
-		if character_data.competences:
-			var json = JSON.new()
-			if json.parse(character_data.competences) == OK:
-				character_data.competences_dict = json.data
-			else:
-				character_data.competences_dict = {}
-		
 		return character_data
 	else:
 		print("Character not found with ID: " + str(character_id))
 		return {}
 
 func get_all_characters() -> Array:
-	"""Get all characters with their race information"""
+	"""Get all characters with their race and background information"""
 	var query = """
-	SELECT c.id, c.name, c.created_at, r.name as race_name
+	SELECT c.id, c.name, c.created_at, r.name as race_name, b.name as background_name
 	FROM character c
 	LEFT JOIN races r ON c.race_id = r.id
+	LEFT JOIN backgrounds b ON c.background_id = b.id
 	ORDER BY c.created_at DESC
 	"""
 	
@@ -892,9 +955,10 @@ func delete_character(character_id: int) -> bool:
 func get_last_saved_character() -> Dictionary:
 	"""Get the most recently saved character"""
 	var query = """
-	SELECT c.*, r.name as race_name, r.description as race_description
+	SELECT c.*, r.name as race_name, r.description as race_description, b.name as background_name, b.description as background_description
 	FROM character c
 	LEFT JOIN races r ON c.race_id = r.id
+	LEFT JOIN backgrounds b ON c.background_id = b.id
 	ORDER BY c.created_at DESC
 	LIMIT 1
 	"""
@@ -917,13 +981,6 @@ func get_last_saved_character() -> Dictionary:
 				character_data.abilities_dict = json.data
 			else:
 				character_data.abilities_dict = {}
-		
-		if character_data.competences:
-			var json = JSON.new()
-			if json.parse(character_data.competences) == OK:
-				character_data.competences_dict = json.data
-			else:
-				character_data.competences_dict = {}
 		
 		print("Found last saved character: " + character_data.name)
 		return character_data
@@ -1313,3 +1370,228 @@ func seed_nodes():
 			print("Failed to seed node: ", node.name)
 	
 	print("Node seeding complete")
+
+func seed_backgrounds():
+	"""Seed the database with background data"""
+	# Check if we already have background data
+	var check_query = "SELECT COUNT(*) as count FROM backgrounds"
+	db.query(check_query)
+	var result = db.query_result
+	
+	if result.size() > 0 and result[0]["count"] > 0:
+		print("Database already contains background data")
+		return
+	
+	print("No existing background data found, seeding backgrounds...")
+	
+	# Define backgrounds data
+	var backgrounds_data = [
+		{
+			"name": "Acolyte",
+			"description": "Religious training and devotion to a higher power",
+			"ability_bonuses": {"Persuasion": 1, "Knowledge": 1},
+			"display_order": 1
+		},
+		{
+			"name": "Criminal",
+			"description": "Life of crime and street smarts",
+			"ability_bonuses": {"Sleight of Hand": 1, "Stealth": 1},
+			"display_order": 2
+		},
+		{
+			"name": "Entertainer",
+			"description": "Performance and artistic expression",
+			"ability_bonuses": {"Persuasion": 1, "Athletics": 1},
+			"display_order": 3
+		},
+		{
+			"name": "Artisan",
+			"description": "Skilled craftsmanship and trade",
+			"ability_bonuses": {"Perception": 1, "Persuasion": 1},
+			"display_order": 4
+		},
+		{
+			"name": "Noble",
+			"description": "High social status and education",
+			"ability_bonuses": {"Knowledge": 1, "Arcana": 1},
+			"display_order": 5
+		},
+		{
+			"name": "Outlander",
+			"description": "Life in the wilderness and survival",
+			"ability_bonuses": {"Survival": 1, "Perception": 1},
+			"display_order": 6
+		},
+		{
+			"name": "Sage",
+			"description": "Academic knowledge and research",
+			"ability_bonuses": {"Knowledge": 1, "Arcana": 1},
+			"display_order": 7
+		},
+		{
+			"name": "Soldier",
+			"description": "Military training and combat experience",
+			"ability_bonuses": {"Athletics": 1, "Perception": 1},
+			"display_order": 8
+		}
+	]
+	
+	for background in backgrounds_data:
+		var json = JSON.new()
+		var bonuses_json = json.stringify(background.ability_bonuses)
+		
+		var insert_query = """
+		INSERT INTO backgrounds (name, description, ability_bonuses, display_order)
+		VALUES ('%s', '%s', '%s', %d)
+		""" % [
+			background.name,
+			background.description,
+			bonuses_json,
+			background.display_order
+		]
+		
+		db.query(insert_query)
+		if is_query_successful():
+			print("Inserted background: " + background.name)
+		else:
+			print("Error inserting " + background.name + " background: " + db.error_message)
+	
+	print("Background seeding complete")
+
+func seed_races_traits():
+	"""Seed the races_traits join table with race-trait relationships"""
+	# Check if we already have races_traits data
+	var check_query = "SELECT COUNT(*) as count FROM races_traits"
+	db.query(check_query)
+	var result = db.query_result
+	
+	if result.size() > 0 and result[0]["count"] > 0:
+		print("Database already contains races_traits data")
+		return
+	
+	print("No existing races_traits data found, seeding race-trait relationships...")
+	
+	# Define race-trait relationships
+	var race_trait_relationships = [
+		{"race_name": "Human", "trait_name": "Polyvalent"},
+		{"race_name": "Elf", "trait_name": "Ancient Wisdom"},
+		{"race_name": "Celestial-blooded", "trait_name": "Divine Heritage"},
+		{"race_name": "Infernal-blooded", "trait_name": "Infernal Power"}
+	]
+	
+	for relationship in race_trait_relationships:
+		# Get race ID
+		var race_query = "SELECT id FROM races WHERE name = '%s'" % relationship.race_name
+		db.query(race_query)
+		var race_result = db.query_result
+		
+		# Get trait ID
+		var trait_query = "SELECT id FROM traits WHERE name = '%s'" % relationship.trait_name
+		db.query(trait_query)
+		var trait_result = db.query_result
+		
+		if race_result.size() > 0 and trait_result.size() > 0:
+			var race_id = race_result[0].id
+			var trait_id = trait_result[0].id
+			
+			var insert_query = """
+			INSERT INTO races_traits (race_id, trait_id)
+			VALUES (%d, %d)
+			""" % [race_id, trait_id]
+			
+			db.query(insert_query)
+			if is_query_successful():
+				print("Inserted race-trait relationship: %s - %s" % [relationship.race_name, relationship.trait_name])
+			else:
+				print("Error inserting race-trait relationship: " + db.error_message)
+		else:
+			print("Warning: Could not find race or trait for relationship: %s - %s" % [relationship.race_name, relationship.trait_name])
+	
+	print("Races_traits seeding complete")
+
+func get_race_traits(race_name: String) -> Array:
+	"""Get all traits for a specific race"""
+	var query = """
+	SELECT t.*
+	FROM traits t
+	JOIN races_traits rt ON t.id = rt.trait_id
+	JOIN races r ON rt.race_id = r.id
+	WHERE r.name = '%s'
+	ORDER BY t.display_order
+	""" % race_name
+	
+	db.query(query)
+	
+	if is_query_successful():
+		var traits = []
+		for trait_data in db.query_result:
+			# Parse JSON bonuses
+			if trait_data.attribute_bonuses:
+				var json = JSON.new()
+				if json.parse(trait_data.attribute_bonuses) == OK:
+					trait_data.attribute_bonuses_dict = json.data
+				else:
+					trait_data.attribute_bonuses_dict = {}
+			else:
+				trait_data.attribute_bonuses_dict = {}
+			
+			if trait_data.ability_bonuses:
+				var json = JSON.new()
+				if json.parse(trait_data.ability_bonuses) == OK:
+					trait_data.ability_bonuses_dict = json.data
+				else:
+					trait_data.ability_bonuses_dict = {}
+			else:
+				trait_data.ability_bonuses_dict = {}
+			
+			if trait_data.skill_bonuses:
+				var json = JSON.new()
+				if json.parse(trait_data.skill_bonuses) == OK:
+					trait_data.skill_bonuses_dict = json.data
+				else:
+					trait_data.skill_bonuses_dict = {}
+			else:
+				trait_data.skill_bonuses_dict = {}
+			
+			if trait_data.other_bonuses:
+				var json = JSON.new()
+				if json.parse(trait_data.other_bonuses) == OK:
+					trait_data.other_bonuses_dict = json.data
+				else:
+					trait_data.other_bonuses_dict = {}
+			else:
+				trait_data.other_bonuses_dict = {}
+			
+			traits.append(trait_data)
+		
+		print("Successfully fetched %d traits for race: %s" % [traits.size(), race_name])
+		return traits
+	else:
+		print("Error fetching race traits: ", db.error_message)
+		return []
+
+func get_all_backgrounds():
+	"""Get all backgrounds from the database"""
+	var query = "SELECT * FROM backgrounds ORDER BY display_order"
+	db.query(query)
+	
+	if is_query_successful():
+		var backgrounds = []
+		for background_data in db.query_result:
+			# Parse JSON ability bonuses
+			if background_data.ability_bonuses:
+				var json = JSON.new()
+				if json.parse(background_data.ability_bonuses) == OK:
+					background_data.ability_bonuses_dict = json.data
+				else:
+					background_data.ability_bonuses_dict = {}
+			else:
+				background_data.ability_bonuses_dict = {}
+			
+			backgrounds.append(background_data)
+		
+		print("Successfully fetched %d backgrounds from database" % backgrounds.size())
+		return backgrounds
+	else:
+		print("Error fetching backgrounds: ", db.error_message)
+		return []
