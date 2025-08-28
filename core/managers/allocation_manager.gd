@@ -87,12 +87,14 @@ func load_item_definitions():
 		items = DatabaseManager.get_all_races()
 	elif table_name == "backgrounds":
 		items = DatabaseManager.get_all_backgrounds()
+	elif table_name == "features":
+		items = DatabaseManager.get_all_features()
 	elif table_name == "competences":
 		items = DatabaseManager.get_all_competences()
 	
 	for item in items:
-		if table_name == "races" or table_name == "backgrounds":
-			# Races and backgrounds don't have base/max values, just selection
+		if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+			# Races, backgrounds, and features don't have base/max values, just selection
 			item_definitions[item.name] = {
 				"id": item.id,
 				"display_order": item.display_order,
@@ -115,8 +117,8 @@ func initialize_character_items():
 	remaining_points = total_points
 	
 	for item_name in item_definitions:
-		if table_name == "races" or table_name == "backgrounds":
-			# For races and backgrounds, we don't initialize values (selection-based)
+		if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+			# For races, backgrounds, and features, we don't initialize values (selection-based)
 			character_items[item_name] = false  # false = not selected
 		else:
 			# For attributes, abilities, and competences
@@ -133,8 +135,8 @@ func get_item_names() -> Array:
 
 func get_item_value(item_name: String) -> int:
 	if character_items.has(item_name):
-		if table_name == "races" or table_name == "backgrounds":
-			# For races and backgrounds, return 1 if selected, 0 if not
+		if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+			# For races, backgrounds, and features, return 1 if selected, 0 if not
 			return 1 if character_items[item_name] else 0
 		else:
 			# Ensure we return an integer value
@@ -142,15 +144,15 @@ func get_item_value(item_name: String) -> int:
 	return 0
 
 func get_item_base_value(item_name: String) -> int:
-	if table_name == "races" or table_name == "backgrounds":
-		return 0  # Races and backgrounds don't have base values
+	if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+		return 0  # Races, backgrounds, and features don't have base values
 	if item_definitions.has(item_name):
 		return int(item_definitions[item_name].base_value)  # Ensure base value is an integer
 	return 0
 
 func get_item_max_value(item_name: String) -> int:
-	if table_name == "races" or table_name == "backgrounds":
-		return 1  # Races and backgrounds have max of 1 (selected or not)
+	if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+		return 1  # Races, backgrounds, and features have max of 1 (selected or not)
 	if item_definitions.has(item_name):
 		var base_max = int(item_definitions[item_name].max_value)  # Ensure base max is an integer
 		
@@ -216,6 +218,33 @@ func get_selected_background() -> String:
 			return background_name
 	return ""
 
+# Feature selection methods
+func select_feature(feature_name: String) -> bool:
+	if table_name != "features":
+		return false
+	
+	# Deselect all other features first (only one feature can be selected)
+	for item_name in character_items:
+		character_items[item_name] = false
+	
+	# Select the chosen feature
+	if character_items.has(feature_name):
+		character_items[feature_name] = true
+		print("Feature selected: %s" % feature_name)
+		return true
+	else:
+		print("Feature not found: %s" % feature_name)
+		return false
+
+func get_selected_feature() -> String:
+	if table_name != "features":
+		return ""
+	
+	for feature_name in character_items:
+		if character_items[feature_name]:
+			return feature_name
+	return ""
+
 func is_race_selected(race_name: String) -> bool:
 	if table_name != "races":
 		return false
@@ -230,6 +259,13 @@ func is_background_selected(background_name: String) -> bool:
 		return character_items[background_name]
 	return false
 
+func is_feature_selected(feature_name: String) -> bool:
+	if table_name != "features":
+		return false
+	if character_items.has(feature_name):
+		return character_items[feature_name]
+	return false
+
 func get_item_description(item_name: String) -> String:
 	if item_definitions.has(item_name):
 		return item_definitions[item_name].description
@@ -239,8 +275,8 @@ func can_increase_item(item_name: String) -> bool:
 	if not character_items.has(item_name):
 		return false
 	
-	if table_name == "races" or table_name == "backgrounds":
-		# For races and backgrounds, can always "increase" (select) if not already selected
+	if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+		# For races, backgrounds, and features, can always "increase" (select) if not already selected
 		return not character_items[item_name]
 	
 	var current_value = character_items[item_name]
@@ -258,8 +294,8 @@ func can_decrease_item(item_name: String) -> bool:
 	if not character_items.has(item_name):
 		return false
 	
-	if table_name == "races" or table_name == "backgrounds":
-		# For races and backgrounds, can always "decrease" (deselect) if currently selected
+	if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+		# For races, backgrounds, and features, can always "decrease" (deselect) if currently selected
 		return character_items[item_name]
 	
 	var current_value = character_items[item_name]
@@ -278,6 +314,8 @@ func increase_item(item_name: String) -> bool:
 		return select_race(item_name)
 	elif table_name == "backgrounds":
 		return select_background(item_name)
+	elif table_name == "features":
+		return select_feature(item_name)
 	
 	if can_increase_item(item_name):
 		character_items[item_name] = int(character_items[item_name] + 1)
@@ -296,6 +334,11 @@ func decrease_item(item_name: String) -> bool:
 			character_items[item_name] = false
 			return true
 		return false
+	elif table_name == "features":
+		if can_decrease_item(item_name):
+			character_items[item_name] = false
+			return true
+		return false
 	
 	if can_decrease_item(item_name):
 		character_items[item_name] = int(character_items[item_name] - 1)
@@ -304,8 +347,8 @@ func decrease_item(item_name: String) -> bool:
 	return false
 
 func update_remaining_points():
-	if table_name == "races" or table_name == "backgrounds":
-		# Races and backgrounds don't use points, so remaining_points stays at total_points
+	if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+		# Races, backgrounds, and features don't use points, so remaining_points stays at total_points
 		return
 	
 	var used_points = 0
@@ -329,7 +372,7 @@ func get_character_items() -> Dictionary:
 	# Ensure all values are integers before returning
 	var result = {}
 	for item_name in character_items:
-		if table_name == "races" or table_name == "backgrounds":
+		if table_name == "races" or table_name == "backgrounds" or table_name == "features":
 			result[item_name] = character_items[item_name]
 		else:
 			result[item_name] = int(character_items[item_name])
@@ -340,7 +383,7 @@ func get_all_item_values() -> Dictionary:
 	# Ensure all values are integers before returning
 	var result = {}
 	for item_name in character_items:
-		if table_name == "races" or table_name == "backgrounds":
+		if table_name == "races" or table_name == "backgrounds" or table_name == "features":
 			result[item_name] = character_items[item_name]
 		else:
 			result[item_name] = int(character_items[item_name])
@@ -356,6 +399,9 @@ func all_points_spent() -> bool:
 	elif table_name == "backgrounds":
 		# For backgrounds, check if any background is selected
 		return get_selected_background() != ""
+	elif table_name == "features":
+		# For features, check if any feature is selected
+		return get_selected_feature() != ""
 	else:
 		# For other types, check if all points are spent
 		return remaining_points == 0
@@ -393,8 +439,8 @@ func get_character_attributes() -> Dictionary:
 
 func add_free_points(points: int):
 	"""Add free points to the allocation pool (for trait bonuses)"""
-	if table_name == "races" or table_name == "backgrounds":
-		return  # Races and backgrounds don't use points
+	if table_name == "races" or table_name == "backgrounds" or table_name == "features":
+		return  # Races, backgrounds, and features don't use points
 	
 	remaining_points = int(remaining_points + points)  # Ensure remaining points is an integer
 	print("Added %d free points to %s allocation" % [points, item_type])
@@ -412,4 +458,20 @@ func set_race_bonuses(bonuses: Dictionary):
 func clear_race_bonuses():
 	"""Clear race bonuses"""
 	race_bonuses.clear()
-	print("Cleared race bonuses") 
+	print("Cleared race bonuses")
+
+func clear_feature_bonuses():
+	"""Clear feature bonuses by resetting to base + race bonuses"""
+	if table_name == "attributes":
+		# Store current race bonuses
+		var current_race_bonuses = race_bonuses.duplicate()
+		
+		# Reset to base values
+		reset_items()
+		
+		# Reapply race bonuses
+		if current_race_bonuses.size() > 0:
+			set_race_bonuses(current_race_bonuses)
+			print("Cleared feature bonuses and restored base + race bonuses")
+		else:
+			print("Cleared feature bonuses and restored base values") 

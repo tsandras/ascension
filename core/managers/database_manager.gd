@@ -98,6 +98,7 @@ func create_tables():
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
 		description TEXT,
+		icon_name TEXT,
 		attribute_bonuses JSON,
 		ability_bonuses JSON,
 		skill_bonuses JSON,
@@ -120,6 +121,7 @@ func create_tables():
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
 		description TEXT,
+		icon_name TEXT,
 		node_type TEXT NOT NULL DEFAULT 'PASSIVE',
 		trait_id INTEGER,
 		skill_id INTEGER,
@@ -169,6 +171,38 @@ func create_tables():
 	else:
 		print("Backgrounds table created successfully")
 	
+	# Create features table
+	var features_query = """
+	CREATE TABLE IF NOT EXISTS features (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		icon_name TEXT,
+		attribute_bonuses JSON,
+		ability_bonuses JSON,
+		skill_bonuses JSON,
+		other_bonuses JSON,
+		trait_id INTEGER,
+		display_order INTEGER NOT NULL DEFAULT 0,
+		FOREIGN KEY (trait_id) REFERENCES traits(id)
+	);
+	"""
+	
+	db.query(features_query)
+	if not is_query_successful():
+		print("Error creating features table: ", db.error_message)
+	else:
+		print("Features table created successfully")
+	
+	# Migrate existing features tables to add trait_id column if it doesn't exist
+	var features_migration_query = "ALTER TABLE features ADD COLUMN trait_id INTEGER"
+	db.query(features_migration_query)
+	if not is_query_successful():
+		# Column might already exist, which is fine
+		print("Features trait column migration note: " + db.error_message)
+	else:
+		print("Features table migrated to include trait_id column")
+	
 	# Create character table for persistent character creation
 	var character_query = """
 	CREATE TABLE IF NOT EXISTS character (
@@ -176,6 +210,7 @@ func create_tables():
 		name TEXT NOT NULL,
 		race_id INTEGER,
 		background_id INTEGER,
+		feature_id INTEGER,
 		sex TEXT NOT NULL,
 		portrait TEXT,
 		avatar TEXT,
@@ -183,7 +218,8 @@ func create_tables():
 		abilities JSON,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (race_id) REFERENCES races(id),
-		FOREIGN KEY (background_id) REFERENCES backgrounds(id)
+		FOREIGN KEY (background_id) REFERENCES backgrounds(id),
+		FOREIGN KEY (feature_id) REFERENCES features(id)
 	);
 	"""
 	
@@ -192,6 +228,15 @@ func create_tables():
 		print("Error creating character table: ", db.error_message)
 	else:
 		print("Character table created successfully")
+	
+	# Migrate existing character tables to add feature_id column if it doesn't exist
+	var migration_query = "ALTER TABLE character ADD COLUMN feature_id INTEGER"
+	db.query(migration_query)
+	if not is_query_successful():
+		# Column might already exist, which is fine
+		print("Feature column migration note: " + db.error_message)
+	else:
+		print("Character table migrated to include feature_id column")
 	
 	# Create ref_map table (template maps)
 	var ref_map_query = """
@@ -324,6 +369,7 @@ func seed_data():
 	seed_traits()       # Seed traits before races (foreign key dependency)
 	seed_races()
 	seed_backgrounds()  # Seed backgrounds
+	seed_features()     # Seed features
 	seed_abilities()    # Seed abilities (includes old competences)
 	seed_nodes()        # Seed sample nodes for skill trees
 
@@ -417,6 +463,8 @@ func seed_traits():
 	
 	if result.size() > 0 and result[0]["count"] > 0:
 		print("Database already contains trait data")
+		# Update existing traits with icon names if they don't have them
+		_update_existing_traits_with_icons()
 		return
 	
 	print("No existing trait data found, seeding traits...")
@@ -426,6 +474,7 @@ func seed_traits():
 		{
 			"name": "Polyvalent",
 			"description": "Humans are adaptable and versatile, gaining small bonuses to all areas of expertise",
+			"icon_name": "hobbit",
 			"attribute_bonuses": [],
 			"ability_bonuses": [],
 			"competence_bonuses": [
@@ -439,6 +488,7 @@ func seed_traits():
 		{
 			"name": "Ancient Wisdom",
 			"description": "Elfs possess centuries of accumulated knowledge and unshakeable mental fortitude",
+			"icon_name": "magic_book",
 			"attribute_bonuses": [
 				{"name": "stamina", "value": -1},
 				{"name": "willpower", "value": 1}
@@ -455,6 +505,7 @@ func seed_traits():
 		{
 			"name": "Divine Heritage",
 			"description": "Celestial-blooded carry divine blessings, excelling in protection and social grace",
+			"icon_name": "giant",
 			"attribute_bonuses": [
 				{"name": "essence", "value": 1}
 			],
@@ -469,6 +520,7 @@ func seed_traits():
 		{
 			"name": "Infernal Power",
 			"description": "Infernal-blooded channel raw dark power, devastating in combat but consuming",
+			"icon_name": "lion",
 			"attribute_bonuses": [
 				{"name": "essence", "value": 1}
 			],
@@ -485,11 +537,12 @@ func seed_traits():
 	# Insert each trait
 	for trait_data in traits_data:
 		var insert_query = """
-		INSERT INTO traits (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order)
-		VALUES ('%s', '%s', '%s', '%s', '%s', '%s', %d)
+		INSERT INTO traits (name, description, icon_name, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order)
+		VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)
 		""" % [
 			trait_data.name,
 			trait_data.description,
+			trait_data.icon_name,
 			JSON.stringify(trait_data.attribute_bonuses),
 			JSON.stringify(trait_data.ability_bonuses),
 			JSON.stringify(trait_data.competence_bonuses),
@@ -502,6 +555,64 @@ func seed_traits():
 			print("Inserted trait: " + trait_data.name)
 		else:
 			print("Error inserting " + trait_data.name + " trait: " + db.error_message)
+	
+	print("Trait seeding complete")
+
+func _update_existing_traits_with_icons():
+	"""Update existing traits with icon names if they don't have them"""
+	print("Updating existing traits with icon names...")
+	
+	# Define icon mappings for existing traits
+	var icon_mappings = {
+		"Polyvalent": "hobbit",
+		"Ancient Wisdom": "magic_book",
+		"Divine Heritage": "giant",
+		"Infernal Power": "lion"
+	}
+	
+	# Update each trait that doesn't have an icon_name
+	for trait_name in icon_mappings:
+		var update_query = """
+		UPDATE traits 
+		SET icon_name = '%s' 
+		WHERE name = '%s' AND (icon_name IS NULL OR icon_name = '')
+		""" % [icon_mappings[trait_name], trait_name]
+		
+		db.query(update_query)
+		if is_query_successful():
+			print("Updated trait '%s' with icon '%s'" % [trait_name, icon_mappings[trait_name]])
+		else:
+			print("Error updating trait '%s': %s" % [trait_name, db.error_message])
+	
+	print("Trait icon updates complete")
+
+func _update_existing_nodes_with_icons():
+	"""Update existing nodes with icon names if they don't have them"""
+	print("Updating existing nodes with icon names...")
+	
+	# Define icon mappings for existing nodes
+	var icon_mappings = {
+		"Combat Mastery": "lion",
+		"Arcane Knowledge": "magic_book",
+		"Stealth Expert": "monkey",
+		"Leadership": "giant"
+	}
+	
+	# Update each node that doesn't have an icon_name
+	for node_name in icon_mappings:
+		var update_query = """
+		UPDATE nodes 
+		SET icon_name = '%s' 
+		WHERE name = '%s' AND (icon_name IS NULL OR icon_name = '')
+		""" % [icon_mappings[node_name], node_name]
+		
+		db.query(update_query)
+		if is_query_successful():
+			print("Updated node '%s' with icon '%s'" % [node_name, icon_mappings[node_name]])
+		else:
+			print("Error updating node '%s': %s" % [node_name, db.error_message])
+	
+	print("Node icon updates complete")
 
 func seed_races():
 	# Check if we already have race data
@@ -621,6 +732,143 @@ func get_background_by_name(background_name: String):
 		return background_data
 	else:
 		return null
+
+func get_feature_by_name(feature_name: String):
+	var query = """
+	SELECT f.*, t.name as trait_name, t.description as trait_description, t.icon_name as trait_icon_name
+	FROM features f
+	LEFT JOIN traits t ON f.trait_id = t.id
+	WHERE f.name = '%s'
+	""" % feature_name
+	db.query(query)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		var feature_data = result[0]
+		
+		# Parse JSON bonuses (same as get_all_features)
+		if feature_data.attribute_bonuses:
+			var json = JSON.new()
+			if json.parse(feature_data.attribute_bonuses) == OK:
+				feature_data.attribute_bonuses_dict = json.data
+			else:
+				feature_data.attribute_bonuses_dict = {}
+		else:
+			feature_data.attribute_bonuses_dict = {}
+		
+		if feature_data.ability_bonuses:
+			var json = JSON.new()
+			if json.parse(feature_data.ability_bonuses) == OK:
+				feature_data.ability_bonuses_dict = json.data
+			else:
+				feature_data.ability_bonuses_dict = {}
+		else:
+			feature_data.ability_bonuses_dict = {}
+		
+		if feature_data.skill_bonuses:
+			var json = JSON.new()
+			if json.parse(feature_data.skill_bonuses) == OK:
+				feature_data.skill_bonuses_dict = json.data
+			else:
+				feature_data.skill_bonuses_dict = {}
+		else:
+			feature_data.skill_bonuses_dict = {}
+		
+		if feature_data.other_bonuses:
+			var json = JSON.new()
+			if json.parse(feature_data.other_bonuses) == OK:
+				feature_data.other_bonuses_dict = json.data
+			else:
+				feature_data.other_bonuses_dict = {}
+		else:
+			feature_data.other_bonuses_dict = {}
+		
+		# Add trait information
+		if feature_data.trait_id and feature_data.trait_name:
+			feature_data.has_trait = true
+			feature_data.trait_data = {
+				"name": feature_data.trait_name,
+				"description": feature_data.trait_description,
+				"icon_name": feature_data.trait_icon_name
+			}
+		else:
+			feature_data.has_trait = false
+			feature_data.trait_data = {}
+		
+		return feature_data
+	else:
+		return null
+
+func get_features_by_trait(trait_id: int) -> Array:
+	"""Get all features that have a specific trait"""
+	var query = """
+	SELECT f.*, t.name as trait_name, t.description as trait_description, t.icon_name as trait_icon_name
+	FROM features f
+	LEFT JOIN traits t ON f.trait_id = t.id
+	WHERE f.trait_id = %d
+	ORDER BY f.display_order
+	""" % trait_id
+	db.query(query)
+	
+	if is_query_successful():
+		var features = []
+		for feature_data in db.query_result:
+			# Parse JSON bonuses (same as get_all_features)
+			if feature_data.attribute_bonuses:
+				var json = JSON.new()
+				if json.parse(feature_data.attribute_bonuses) == OK:
+					feature_data.attribute_bonuses_dict = json.data
+				else:
+					feature_data.attribute_bonuses_dict = {}
+			else:
+				feature_data.attribute_bonuses_dict = {}
+			
+			if feature_data.ability_bonuses:
+				var json = JSON.new()
+				if json.parse(feature_data.ability_bonuses) == OK:
+					feature_data.ability_bonuses_dict = json.data
+				else:
+					feature_data.ability_bonuses_dict = {}
+			else:
+				feature_data.ability_bonuses_dict = {}
+			
+			if feature_data.skill_bonuses:
+				var json = JSON.new()
+				if json.parse(feature_data.skill_bonuses) == OK:
+					feature_data.skill_bonuses_dict = json.data
+				else:
+					feature_data.skill_bonuses_dict = {}
+			else:
+				feature_data.skill_bonuses_dict = {}
+			
+			if feature_data.other_bonuses:
+				var json = JSON.new()
+				if json.parse(feature_data.other_bonuses) == OK:
+					feature_data.other_bonuses_dict = json.data
+				else:
+					feature_data.other_bonuses_dict = {}
+			else:
+				feature_data.other_bonuses_dict = {}
+			
+			# Add trait information
+			if feature_data.trait_id and feature_data.trait_name:
+				feature_data.has_trait = true
+				feature_data.trait_data = {
+					"name": feature_data.trait_name,
+					"description": feature_data.trait_description,
+					"icon_name": feature_data.trait_icon_name
+				}
+			else:
+				feature_data.has_trait = false
+				feature_data.trait_data = {}
+			
+			features.append(feature_data)
+		
+		print("Successfully fetched %d features with trait ID %d" % [features.size(), trait_id])
+		return features
+	else:
+		print("Error fetching features by trait: ", db.error_message)
+		return []
 
 func seed_abilities():
 	# Check if we already have ability data
@@ -842,7 +1090,7 @@ func close_database():
 		db.close_db()
 
 
-func save_character(character_name: String, race_name: String, background_name: String, sex: String, portrait: String, avatar: String, attributes: Dictionary, abilities: Dictionary) -> int:
+func save_character(character_name: String, race_name: String, background_name: String, feature_name: String, sex: String, portrait: String, avatar: String, attributes: Dictionary, abilities: Dictionary) -> int:
 	"""Save a character to the database and return the character ID"""
 	print("Saving character: " + character_name)
 	
@@ -862,15 +1110,23 @@ func save_character(character_name: String, race_name: String, background_name: 
 	
 	var background_id = background.id
 	
+	# Get feature ID from feature name
+	var feature = get_feature_by_name(feature_name)
+	if not feature:
+		print("Error: Feature not found: " + feature_name)
+		return -1
+	
+	var feature_id = feature.id
+	
 	# Convert dictionaries to JSON strings for SQLite JSON columns
 	var attributes_json = JSON.stringify(attributes)
 	var abilities_json = JSON.stringify(abilities)
 	
 	# Insert character into database
 	var insert_query = """
-	INSERT INTO character (name, race_id, background_id, sex, portrait, avatar, attributes, abilities)
-	VALUES ('%s', %d, %d, '%s', '%s', '%s', '%s', '%s')
-	""" % [character_name, race_id, background_id, sex, portrait, avatar, attributes_json, abilities_json]
+	INSERT INTO character (name, race_id, background_id, feature_id, sex, portrait, avatar, attributes, abilities)
+	VALUES ('%s', %d, %d, %d, '%s', '%s', '%s', '%s', '%s')
+	""" % [character_name, race_id, background_id, feature_id, sex, portrait, avatar, attributes_json, abilities_json]
 	
 	db.query(insert_query)
 	if not is_query_successful():
@@ -889,12 +1145,13 @@ func save_character(character_name: String, race_name: String, background_name: 
 		return -1
 
 func get_character_by_id(character_id: int) -> Dictionary:
-	"""Retrieve a character by ID with race and background information"""
+	"""Retrieve a character by ID with race, background, and feature information"""
 	var query = """
-	SELECT c.*, r.name as race_name, r.description as race_description, b.name as background_name, b.description as background_description
+	SELECT c.*, r.name as race_name, r.description as race_description, b.name as background_name, b.description as background_description, f.name as feature_name, f.description as feature_description
 	FROM character c
 	LEFT JOIN races r ON c.race_id = r.id
 	LEFT JOIN backgrounds b ON c.background_id = b.id
+	LEFT JOIN features f ON c.feature_id = f.id
 	WHERE c.id = %d
 	""" % character_id
 	
@@ -923,12 +1180,13 @@ func get_character_by_id(character_id: int) -> Dictionary:
 		return {}
 
 func get_all_characters() -> Array:
-	"""Get all characters with their race and background information"""
+	"""Get all characters with their race, background, and feature information"""
 	var query = """
-	SELECT c.id, c.name, c.created_at, r.name as race_name, b.name as background_name
+	SELECT c.id, c.name, c.created_at, r.name as race_name, b.name as background_name, f.name as feature_name
 	FROM character c
 	LEFT JOIN races r ON c.race_id = r.id
 	LEFT JOIN backgrounds b ON c.background_id = b.id
+	LEFT JOIN features f ON c.feature_id = f.id
 	ORDER BY c.created_at DESC
 	"""
 	
@@ -955,10 +1213,11 @@ func delete_character(character_id: int) -> bool:
 func get_last_saved_character() -> Dictionary:
 	"""Get the most recently saved character"""
 	var query = """
-	SELECT c.*, r.name as race_name, r.description as race_description, b.name as background_name, b.description as background_description
+	SELECT c.*, r.name as race_name, r.description as race_description, b.name as background_name, b.description as background_description, f.name as feature_name, f.description as feature_description
 	FROM character c
 	LEFT JOIN races r ON c.race_id = r.id
 	LEFT JOIN backgrounds b ON c.background_id = b.id
+	LEFT JOIN features f ON c.feature_id = f.id
 	ORDER BY c.created_at DESC
 	LIMIT 1
 	"""
@@ -989,17 +1248,18 @@ func get_last_saved_character() -> Dictionary:
 		return {}
 
 # Node management methods for skill trees
-func save_node(name: String, description: String, node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}) -> int:
+func save_node(name: String, description: String, icon_name: String = "", node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}) -> int:
 	"""Save a new node to the database"""
 	var json = JSON.new()
 	var bonuses_json = json.stringify(attribute_bonuses) if attribute_bonuses.size() > 0 else ""
 	
 	var insert_query = """
-	INSERT INTO nodes (name, description, node_type, trait_id, skill_id, attribute_bonuses)
-	VALUES ('%s', '%s', '%s', %s, %s, '%s')
+	INSERT INTO nodes (name, description, icon_name, node_type, trait_id, skill_id, attribute_bonuses)
+	VALUES ('%s', '%s', '%s', '%s', %s, %s, '%s')
 	""" % [
 		name.replace("'", "''"),  # Escape single quotes
 		description.replace("'", "''"),
+		icon_name,
 		node_type,
 		str(trait_id) if trait_id > 0 else "NULL",
 		str(skill_id) if skill_id > 0 else "NULL",
@@ -1015,18 +1275,19 @@ func save_node(name: String, description: String, node_type: String = "PASSIVE",
 		print("Error saving node: ", db.error_message)
 		return -1
 
-func update_node(node_id: int, name: String, description: String, node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}) -> bool:
+func update_node(node_id: int, name: String, description: String, icon_name: String = "", node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}) -> bool:
 	"""Update an existing node in the database"""
 	var json = JSON.new()
 	var bonuses_json = json.stringify(attribute_bonuses) if attribute_bonuses.size() > 0 else ""
 	
 	var update_query = """
 	UPDATE nodes 
-	SET name = '%s', description = '%s', node_type = '%s', trait_id = %s, skill_id = %s, attribute_bonuses = '%s'
+	SET name = '%s', description = '%s', icon_name = '%s', node_type = '%s', trait_id = %s, skill_id = %s, attribute_bonuses = '%s'
 	WHERE id = %d
 	""" % [
 		name.replace("'", "''"),  # Escape single quotes
 		description.replace("'", "''"),
+		icon_name,
 		node_type,
 		str(trait_id) if trait_id > 0 else "NULL",
 		str(skill_id) if skill_id > 0 else "NULL",
@@ -1302,6 +1563,8 @@ func seed_nodes():
 	
 	if result.size() > 0 and result[0]["count"] > 0:
 		print("Database already contains node data")
+		# Update existing nodes with icon names if they don't have them
+		_update_existing_nodes_with_icons()
 		return
 	
 	print("No existing node data found, seeding nodes...")
@@ -1323,6 +1586,7 @@ func seed_nodes():
 		{
 			"name": "Combat Mastery",
 			"description": "Master of all combat techniques",
+			"icon_name": "lion",
 			"node_type": "MASTER_ATTRIBUTE",
 			"trait_id": trait_id,
 			"skill_id": -1,
@@ -1331,6 +1595,7 @@ func seed_nodes():
 		{
 			"name": "Arcane Knowledge",
 			"description": "Deep understanding of magical arts",
+			"icon_name": "magic_book",
 			"node_type": "IMPROVEMENT",
 			"trait_id": -1,
 			"skill_id": ability_id,
@@ -1339,6 +1604,7 @@ func seed_nodes():
 		{
 			"name": "Stealth Expert",
 			"description": "Master of stealth and subterfuge",
+			"icon_name": "monkey",
 			"node_type": "PASSIVE",
 			"trait_id": trait_id,
 			"skill_id": -1,
@@ -1347,6 +1613,7 @@ func seed_nodes():
 		{
 			"name": "Leadership",
 			"description": "Natural leader and commander",
+			"icon_name": "giant",
 			"node_type": "ACTIVE",
 			"trait_id": -1,
 			"skill_id": -1,
@@ -1358,6 +1625,7 @@ func seed_nodes():
 		var node_id = save_node(
 			node.name,
 			node.description,
+			node.icon_name,
 			node.node_type,
 			node.trait_id,
 			node.skill_id,
@@ -1457,6 +1725,119 @@ func seed_backgrounds():
 			print("Error inserting " + background.name + " background: " + db.error_message)
 	
 	print("Background seeding complete")
+
+func seed_features():
+	"""Seed the database with feature data"""
+	# Check if we already have feature data
+	var check_query = "SELECT COUNT(*) as count FROM features"
+	db.query(check_query)
+	var result = db.query_result
+	
+	if result.size() > 0 and result[0]["count"] > 0:
+		print("Database already contains feature data")
+		return
+	
+	print("No existing feature data found, seeding features...")
+	
+	# Define features data with 6 features
+	var features_data = [
+		{
+			"name": "Force of Nature",
+			"description": "Born with exceptional physical strength and resilience",
+			"icon_name": "force_of_nature",
+			"attribute_bonuses": {"Strength": 1, "Stamina": 1},
+			"ability_bonuses": {"Athletics": 1},
+			"skill_bonuses": {},
+			"other_bonuses": {},
+			"trait_id": 1,  # Polyvalent trait (Human trait)
+			"display_order": 1
+		},
+		{
+			"name": "Master Mind",
+			"description": "Exceptional intelligence and analytical thinking",
+			"icon_name": "master_mind",
+			"attribute_bonuses": {"Intelligence": 2},
+			"ability_bonuses": {"Knowledge": 1, "Arcana": 1},
+			"skill_bonuses": {},
+			"other_bonuses": {},
+			"trait_id": null,  # No trait for this feature
+			"display_order": 2
+		},
+		{
+			"name": "Shadow Walker",
+			"description": "Natural stealth and agility abilities",
+			"icon_name": "shadow_walker",
+			"attribute_bonuses": {"Agility": 1, "Resolution": 1},
+			"ability_bonuses": {"Stealth": 1, "Sleight of Hand": 1},
+			"skill_bonuses": {},
+			"other_bonuses": {},
+			"trait_id": null,  # No trait for this feature
+			"display_order": 3
+		},
+		{
+			"name": "Iron Will",
+			"description": "Unbreakable mental fortitude and determination",
+			"icon_name": "iron_will",
+			"attribute_bonuses": {"Resolution": 2},
+			"ability_bonuses": {"Intimidation": 1},
+			"skill_bonuses": {},
+			"other_bonuses": {},
+			"trait_id": null,  # No trait for this feature
+			"display_order": 4
+		},
+		{
+			"name": "Mystic Touch",
+			"description": "Natural affinity for magic and mystical energies",
+			"icon_name": "mystic_touch",
+			"attribute_bonuses": {"Essence": 2},
+			"ability_bonuses": {"Arcana": 1, "Perception": 1},
+			"skill_bonuses": {},
+			"other_bonuses": {},
+			"trait_id": null,  # No trait for this feature
+			"display_order": 5
+		},
+		{
+			"name": "Swift Reflexes",
+			"description": "Lightning-fast reactions and coordination",
+			"icon_name": "swift_reflexes",
+			"attribute_bonuses": {"Agility": 1, "Intelligence": 1},
+			"ability_bonuses": {"Acrobatics": 1, "Perception": 1},
+			"skill_bonuses": {},
+			"other_bonuses": {},
+			"trait_id": null,  # No trait for this feature
+			"display_order": 6
+		}
+	]
+	
+	for feature in features_data:
+		var json = JSON.new()
+		var attr_bonuses_json = json.stringify(feature.attribute_bonuses)
+		var ability_bonuses_json = json.stringify(feature.ability_bonuses)
+		var skill_bonuses_json = json.stringify(feature.skill_bonuses)
+		var other_bonuses_json = json.stringify(feature.other_bonuses)
+		
+		var insert_query = """
+		INSERT INTO features (name, description, icon_name, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, trait_id, display_order)
+		VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, %d)
+		""" % [
+			feature.name,
+			feature.description,
+			feature.icon_name,
+			attr_bonuses_json,
+			ability_bonuses_json,
+			skill_bonuses_json,
+			other_bonuses_json,
+			"NULL" if feature.trait_id == null else str(feature.trait_id),
+			feature.display_order
+		]
+		
+		db.query(insert_query)
+		if is_query_successful():
+			print("Inserted feature: " + feature.name)
+		else:
+			print("Error inserting " + feature.name + " feature: " + db.error_message)
+	
+	print("Feature seeding complete")
 
 func seed_races_traits():
 	"""Seed the races_traits join table with race-trait relationships"""
@@ -1590,8 +1971,78 @@ func get_all_backgrounds():
 			
 			backgrounds.append(background_data)
 		
-		print("Successfully fetched %d backgrounds from database" % backgrounds.size())
+			print("Successfully fetched %d backgrounds from database" % backgrounds.size())
 		return backgrounds
 	else:
 		print("Error fetching backgrounds: ", db.error_message)
+		return []
+
+func get_all_features():
+	"""Get all features from the database"""
+	var query = """
+	SELECT f.*, t.name as trait_name, t.description as trait_description, t.icon_name as trait_icon_name
+	FROM features f
+	LEFT JOIN traits t ON f.trait_id = t.id
+	ORDER BY f.display_order
+	"""
+	db.query(query)
+	
+	if is_query_successful():
+		var features = []
+		for feature_data in db.query_result:
+			# Parse JSON bonuses
+			if feature_data.attribute_bonuses:
+				var json = JSON.new()
+				if json.parse(feature_data.attribute_bonuses) == OK:
+					feature_data.attribute_bonuses_dict = json.data
+				else:
+					feature_data.attribute_bonuses_dict = {}
+			else:
+				feature_data.attribute_bonuses_dict = {}
+			
+			if feature_data.ability_bonuses:
+				var json = JSON.new()
+				if json.parse(feature_data.ability_bonuses) == OK:
+					feature_data.ability_bonuses_dict = json.data
+				else:
+					feature_data.ability_bonuses_dict = {}
+			else:
+				feature_data.ability_bonuses_dict = {}
+			
+			if feature_data.skill_bonuses:
+				var json = JSON.new()
+				if json.parse(feature_data.skill_bonuses) == OK:
+					feature_data.skill_bonuses_dict = json.data
+				else:
+					feature_data.skill_bonuses_dict = {}
+			else:
+				feature_data.skill_bonuses_dict = {}
+			
+			if feature_data.other_bonuses:
+				var json = JSON.new()
+				if json.parse(feature_data.other_bonuses) == OK:
+					feature_data.other_bonuses_dict = json.data
+				else:
+					feature_data.other_bonuses_dict = {}
+			else:
+				feature_data.other_bonuses_dict = {}
+			
+			# Add trait information
+			if feature_data.trait_id and feature_data.trait_name:
+				feature_data.has_trait = true
+				feature_data.trait_data = {
+					"name": feature_data.trait_name,
+					"description": feature_data.trait_description,
+					"icon_name": feature_data.trait_icon_name
+				}
+			else:
+				feature_data.has_trait = false
+				feature_data.trait_data = {}
+			
+			features.append(feature_data)
+		
+		print("Successfully fetched %d features from database" % features.size())
+		return features
+	else:
+		print("Error fetching features: ", db.error_message)
 		return []

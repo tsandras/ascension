@@ -4,10 +4,12 @@ extends Control
 var attribute_manager: AllocationManager
 var race_manager: AllocationManager
 var background_manager: AllocationManager
+var features_manager: AllocationManager
 var attributes_display: AttributesDisplay
 var abilities_display: AbilitiesDisplay
 var race_carousel: CarouselPicker
 var background_carousel: CarouselPicker
+var features_carousel: CarouselPicker
 
 # UI node references
 @onready var points_label = $CenterContainer/VBoxContainer/PointsLabel
@@ -18,9 +20,8 @@ var background_carousel: CarouselPicker
 
 @onready var race_container = $CenterContainer/VBoxContainer/ContentContainer/Column1/RaceContainer
 @onready var background_container = $CenterContainer/VBoxContainer/ContentContainer/Column1/BackgroundContainer
-@onready var trait_name_label = $CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitNameLabel
-@onready var trait_desc_label = $CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitDescLabel
-@onready var trait_bonuses_label = $CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo/TraitBonusesLabel
+@onready var features_container = $CenterContainer/VBoxContainer/ContentContainer/Column1/FeaturesContainer
+
 @onready var back_button = $CenterContainer/VBoxContainer/ButtonsContainer/BackButton
 @onready var continue_button = $CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton
 
@@ -40,6 +41,8 @@ var selected_avatar = ""
 var avatar_textures = {}
 # Store portrait textures
 var portrait_textures = {}
+# Store trait icons
+var trait_icons = {}
 
 func _ready():
 	# Apply UI constants to this scene
@@ -49,13 +52,17 @@ func _ready():
 	# Note: In Godot 4, DatabaseManager should be ready immediately
 	
 	# Initialize the managers
+	print("DEBUG: Initializing managers...")
 	attribute_manager = AllocationManager.new("attributes", "attributes", 5)
 	race_manager = AllocationManager.new("races", "races", 0)  # Races don't use points
 	background_manager = AllocationManager.new("backgrounds", "backgrounds", 0)  # Backgrounds don't use points
+	features_manager = AllocationManager.new("features", "features", 0)  # Features don't use points
 	attributes_display = AttributesDisplay.new()
 	abilities_display = AbilitiesDisplay.new()
 	race_carousel = CarouselPicker.new()
 	background_carousel = CarouselPicker.new()
+	features_carousel = CarouselPicker.new()
+	print("DEBUG: Managers initialized")
 	
 	# Generate the UI dynamically
 	generate_portrait_avatar_ui()
@@ -82,6 +89,8 @@ func _ready():
 	# Load avatar and portrait textures
 	load_avatar_textures()
 	load_portrait_textures()
+	# Load trait icons
+	load_trait_icons()
 	
 
 	
@@ -92,7 +101,9 @@ func _ready():
 	load_existing_character_data()
 	
 	# Update the UI
+	print("DEBUG: Calling update_ui...")
 	update_ui()
+	print("DEBUG: _ready function completed")
 
 func add_cursor_to_buttons():
 	"""Add cursor functionality to all buttons"""
@@ -110,6 +121,7 @@ func add_cursor_to_buttons():
 
 func load_existing_character_data():
 	"""Load existing character data if user is returning from step 2"""
+	print("DEBUG: load_existing_character_data called")
 	if not CharacterCreation.has_complete_data():
 		print("No existing character data to load")
 		return
@@ -123,10 +135,13 @@ func load_existing_character_data():
 	
 	# Load selected race
 	if CharacterCreation.selected_race != "":
+		print("DEBUG: Loading existing race selection: ", CharacterCreation.selected_race)
 		race_manager.select_race(CharacterCreation.selected_race)
 		# Note: Race carousel will be created later in generate_portrait_avatar_ui()
 		# Race selection will be applied after carousel creation
 		print("Loaded selected race: " + CharacterCreation.selected_race)
+	else:
+		print("DEBUG: No existing race selection found")
 	
 	# Load selected background
 	if CharacterCreation.selected_background != "":
@@ -134,6 +149,17 @@ func load_existing_character_data():
 		# Note: Background carousel will be created later in generate_portrait_avatar_ui()
 		# Background selection will be applied after carousel creation
 		print("Loaded selected background: " + CharacterCreation.selected_background)
+	else:
+		print("DEBUG: No existing background selection found")
+	
+	# Load selected feature
+	if CharacterCreation.selected_feature != "":
+		features_manager.select_feature(CharacterCreation.selected_feature)
+		# Note: Features carousel will be created later in generate_portrait_avatar_ui()
+		# Features selection will be applied after carousel creation
+		print("Loaded selected feature: " + CharacterCreation.selected_feature)
+	else:
+		print("DEBUG: No existing feature selection found")
 	
 	# Load selected sex
 	if CharacterCreation.selected_sex != "":
@@ -172,6 +198,7 @@ func load_existing_character_data():
 	print("Character data loading complete")
 
 func generate_race_ui():
+	print("DEBUG: generate_race_ui called")
 	# Clear existing children
 	for child in race_container.get_children():
 		child.queue_free()
@@ -192,6 +219,7 @@ func generate_race_ui():
 	# Store race data for trait display
 	for race in races:
 		race_data[race.name] = race
+		print("DEBUG: Stored race data for: ", race.name)
 	
 	# Create race label
 	var race_label = Label.new()
@@ -211,9 +239,8 @@ func generate_race_ui():
 	print("Carousel container created: ", carousel_container)
 	print("Race container children count: ", race_container.get_child_count())
 	
-
-	
 	# Use call_deferred to ensure the carousel is fully created before connecting signals
+	print("DEBUG: Scheduling race carousel signal connection...")
 	call_deferred("_connect_race_carousel_signals")
 	
 	# Initial race selection will be set after signals are connected
@@ -225,8 +252,10 @@ func generate_race_ui():
 
 func _connect_race_carousel_signals():
 	"""Connect race carousel signals after it's fully created"""
+	print("DEBUG: _connect_race_carousel_signals called")
 	# Connect carousel selection change (with null checks)
 	if race_carousel and race_carousel.left_button and race_carousel.right_button:
+		print("DEBUG: Connecting race carousel button signals...")
 		race_carousel.left_button.pressed.connect(_on_race_carousel_changed)
 		race_carousel.right_button.pressed.connect(_on_race_carousel_changed)
 		
@@ -236,6 +265,7 @@ func _connect_race_carousel_signals():
 		print("Race carousel buttons connected successfully")
 		
 		# Now that signals are connected, we can set initial race selection
+		print("DEBUG: Setting initial race selection...")
 		_set_initial_race_selection()
 	else:
 		print("ERROR: Race carousel buttons not found!")
@@ -246,11 +276,13 @@ func _connect_race_carousel_signals():
 
 func _set_initial_race_selection():
 	"""Set initial race selection after carousel is ready"""
+	print("DEBUG: _set_initial_race_selection called")
 	if not race_carousel:
 		print("Warning: Race carousel not available for initial selection")
 		return
 		
 	var races = DatabaseManager.get_all_races()
+	print("DEBUG: Found %d races in database" % races.size())
 	if races.size() > 0:
 		# If we have a previously selected race, set it in the carousel
 		if CharacterCreation.selected_race != "":
@@ -260,6 +292,7 @@ func _set_initial_race_selection():
 				print("Set carousel to previously selected race: " + CharacterCreation.selected_race)
 		
 		# Trigger the race selection change to update traits
+		print("DEBUG: Triggering race carousel change...")
 		_on_race_carousel_changed()
 	else:
 		print("Warning: No races available for initial selection")
@@ -268,6 +301,7 @@ func _set_initial_race_selection():
 
 func generate_portrait_avatar_ui():
 	"""Generate UI for portrait and avatar selection"""
+	print("DEBUG: generate_portrait_avatar_ui called")
 	# Find the portrait and avatar containers in the new subcolumn structure
 	var portrait_container = $CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/PortraitSubColumn/PortraitContainer
 	var avatar_container = $CenterContainer/VBoxContainer/ContentContainer/Column2/PortraitAvatarContainer/AvatarSubColumn/AvatarContainer
@@ -314,20 +348,27 @@ func generate_portrait_avatar_ui():
 	# Create a character object to pass to the attributes display
 	var character = Character.new()
 	character.name = character_name_input.text if character_name_input else ""
-	character.race_name = race_manager.get_selected_race() if race_manager else ""
-	character.background_name = background_manager.get_selected_background() if background_manager else ""
+	var selected_race = race_manager.get_selected_race() if race_manager else ""
+	var selected_background = background_manager.get_selected_background() if background_manager else ""
+	var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+	character.race_name = selected_race
+	character.background_name = selected_background
+	character.feature_name = selected_feature
 	character.sex = selected_sex
 	character.portrait = selected_portrait
 	character.avatar = selected_avatar
 	character.attributes = attribute_manager.get_character_items() if attribute_manager else {}
+	print("DEBUG: race_manager.get_selected_race() returned: '%s'" % selected_race)
 	
 	# Debug: Print character data
 	print("Creating character for attributes display:")
 	print("  Name: ", character.name)
 	print("  Race: ", character.race_name)
 	print("  Background: ", character.background_name)
+	print("  Feature: ", character.feature_name)
 	print("  Sex: ", character.sex)
 	print("  Attributes: ", character.attributes)
+	print("DEBUG: race_manager.get_selected_race() returned: '%s'" % selected_race)
 	
 	attributes_area_node = attributes_display.create_attributes_area(character)
 	var column1 = $CenterContainer/VBoxContainer/ContentContainer/Column1
@@ -338,14 +379,22 @@ func generate_portrait_avatar_ui():
 	abilities_area_node = abilities_display.create_abilities_area(character)
 	column1.add_child(abilities_area_node)
 	print("Abilities area created and added to Column1 (left side)")
+	print("DEBUG: race_manager.get_selected_race() returned: '%s'" % selected_race)
 	
 	# Create race carousel after attributes and abilities
+	print("DEBUG: Calling generate_race_ui...")
 	generate_race_ui()
 	print("Race carousel created and added to Column1 (left side)")
 	
 	# Create background carousel after race carousel
+	print("DEBUG: Calling generate_background_ui...")
 	generate_background_ui()
 	print("Background carousel created and added to Column1 (left side)")
+	
+	# Create features carousel after background carousel
+	print("DEBUG: Calling generate_features_ui...")
+	generate_features_ui()
+	print("Features carousel created and added to Column1 (left side)")
 
 func get_attributes_area() -> Control:
 	"""Get the attributes area node - useful for other parts of the game"""
@@ -363,11 +412,15 @@ func update_attributes_display():
 		column1.remove_child(attributes_area_node)
 		attributes_area_node.queue_free()
 		
-			# Create a new character object with current data
+		# Create a new character object with current data
 		var character = Character.new()
 		character.name = character_name_input.text if character_name_input else ""
-		character.race_name = race_manager.get_selected_race() if race_manager else ""
-		character.background_name = background_manager.get_selected_background() if background_manager else ""
+		var selected_race = race_manager.get_selected_race() if race_manager else ""
+		var selected_background = background_manager.get_selected_background() if background_manager else ""
+		var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+		character.race_name = selected_race
+		character.background_name = selected_background
+		character.feature_name = selected_feature
 		character.sex = selected_sex
 		character.portrait = selected_portrait
 		character.avatar = selected_avatar
@@ -377,6 +430,7 @@ func update_attributes_display():
 		attributes_area_node = attributes_display.create_attributes_area(character)
 		column1.add_child(attributes_area_node)
 		print("Attributes display updated with current character data")
+		print("DEBUG: race_manager.get_selected_race() returned: '%s'" % selected_race)
 		
 		# Also update abilities area
 		update_abilities_display()
@@ -391,16 +445,21 @@ func update_attributes_display():
 
 func _on_race_carousel_changed():
 	"""Handle race selection change in the carousel"""
+	print("DEBUG: _on_race_carousel_changed called")
 	if not race_carousel:
 		print("Warning: Race carousel is null in _on_race_carousel_changed")
 		return
 		
 	var selected_race_data = race_carousel.get_current_item()
+	print("DEBUG: Selected race data: ", selected_race_data)
 	if selected_race_data and selected_race_data.has("name"):
 		var race_name = selected_race_data.name
+		print("DEBUG: Calling _on_race_selected with: ", race_name)
 		_on_race_selected(race_name)
 	else:
 		print("Warning: No valid race data in carousel")
+	
+	print("DEBUG: _on_race_carousel_changed completed")
 
 
 
@@ -516,6 +575,53 @@ func _set_initial_background_selection():
 	else:
 		print("Warning: No backgrounds available for initial selection")
 
+func _connect_features_carousel_signals():
+	"""Connect features carousel signals after it's fully created"""
+	print("DEBUG: _connect_features_carousel_signals called")
+	# Connect carousel selection change (with null checks)
+	if features_carousel and features_carousel.left_button and features_carousel.right_button:
+		print("DEBUG: Connecting features carousel button signals...")
+		features_carousel.left_button.pressed.connect(_on_features_carousel_changed)
+		features_carousel.right_button.pressed.connect(_on_features_carousel_changed)
+		
+		# Add cursor functionality to carousel buttons
+		CursorUtils.add_cursor_to_button(features_carousel.left_button)
+		CursorUtils.add_cursor_to_button(features_carousel.right_button)
+		print("Features carousel buttons connected successfully")
+		
+		# Now that signals are connected, we can set initial features selection
+		print("DEBUG: Setting initial features selection...")
+		_set_initial_features_selection()
+	else:
+		print("ERROR: Features carousel buttons not found!")
+		print("Features carousel: ", features_carousel)
+		if features_carousel:
+			print("Left button: ", features_carousel.left_button)
+			print("Right button: ", features_carousel.right_button)
+
+func _set_initial_features_selection():
+	"""Set initial features selection after carousel is ready"""
+	print("DEBUG: _set_initial_features_selection called")
+	if not features_carousel:
+		print("Warning: Features carousel not available for initial selection")
+		return
+		
+	var features = DatabaseManager.get_all_features()
+	print("DEBUG: Found %d features in database" % features.size())
+	if features.size() > 0:
+		# If we have a previously selected feature, set it in the carousel
+		if CharacterCreation.selected_feature != "":
+			var feature_index = features_carousel.find_item_index_by_name(CharacterCreation.selected_feature, "name")
+			if feature_index >= 0:
+				features_carousel.set_current_index(feature_index)
+				print("Set carousel to previously selected feature: " + CharacterCreation.selected_feature)
+		
+		# Trigger the features selection change to update abilities
+		print("DEBUG: Triggering features carousel change...")
+		_on_features_carousel_changed()
+	else:
+		print("Warning: No features available for initial selection")
+
 func _on_background_carousel_changed():
 	"""Handle background selection change in the carousel"""
 	if not background_carousel:
@@ -528,6 +634,72 @@ func _on_background_carousel_changed():
 		_on_background_selected(background_name)
 	else:
 		print("Warning: No valid background data in carousel")
+
+func _on_features_carousel_changed():
+	"""Handle features selection change in the carousel"""
+	print("DEBUG: _on_features_carousel_changed called")
+	if not features_carousel:
+		print("Warning: Features carousel is null in _on_features_carousel_changed")
+		return
+		
+	var selected_feature_data = features_carousel.get_current_item()
+	print("DEBUG: Selected feature data: ", selected_feature_data)
+	if selected_feature_data and selected_feature_data.has("name"):
+		var feature_name = selected_feature_data.name
+		print("DEBUG: Calling _on_feature_selected with: ", feature_name)
+		_on_feature_selected(feature_name)
+	else:
+		print("Warning: No valid feature data in carousel")
+	
+	print("DEBUG: _on_features_carousel_changed completed")
+
+func generate_features_ui():
+	"""Generate UI for feature selection"""
+	print("DEBUG: generate_features_ui called")
+	# Clear existing children
+	for child in features_container.get_children():
+		child.queue_free()
+	
+	# Note: Children are freed immediately in Godot 4
+	
+	# Debug features container
+	print("Features container: ", features_container)
+	print("Features container visible: ", features_container.visible)
+	print("Features container size: ", features_container.size)
+	print("Features container position: ", features_container.position)
+	
+	# Get all features data
+	var features = DatabaseManager.get_all_features()
+	print("Features data: ", features)
+	
+	# Create features label
+	var features_label = Label.new()
+	features_label.text = "SELECT FEATURE"
+	features_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	features_label.add_theme_font_size_override("font_size", 16)
+	features_container.add_child(features_label)
+	
+	# Add some spacing
+	var features_spacer = Control.new()
+	features_spacer.custom_minimum_size = Vector2(0, 20)
+	features_container.add_child(features_spacer)
+	
+	# Create features carousel
+	print("Creating features carousel with %d features" % features.size())
+	var carousel_container = features_carousel.create_carousel(features, "name", "description", features_container)
+	print("Features carousel container created: ", carousel_container)
+	print("Features container children count: ", features_container.get_child_count())
+	
+	# Use call_deferred to ensure the carousel is fully created before connecting signals
+	print("DEBUG: Scheduling features carousel signal connection...")
+	call_deferred("_connect_features_carousel_signals")
+	
+	# Initial features selection will be set after signals are connected
+	
+	# Add some spacing after the features carousel
+	var features_bottom_spacer = Control.new()
+	features_bottom_spacer.custom_minimum_size = Vector2(0, 20)
+	features_container.add_child(features_bottom_spacer)
 
 func _on_background_selected(background_name: String):
 	"""Handle background selection"""
@@ -573,10 +745,93 @@ func update_background_carousel_display():
 	else:
 		print("Background carousel not available for update")
 
+func _on_feature_selected(feature_name: String):
+	"""Handle feature selection"""
+	print("DEBUG: _on_feature_selected called with feature: ", feature_name)
+	
+	# Check if this is a different feature than the currently selected one
+	var currently_selected = features_manager.get_selected_feature() if features_manager else ""
+	if currently_selected != "" and currently_selected != feature_name:
+		print("DEBUG: Changing from feature '%s' to '%s', clearing previous bonuses" % [currently_selected, feature_name])
+		# Clear previous feature bonuses before selecting new one
+		attribute_manager.clear_feature_bonuses()
+	
+	if features_manager.select_feature(feature_name):
+		print("DEBUG: Feature selection successful")
+		# Get feature data for the selected feature
+		var features = DatabaseManager.get_all_features()
+		var selected_feature = null
+		for feature in features:
+			if feature.name == feature_name:
+				selected_feature = feature
+				break
+		
+		if selected_feature:
+			# Store feature data for abilities display
+			CharacterCreation.current_feature_data = selected_feature
+			
+			# Apply new feature attribute bonuses
+			if selected_feature.has("attribute_bonuses_dict"):
+				var attr_bonuses = selected_feature.attribute_bonuses_dict
+				print("DEBUG: Applying feature attribute bonuses: ", attr_bonuses)
+				for attr_name in attr_bonuses:
+					var bonus_value = attr_bonuses[attr_name]
+					# Find the attribute (case-insensitive)
+					for attr in attribute_manager.get_all_item_values():
+						if attr.to_lower() == attr_name.to_lower():
+							# Apply the bonus (features don't consume allocation points)
+							var current_value = attribute_manager.get_item_value(attr)
+							attribute_manager.character_items[attr] = current_value + bonus_value
+							print("DEBUG: Applied %s bonus to %s: %d + %d = %d" % [feature_name, attr, current_value, bonus_value, attribute_manager.character_items[attr]])
+							break
+			
+			# Update abilities display to show feature bonuses
+			print("Updating abilities display for feature: " + feature_name)
+			update_abilities_display()
+			
+			# Update features carousel display
+			update_features_carousel_display()
+			
+			# Update trait display to show feature traits
+			var selected_race = race_manager.get_selected_race() if race_manager else ""
+			if selected_race != "":
+				print("Updating trait display for feature: " + feature_name)
+				update_trait_display(selected_race)
+			
+			# Update the UI to reflect changes
+			update_ui()
+			
+			print("Feature selected: " + feature_name)
+			print("Feature bonuses applied: ", selected_feature.attribute_bonuses_dict)
+			print("Feature data structure: ", selected_feature.keys())
+		else:
+			print("Warning: Could not find feature data for: " + feature_name)
+	else:
+		print("Warning: Could not select feature: " + feature_name)
+	
+	print("DEBUG: _on_feature_selected completed")
+
+
+
+func update_features_carousel_display():
+	"""Update the features carousel display to show current selection"""
+	if features_carousel and features_carousel.has_items():
+		var current_feature = features_carousel.get_current_item()
+		if current_feature.has("name"):
+			# Update the carousel display
+			features_carousel.update_display()
+			print("Features carousel display updated")
+	else:
+		print("Features carousel not available for update")
+
 func _on_race_selected(race_name: String):
+	print("DEBUG: _on_race_selected called with race: ", race_name)
+	print("DEBUG: Calling race_manager.select_race('%s')" % race_name)
 	if race_manager.select_race(race_name):
+		print("DEBUG: Race selection successful")
 		# Get trait data for the selected race
 		var trait_data = TraitManager.get_race_trait(race_name)
+		print("DEBUG: Got trait data: ", trait_data)
 		
 		# Get race data for attribute bonuses
 		var races = DatabaseManager.get_all_races()
@@ -628,10 +883,33 @@ func _on_race_selected(race_name: String):
 		# Store trait data for step 2
 		CharacterCreation.current_trait_data = trait_data
 		
+		# Reapply feature bonuses if a feature is selected (since race changed)
+		var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+		if selected_feature != "":
+			print("DEBUG: Reapplying feature bonuses after race change: ", selected_feature)
+			# Get feature data and reapply bonuses
+			var features = DatabaseManager.get_all_features()
+			for feature in features:
+				if feature.name == selected_feature and feature.has("attribute_bonuses_dict"):
+					var attr_bonuses = feature.attribute_bonuses_dict
+					print("DEBUG: Reapplying feature attribute bonuses: ", attr_bonuses)
+					for attr_name in attr_bonuses:
+						var bonus_value = attr_bonuses[attr_name]
+						# Find the attribute (case-insensitive)
+						for attr in attribute_manager.get_all_item_values():
+							if attr.to_lower() == attr_name.to_lower():
+								# Apply the bonus (features don't consume allocation points)
+								var current_value = attribute_manager.get_item_value(attr)
+								attribute_manager.character_items[attr] = current_value + bonus_value
+								print("DEBUG: Reapplied %s bonus to %s: %d + %d = %d" % [selected_feature, attr, current_value, bonus_value, attribute_manager.character_items[attr]])
+								break
+		
+		print("DEBUG: Calling update_trait_display for race: ", race_name)
 		update_trait_display(race_name)
 		update_avatar_display()  # Update avatar when race changes
 		update_race_carousel_display()
 		update_ui()
+		print("DEBUG: _on_race_selected completed")
 
 func _on_character_name_changed(_new_text: String):
 	# Update the continue button state when the character name changes
@@ -705,6 +983,39 @@ func load_portrait_textures():
 		print("Error: Could not open ink_portraits directory")
 	
 	print("Portrait loading complete. Loaded %d portraits" % portrait_textures.size())
+
+func load_trait_icons():
+	"""Load all available trait icons"""
+	print("Loading trait icons...")
+	
+	# Load all icon files from the traits directory
+	var dir = DirAccess.open("res://assets/icons/traits/")
+	if dir:
+		trait_icons = {}
+		
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		
+		while file_name != "":
+			if file_name.ends_with(".png") and not file_name.ends_with(".import"):
+				var icon_path = "res://assets/icons/traits/" + file_name
+				var texture = load(icon_path)
+				if texture:
+					# Store using the filename without extension as the key
+					var key = file_name.replace(".png", "")
+					trait_icons[key] = texture
+					print("Loaded trait icon: ", key, " - Size: ", texture.get_size(), " - Valid: ", texture != null)
+				else:
+					print("Warning: Failed to load trait icon: ", icon_path)
+			
+			file_name = dir.get_next()
+		
+		dir.list_dir_end()
+	else:
+		print("Error: Could not open traits directory")
+	
+	print("Trait icon loading complete. Loaded %d icons" % trait_icons.size())
+	print("DEBUG: Available trait icon keys: ", trait_icons.keys())
 
 func _on_male_button_pressed():
 	"""Handle male button selection"""
@@ -1008,44 +1319,143 @@ func _on_avatar_selected_from_modal(avatar_key: String):
 		modal.queue_free()
 
 func update_trait_display(race_name: String):
+	print("DEBUG: update_trait_display called for race: ", race_name)
+	var all_traits = []
+	
 	if race_data.has(race_name):
 		var race = race_data[race_name]
+		print("DEBUG: Race data found: ", race)
 		
 		# Get trait data using TraitManager
 		var trait_data = TraitManager.get_race_trait(race_name)
+		print("DEBUG: Trait data from TraitManager: ", trait_data)
 		
 		# Get traits for this race
-		var traits = DatabaseManager.get_race_traits(race_name)
-		
-		# Display trait names
-		if traits.size() > 0:
-			var trait_names = []
-			for vtrait in traits:
-				trait_names.append(vtrait.name)
-			trait_name_label.text = "Traits: " + ", ".join(trait_names)
-		else:
-			trait_name_label.text = "No Traits"
-		
-		# Display trait descriptions
-		if traits.size() > 0:
-			var trait_descriptions = []
-			for vtrait in traits:
-				trait_descriptions.append(vtrait.description)
-			trait_desc_label.text = " | ".join(trait_descriptions)
-		else:
-			trait_desc_label.text = ""
-		
-		# Display comprehensive trait information using TraitManager
-		var trait_info = TraitManager.get_trait_description(trait_data)
-		if trait_info != "":
-			trait_bonuses_label.text = trait_info
-		else:
-			trait_bonuses_label.text = "No trait bonuses"
+		var race_traits = DatabaseManager.get_race_traits(race_name)
+		print("DEBUG: Race traits from database: ", race_traits.size(), " traits found")
+		for i in range(race_traits.size()):
+			var t = race_traits[i]
+			print("DEBUG: Race trait %d: name='%s', icon_name='%s', description='%s'" % [i, t.get("name", "Unknown"), t.get("icon_name", "None"), t.get("description", "None")])
+			all_traits.append(t)
 	else:
-		# Reset trait display if no race data found
-		trait_name_label.text = "Select a race to see its traits"
-		trait_desc_label.text = ""
-		trait_bonuses_label.text = ""
+		print("DEBUG: No race data found for: ", race_name)
+	
+	# Check if selected feature has a trait
+	var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+	if selected_feature != "":
+		var features = DatabaseManager.get_all_features()
+		for feature in features:
+			if feature.name == selected_feature and feature.has_trait:
+				print("DEBUG: Feature '%s' has trait: %s" % [selected_feature, feature.trait_data.name])
+				# Add feature trait to the list
+				all_traits.append(feature.trait_data)
+	
+	print("DEBUG: Total traits to display: ", all_traits.size())
+	
+	# Clear existing trait icons and create new ones
+	print("DEBUG: Clearing existing trait icons...")
+	_clear_trait_icons()
+	
+	# Display trait icons instead of descriptions
+	if all_traits.size() > 0:
+		print("DEBUG: Creating trait icons...")
+		_create_trait_icons(all_traits)
+	else:
+		print("DEBUG: No traits to create icons for")
+		pass
+
+func _clear_trait_icons():
+	"""Clear existing trait icons from the description label area"""
+	# Find and remove any existing trait icon containers
+	var trait_info = get_node_or_null("CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo")
+	if trait_info:
+		print("DEBUG: Clearing trait icons from container with %d children" % trait_info.get_child_count())
+		# Remove any existing icon containers and spacers
+		var children_to_remove = []
+		for i in range(trait_info.get_child_count()):
+			var child = trait_info.get_child(i)
+			if child.name.begins_with("TraitIcon") or child.name == "TraitIconContainer" or child.name.begins_with("Spacer") or child.name == "SpacerBeforeIcons":
+				children_to_remove.append(child)
+				print("DEBUG: Marking child for removal: %s" % child.name)
+		
+		print("DEBUG: Removing %d children" % children_to_remove.size())
+		for child in children_to_remove:
+			trait_info.remove_child(child)
+			child.queue_free()
+		
+		print("DEBUG: After clearing, container has %d children" % trait_info.get_child_count())
+	else:
+		print("DEBUG: Trait info container not found for clearing")
+
+func _create_trait_icons(traits: Array):
+	"""Create and display trait icons with tooltips and frames"""
+	print("DEBUG: _create_trait_icons called with %d traits" % traits.size())
+	var trait_info = get_node_or_null("CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo")
+	if not trait_info:
+		print("Warning: Trait info container not found")
+		print("DEBUG: Full path attempted: CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo")
+		return
+	else:
+		print("DEBUG: Trait info container found successfully")
+	
+	# Load the trait frame texture
+	var frame_texture = load("res://assets/ui/frame_trait.svg")
+	if not frame_texture:
+		print("Warning: Could not load trait frame texture")
+		return
+	
+	# Create a horizontal container for the icons
+	var icon_container = HBoxContainer.new()
+	icon_container.name = "TraitIconContainer"
+	icon_container.custom_minimum_size = Vector2(0, 140)  # Increased height for 130x130 framed icons
+	icon_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	# Add some spacing before the icons
+	var spacer = Control.new()
+	spacer.name = "SpacerBeforeIcons"
+	spacer.custom_minimum_size = Vector2(0, 10)
+	trait_info.add_child(spacer)
+	
+	# Add the icon container
+	trait_info.add_child(icon_container)
+	
+	# Create an icon for each trait
+	for i in range(traits.size()):
+		var trait_item = traits[i]
+		var icon_name = trait_item.get("icon_name", "")
+		print("DEBUG: Processing trait %d: '%s' with icon_name: '%s'" % [i, trait_item.get("name", "Unknown"), icon_name])
+		
+		if icon_name != "" and trait_icons.has(icon_name):
+			print("DEBUG: Creating icon for trait '%s' with icon '%s'" % [trait_item.get("name", "Unknown"), icon_name])
+			
+			# Create a framed trait icon using the utility function
+			var framed_icon_container = create_framed_trait_icon(trait_icons[icon_name], frame_texture)
+			if framed_icon_container:
+				# Set the name for this specific trait icon
+				framed_icon_container.name = "TraitIcon" + str(i)
+				
+				# Create tooltip with trait description
+				var tooltip_text = trait_item.get("description", "No description available")
+				# Find the icon texture child to add tooltip
+				var icon_texture = framed_icon_container.get_node_or_null("TraitIconTexture")
+				if icon_texture:
+					icon_texture.tooltip_text = tooltip_text
+				
+				# Add the framed icon container to the icon container
+				icon_container.add_child(framed_icon_container)
+				print("DEBUG: Successfully added framed icon for trait '%s'" % trait_item.get("name", "Unknown"))
+			else:
+				print("Warning: Failed to create framed icon for trait: ", trait_item.get("name", "Unknown"))
+			
+			# Add some spacing between icons
+			if i < traits.size() - 1:
+				var icon_spacer = Control.new()
+				icon_spacer.custom_minimum_size = Vector2(15, 0)  # Increased spacing for larger icons
+				icon_container.add_child(icon_spacer)
+		else:
+			print("Warning: No icon found for trait: ", trait_item.get("name", "Unknown"), " (icon_name: ", icon_name, ")")
+			print("DEBUG: Available trait icon keys: ", trait_icons.keys())
+			print("DEBUG: trait_icons.has('%s'): %s" % [icon_name, trait_icons.has(icon_name)])
 
 func format_other_bonuses(json_string: String) -> String:
 	var json = JSON.new()
@@ -1164,6 +1574,7 @@ func is_percentage_bonus(bonus_type: String) -> bool:
 			return false
 
 func update_ui():
+	print("DEBUG: update_ui called")
 	# Update points label with color feedback
 	var remaining_points = attribute_manager.get_remaining_points()
 	points_label.text = "Points Remaining: " + str(remaining_points)
@@ -1182,41 +1593,72 @@ func update_ui():
 	if background_carousel:
 		update_background_carousel_display()
 	
+	# Update features carousel display (only if it exists)
+	if features_carousel:
+		update_features_carousel_display()
+	
 	# Update trait display based on selected race
+	print("DEBUG: Calling race_manager.get_selected_race()...")
 	var selected_race = race_manager.get_selected_race()
+	print("DEBUG: Selected race in update_ui: '%s'" % selected_race)
 	if selected_race != "":
+		print("DEBUG: Calling update_trait_display from update_ui...")
 		update_trait_display(selected_race)
 	else:
+		print("DEBUG: No race selected, resetting trait display")
 		# Reset trait display if no race selected
-		trait_name_label.text = "Select a race to see its trait"
-		trait_desc_label.text = ""
-		trait_bonuses_label.text = ""
+		_clear_trait_icons()
 	
 	# Update continue button state using UIManager
 	var character_name = character_name_input.text.strip_edges()
 	
 	# Abilities are now automatically set by traits, no need to check if points are spent
-	var can_continue = attribute_manager.all_points_spent() and race_manager.all_points_spent() and background_manager.all_points_spent() and character_name.length() > 0 and selected_sex != "" and selected_portrait != "" and selected_avatar != ""
+	print("DEBUG: Checking if can continue...")
+	var attributes_spent = attribute_manager.all_points_spent()
+	var race_selected = race_manager.all_points_spent()
+	var background_selected = background_manager.all_points_spent()
+	var features_selected = features_manager.all_points_spent()
+	var has_name = character_name.length() > 0
+	var has_sex = selected_sex != ""
+	var has_portrait = selected_portrait != ""
+	var has_avatar = selected_avatar != ""
+	
+	print("DEBUG: Continue conditions: attributes_spent=%s, race_selected=%s, background_selected=%s, features_selected=%s, has_name=%s, has_sex=%s, has_portrait=%s, has_avatar=%s" % [attributes_spent, race_selected, background_selected, features_selected, has_name, has_sex, has_portrait, has_avatar])
+	
+	var can_continue = attributes_spent and race_selected and background_selected and features_selected and has_name and has_sex and has_portrait and has_avatar
 	UIManager.apply_button_state(continue_button, can_continue)
 
 func _on_back_button_pressed():
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
 func _on_continue_button_pressed():
+	print("DEBUG: Continue button pressed")
 	# Check if all points have been spent and race selected
-	if not attribute_manager.all_points_spent():
+	var attributes_spent = attribute_manager.all_points_spent()
+	print("DEBUG: Attributes spent: %s" % attributes_spent)
+	if not attributes_spent:
 		print("Cannot continue: You must spend all %d attribute points before proceeding!" % attribute_manager.get_remaining_points())
 		UIManager.flash_error_feedback(points_label)
 		return
 	
 	# Abilities are automatically set by traits, no need to validate ability points
 	
-	if not race_manager.all_points_spent():
+	var race_selected = race_manager.all_points_spent()
+	print("DEBUG: Race selected: %s" % race_selected)
+	if not race_selected:
 		print("Cannot continue: You must select a race before proceeding!")
 		return
 	
-	if not background_manager.all_points_spent():
+	var background_selected = background_manager.all_points_spent()
+	print("DEBUG: Background selected: %s" % background_selected)
+	if not background_selected:
 		print("Cannot continue: You must select a background before proceeding!")
+		return
+	
+	var features_selected = features_manager.all_points_spent()
+	print("DEBUG: Features selected: %s" % features_selected)
+	if not features_selected:
+		print("Cannot continue: You must select a feature before proceeding!")
 		return
 	
 	# Check if character name is provided
@@ -1229,10 +1671,16 @@ func _on_continue_button_pressed():
 		return
 	
 	# Store step 1 data in global CharacterCreation
+	var selected_race = race_manager.get_selected_race()
+	var selected_background = background_manager.get_selected_background() if background_manager else ""
+	var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+	print("DEBUG: Storing step 1 data - race: '%s', background: '%s', feature: '%s'" % [selected_race, selected_background, selected_feature])
+	
 	CharacterCreation.set_step1_data(
 		character_name,
-		race_manager.get_selected_race(),
-		background_manager.get_selected_background() if background_manager else "",
+		selected_race,
+		selected_background,
+		selected_feature,
 		selected_sex,
 		selected_portrait,
 		selected_avatar,
@@ -1249,8 +1697,9 @@ func _on_continue_button_pressed():
 	
 	# Print character stats
 	attribute_manager.print_character_stats()
-	print("Selected Race: %s" % race_manager.get_selected_race())
-	print("Selected Background: %s" % background_manager.get_selected_background())
+	print("Selected Race: %s" % selected_race)
+	print("Selected Background: %s" % selected_background)
+	print("Selected Feature: %s" % selected_feature)
 	print("Character Name: %s" % character_name)
 	
 	# Navigate to step 2 (abilities & competences allocation)
@@ -1267,8 +1716,12 @@ func update_abilities_display():
 		# Create a new character object with current data
 		var character = Character.new()
 		character.name = character_name_input.text if character_name_input else ""
-		character.race_name = race_manager.get_selected_race() if race_manager else ""
-		character.background_name = background_manager.get_selected_background() if background_manager else ""
+		var selected_race = race_manager.get_selected_race() if race_manager else ""
+		var selected_background = background_manager.get_selected_background() if background_manager else ""
+		var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+		character.race_name = selected_race
+		character.background_name = selected_background
+		character.feature_name = selected_feature
 		character.sex = selected_sex
 		character.portrait = selected_portrait
 		character.avatar = selected_avatar
@@ -1279,4 +1732,63 @@ func update_abilities_display():
 		column1.add_child(abilities_area_node)
 		print("Abilities display updated with current character data")
 		print("Character background: ", character.background_name)
+		print("Character feature: ", character.feature_name)
 		print("Character race: ", character.race_name)
+		print("DEBUG: race_manager.get_selected_race() returned: '%s'" % selected_race)
+
+# Utility function for creating framed trait icons that can be used elsewhere
+static func create_framed_trait_icon(trait_icon_texture: Texture2D, frame_texture: Texture2D = null, icon_size: Vector2 = Vector2(100, 100), frame_size: Vector2 = Vector2(150, 150)) -> Control:
+	"""
+	Create a framed trait icon that can be used anywhere in the UI
+	
+	Parameters:
+	- trait_icon_texture: The trait icon texture to display
+	- frame_texture: The frame texture (if null, will load from assets/ui/frame_trait.svg)
+	- icon_size: Size of the trait icon (default: 100x100)
+	- frame_size: Size of the frame (default: 140x140)
+	
+	Returns:
+	- A Control node containing the framed icon
+	"""
+	# Load frame texture if not provided
+	if not frame_texture:
+		frame_texture = load("res://assets/ui/frame_trait.svg")
+		if not frame_texture:
+			print("Warning: Could not load trait frame texture")
+			return null
+	
+	# Create a container for the framed icon
+	var framed_icon_container = Control.new()
+	framed_icon_container.custom_minimum_size = frame_size
+	framed_icon_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	framed_icon_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
+	# Create the frame background (larger, behind the icon)
+	var frame_background = TextureRect.new()
+	frame_background.name = "FrameBackground"
+	frame_background.texture = frame_texture
+	frame_background.custom_minimum_size = frame_size
+	frame_background.size_flags_horizontal = Control.SIZE_FILL
+	frame_background.size_flags_vertical = Control.SIZE_FILL
+	frame_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	frame_background.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	
+	# Create the trait icon (smaller, centered on top of frame)
+	var icon_texture = TextureRect.new()
+	icon_texture.name = "TraitIconTexture"
+	icon_texture.texture = trait_icon_texture
+	icon_texture.custom_minimum_size = icon_size
+	icon_texture.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icon_texture.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	icon_texture.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	
+	# Calculate position to center the icon within the frame
+	var icon_offset = (frame_size - icon_size) / 2
+	icon_texture.position = icon_offset
+	
+	# Add frame first (background), then icon on top
+	framed_icon_container.add_child(frame_background)
+	framed_icon_container.add_child(icon_texture)
+	
+	return framed_icon_container

@@ -76,6 +76,9 @@ layout_mode = 2
 [node name="BackgroundContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
 layout_mode = 2
 
+[node name="FeaturesContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column1"]
+layout_mode = 2
+
 [node name="ColumnSpacer1" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer"]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
@@ -168,6 +171,54 @@ custom_minimum_size = Vector2(80, 40)
 layout_mode = 2
 text = "Female"
 
+[node name="SexSpacer2" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/SexContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="TraitsSection" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="TraitsLabel" type="Label" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "TRAITS"
+horizontal_alignment = 1
+
+[node name="TraitsSpacer" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="TraitsContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="TraitPanel" type="Panel" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection/TraitsContainer"]
+custom_minimum_size = Vector2(0, 270)
+layout_mode = 2
+
+[node name="TraitContent" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection/TraitsContainer/TraitPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TraitMargin" type="MarginContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection/TraitsContainer/TraitPanel/TraitContent"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="TraitInfo" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin"]
+layout_mode = 2
+
+[node name="TraitsSpacer2" type="Control" parent="CenterContainer/VBoxContainer/ContentContainer/Column2/TraitsSection"]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+
 [node name="Spacer3" type="Control" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 15)
 layout_mode = 2
@@ -179,65 +230,6 @@ text = "Points remaining: 5"
 horizontal_alignment = 1
 
 [node name="Spacer4" type="Control" parent="CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 15)
-layout_mode = 2
-
-[node name="TraitsSection" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 4
-
-[node name="TraitsLabel" type="Label" parent="CenterContainer/VBoxContainer/TraitsSection"]
-layout_mode = 2
-size_flags_horizontal = 4
-text = "TRAITS"
-horizontal_alignment = 1
-
-[node name="TraitsSpacer" type="Control" parent="CenterContainer/VBoxContainer/TraitsSection"]
-custom_minimum_size = Vector2(0, 10)
-layout_mode = 2
-
-[node name="TraitsContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/TraitsSection"]
-layout_mode = 2
-size_flags_horizontal = 4
-
-[node name="TraitPanel" type="Panel" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer"]
-custom_minimum_size = Vector2(0, 120)
-layout_mode = 2
-
-[node name="TraitContent" type="VBoxContainer" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="TraitMargin" type="MarginContainer" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="TraitInfo" type="VBoxContainer" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin"]
-layout_mode = 2
-
-[node name="TraitNameLabel" type="Label" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
-layout_mode = 2
-text = "Select a race to see its trait"
-horizontal_alignment = 1
-
-[node name="TraitDescLabel" type="Label" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="TraitBonusesLabel" type="Label" parent="CenterContainer/VBoxContainer/TraitsSection/TraitsContainer/TraitPanel/TraitContent/TraitMargin/TraitInfo"]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="TraitsSpacer2" type="Control" parent="CenterContainer/VBoxContainer/TraitsSection"]
 custom_minimum_size = Vector2(0, 15)
 layout_mode = 2
 

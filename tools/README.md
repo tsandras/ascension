@@ -24,6 +24,7 @@ CREATE TABLE nodes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     description TEXT,
+    icon_name TEXT,
     node_type TEXT NOT NULL DEFAULT 'PASSIVE',
     trait_id INTEGER,
     skill_id INTEGER,

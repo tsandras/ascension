@@ -42,9 +42,11 @@ ascension/
 - **No Hardcoded Content**: Easy to add/modify attributes and abilities
 
 #### 🎯 Character Creation Flow
-1. **Attributes Allocation**: 8 points to distribute among 6 attributes (base 2, max 6)
-2. **Abilities Allocation**: 3 points to distribute among 10 abilities (base 0, max 6)
-3. **Validation**: Must spend all points to proceed
+1. **Attributes Allocation**: 5 points to distribute among 6 attributes (base 0, max 6)
+2. **Race Selection**: Choose from 4 races, each with unique traits and bonuses
+3. **Background Selection**: Choose from 8 backgrounds, each with ability bonuses
+4. **Trait System**: Visual trait icons with tooltips showing descriptions
+5. **Validation**: Must spend all points and make all selections to proceed
 
 #### 🎨 UI System
 - **Constants-Based**: All UI sizes defined in `ui_constants.gd`
