@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="76.328415mm"
+   height="76.328072mm"
+   viewBox="0 0 76.328415 76.328072"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   sodipodi:docname="frame_skill.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.12"
+     inkscape:cx="129.16667"
+     inkscape:cy="141.66667"
+     inkscape:window-width="1920"
+     inkscape:window-height="1027"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-70.379192,-110.3312)">
+    <path
+       id="path12918"
+       d="M 137.06619,177.01785 H 80.020962 v -57.04523 h 57.045228 z m 1.6069,-36.55836 v 0 -21.18572 l 1.74237,-2.65042 -2.65006,1.74237 h -21.18713 c -4.4376,0 -8.03487,-3.59728 -8.03487,-8.03452 0,4.43724 -3.59692,8.03452 -8.03451,8.03452 H 79.321756 l -2.650067,-1.74237 1.74237,2.65042 v 21.18572 c 0,4.43794 -3.597275,8.03627 -8.034867,8.03627 4.437592,0 8.034867,3.59834 8.034867,8.03275 v 21.18784 l -1.74237,2.64936 2.650067,-1.73919 h 21.187134 c 4.43759,0 8.03451,3.5948 8.03451,8.03275 0,-4.43795 3.59727,-8.03275 8.03487,-8.03275 h 21.18713 l 2.65006,1.73919 -1.74237,-2.64936 v -21.18784 c 0,-4.43441 3.59728,-8.03275 8.03452,-8.03275 -4.43724,0 -8.03452,-3.59833 -8.03452,-8.03627"
+       style="fill:#fab85f;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.0352778" />
+  </g>
+</svg>

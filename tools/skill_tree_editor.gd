@@ -421,6 +421,10 @@ func load_skill_tree_data(skill_tree_data: Dictionary):
 				node.set_node_name(full_node_data.name)
 				node.set_node_description(full_node_data.description)
 				
+				# Set icon if available
+				if full_node_data.has("icon_name") and full_node_data.icon_name:
+					node.set_icon_name(full_node_data.icon_name)
+				
 				# Set database metadata
 				node.set_meta("database_id", int_node_id)
 				node.set_meta("node_type", node_type)
@@ -527,6 +531,10 @@ func add_database_node(node_data: Dictionary):
 	node.setup(node_type, Vector2(100, 100))
 	node.set_node_name(node_data.name)
 	node.set_node_description(node_data.description)
+	
+	# Set icon if available
+	if node_data.has("icon_name") and node_data.icon_name:
+		node.set_icon_name(node_data.icon_name)
 	
 	# Store the database node data for reference
 	node.set_meta("database_id", node_data.id)
