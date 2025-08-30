@@ -380,7 +380,7 @@ func _on_save_new_node_pressed():
 		print("Error: Could not retrieve selected node data")
 		return
 	
-	var node_id = DatabaseManager.save_node(selected_node.name, description, "", "PASSIVE", trait_id, skill_id)
+	var node_id = DatabaseManager.save_node(selected_node.name, description, "", "PASSIVE", trait_id, skill_id, {}, {}, {})
 	
 	if node_id > 0:
 		print("Node saved successfully with ID: ", node_id)

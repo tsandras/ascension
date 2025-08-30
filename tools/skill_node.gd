@@ -13,45 +13,9 @@ var drag_start: Vector2 = Vector2.ZERO
 
 @onready var frame: TextureRect = $FrameContainer/Frame
 @onready var icon: TextureRect = $IconContainer/Icon
-@onready var node_type_label: Label = $NodeTypeLabel
 @onready var name_label: Label = $NameLabel
 
-const NODE_SIZES = {
-	"PASSIVE": Vector2(150, 150),
-	"ACTIVE": Vector2(100, 100),
-	"IMPROVEMENT": Vector2(100, 100),
-	"MASTER_ATTRIBUTE": Vector2(150, 150),
-	"ATTRIBUTE": Vector2(100, 100),
-	"ABILITY": Vector2(75, 75),
-	"EMPTY": Vector2(40, 40)
-}
-
-
-
-# Frame mapping for different node types
-const NODE_FRAMES = {
-	"PASSIVE": "res://assets/ui/frame_passive.svg",
-	"ACTIVE": "res://assets/ui/ability_frame.svg",
-	"IMPROVEMENT": "res://assets/ui/skill_improvement_frame.svg",
-	"MASTER_ATTRIBUTE": "res://assets/ui/master_attribute_frame.svg",
-	"ATTRIBUTE": "res://assets/ui/attribute_frame.svg",
-	"ABILITY": "res://assets/ui/ability_frame.svg",
-	"EMPTY": "res://assets/ui/frame_passive.svg"
-}
-
-# Icon base path
-const ICON_BASE_PATH = "res://assets/icons/svgs/"
-
-# Icon sizes for each node type (should be smaller than node size)
-const ICON_SIZES = {
-	"PASSIVE": Vector2(120, 120),      # 150x150 node, 120x120 icon
-	"ACTIVE": Vector2(80, 80),         # 100x100 node, 80x80 icon
-	"IMPROVEMENT": Vector2(80, 80),    # 100x100 node, 80x80 icon
-	"MASTER_ATTRIBUTE": Vector2(120, 120), # 150x150 node, 120x120 icon
-	"ATTRIBUTE": Vector2(80, 80),      # 100x100 node, 80x80 icon
-	"ABILITY": Vector2(60, 60),        # 75x75 node, 60x60 icon
-	"EMPTY": Vector2(30, 30)           # 40x40 node, 30x30 icon
-}
+# Use centralized constants from SkillTreeConstants
 
 func _ready():
 	# Enable input processing
@@ -73,8 +37,8 @@ func setup(type: String, pos: Vector2):
 	position = pos
 	
 	# Set size based on node type
-	custom_minimum_size = NODE_SIZES[type]
-	size = NODE_SIZES[type]
+	custom_minimum_size = SkillTreeConstants.get_node_size(type)
+	size = SkillTreeConstants.get_node_size(type)
 	
 	# Update visual appearance after setup - ensure nodes are ready
 	call_deferred("_update_appearance")
@@ -104,7 +68,7 @@ func _load_icon():
 				icon.texture = load(default_icon_path)
 			return
 		
-		var icon_path = "res://assets/icons/svgs/" + icon_name + ".svg"
+		var icon_path = SkillTreeConstants.get_icon_path(icon_name, node_type)
 		if ResourceLoader.exists(icon_path):
 			icon.texture = load(icon_path)
 			print("Loaded icon: ", icon_path)
@@ -120,24 +84,8 @@ func _get_default_icon_path() -> String:
 	if SkillTreeRenderer:
 		return SkillTreeRenderer.get_icon_path("", node_type)
 	else:
-		# Fallback to old method if utility class not available
-		match node_type:
-			"PASSIVE":
-				return "res://assets/icons/svgs/stealth.svg"
-			"ACTIVE":
-				return "res://assets/icons/svgs/sword.svg"
-			"IMPROVEMENT":
-				return "res://assets/icons/svgs/magic_book.svg"
-			"MASTER_ATTRIBUTE":
-				return "res://assets/icons/svgs/lion.svg"
-			"ATTRIBUTE":
-				return "res://assets/icons/svgs/strenght.svg"
-			"ABILITY":
-				return "res://assets/icons/svgs/anchor.svg"
-			"EMPTY":
-				return "res://assets/icons/svgs/stealth.svg"
-			_:
-				return "res://assets/icons/svgs/stealth.svg"
+		# Use centralized constants
+		return SkillTreeConstants.get_icon_path("", node_type)
 
 func _load_frame():
 	"""Load the frame based on node type"""
@@ -146,11 +94,19 @@ func _load_frame():
 		print("Warning: Frame node not ready yet")
 		return
 	
+	print("Loading frame for node type: ", node_type)
+	
 	if SkillTreeRenderer:
-		frame.texture = SkillTreeRenderer.load_frame_texture(node_type)
+		var frame_texture = SkillTreeRenderer.load_frame_texture(node_type)
+		if frame_texture:
+			frame.texture = frame_texture
+			print("Loaded frame via SkillTreeRenderer: ", node_type)
+		else:
+			print("Failed to load frame via SkillTreeRenderer for: ", node_type)
 	else:
 		# Fallback to old method if utility class not available
-		var frame_path = "res://assets/ui/frame_passive.svg"  # Default fallback
+		var frame_path = SkillTreeConstants.get_frame_path(node_type)
+		print("Using fallback frame path: ", frame_path)
 		if ResourceLoader.exists(frame_path):
 			frame.texture = load(frame_path)
 			print("Loaded fallback frame: ", frame_path)
@@ -202,17 +158,13 @@ func _update_appearance():
 	if icon and not icon.texture:
 		_load_icon()
 	
-	# Update node type label text - show single type
-	if node_type_label:
-		node_type_label.text = node_type
-	
 	# Update name label
 	if name_label:
 		name_label.text = node_name if node_name != "" else "Node"
 	
 	# Update size
-	custom_minimum_size = NODE_SIZES.get(node_type, NODE_SIZES["PASSIVE"])
-	size = NODE_SIZES.get(node_type, NODE_SIZES["PASSIVE"])
+	custom_minimum_size = SkillTreeConstants.get_node_size(node_type)
+	size = SkillTreeConstants.get_node_size(node_type)
 	
 	# Update icon container size based on node type
 	_update_icon_container_size()
@@ -223,7 +175,7 @@ func _update_icon_container_size():
 		return
 	
 	var icon_container = icon.get_parent()
-	var icon_size = ICON_SIZES.get(node_type, ICON_SIZES["PASSIVE"])
+	var icon_size = SkillTreeConstants.get_icon_size(node_type)
 	
 	# Calculate the offset to center the icon
 	var offset = icon_size / 2
@@ -234,7 +186,7 @@ func _update_icon_container_size():
 	icon_container.position = Vector2.ZERO  # Reset position
 	
 	# Center the icon container within the node
-	var node_size = NODE_SIZES.get(node_type, NODE_SIZES["PASSIVE"])
+	var node_size = SkillTreeConstants.get_node_size(node_type)
 	icon_container.position = (node_size - icon_size) / 2
 
 func get_node_type() -> String:

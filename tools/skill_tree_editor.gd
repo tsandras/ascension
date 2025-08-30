@@ -289,8 +289,8 @@ func _draw():
 			if from_pos.distance_to(to_pos) < 5.0:
 				continue  # Skip connections that are too close
 			
-			# Draw connection line
-			draw_line(from_pos, to_pos, Color.WHITE, 3.0)
+			# Draw curvy connection line
+			_draw_curved_connection(from_pos, to_pos)
 			
 			# Draw arrow at the end (only if there's enough distance)
 			if from_pos.distance_to(to_pos) > 20.0:
@@ -306,7 +306,39 @@ func _draw():
 				# Validate polygon points before drawing
 				var polygon_points = [to_pos, arrow_point1, arrow_point2]
 				if _is_valid_polygon(polygon_points):
-					draw_colored_polygon(polygon_points, Color.WHITE)
+					draw_colored_polygon(polygon_points, Color(1, 0.8, 0))  # Golden orange color
+
+func _draw_curved_connection(from_pos: Vector2, to_pos: Vector2):
+	"""Draw a curved connection line between two points"""
+	var distance = from_pos.distance_to(to_pos)
+	var line_color = Color(1, 0.8, 0)  # Golden orange color
+	var line_width = 3.0
+	
+	# Calculate control points for the curve
+	var mid_point = (from_pos + to_pos) / 2
+	var direction = (to_pos - from_pos).normalized()
+	var perp = Vector2(-direction.y, direction.x)
+	
+	# Curve intensity - adjust this value to control how curved the lines are
+	var curve_intensity = min(distance * 0.3, 30.0)  # Maximum curve of 30 pixels
+	
+	# Control point for the curve
+	var control_point = mid_point + perp * curve_intensity
+	
+	# Draw the curved line using multiple line segments
+	var segments = max(int(distance / 10.0), 8)  # At least 8 segments, more for longer lines
+	var prev_point = from_pos
+	
+	for i in range(1, segments + 1):
+		var t = float(i) / float(segments)
+		
+		# Quadratic Bezier curve calculation
+		var t_inv = 1.0 - t
+		var current_point = t_inv * t_inv * from_pos + 2 * t_inv * t * control_point + t * t * to_pos
+		
+		# Draw line segment
+		draw_line(prev_point, current_point, line_color, line_width)
+		prev_point = current_point
 
 func get_nodes_data() -> Array:
 	var nodes_data = []
@@ -542,6 +574,8 @@ func add_database_node(node_data: Dictionary):
 	node.set_meta("trait_id", node_data.trait_id)
 	node.set_meta("skill_id", node_data.skill_id)
 	node.set_meta("attribute_bonuses", node_data.attribute_bonuses_dict)
+	node.set_meta("master_attribute_bonuses", node_data.master_attribute_bonuses_dict)
+	node.set_meta("ability_bonuses", node_data.ability_bonuses_dict)
 	
 	# Connect node signals
 	node.node_selected.connect(_on_node_selected)

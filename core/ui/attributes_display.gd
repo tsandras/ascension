@@ -122,6 +122,16 @@ func create_attribute_circles(svg_container: Control, character: Character = nul
 	# Get the 6 attribute names (must match the order in allocation_manager.gd)
 	var attribute_names = ["Intelligence", "Strength", "Ruse", "Agility", "Resolution", "Vitality"]
 	
+	# Map attribute names to their SVG file names
+	var attribute_svg_files = {
+		"Intelligence": "intelligence.svg",
+		"Strength": "strenght.svg",  # Note: typo in filename
+		"Ruse": "ruse.svg",
+		"Agility": "agility.svg",
+		"Resolution": "resolution.svg",
+		"Vitality": "vitality.svg"
+	}
+	
 	var circle_positions = [
 		Vector2(100, 220),   # Top center - Intelligence
 		Vector2(170, 80),  # Top right - Strength
@@ -131,62 +141,105 @@ func create_attribute_circles(svg_container: Control, character: Character = nul
 		Vector2(200, 330)   # Top left - Vitality
 	]
 	
+	# Load the attribute frame texture
+	var frame_texture = load("res://assets/ui/attribute_frame_with_bg.svg")
+	if not frame_texture:
+		print("Warning: Could not load attribute_frame_with_bg.svg")
+	
 	# Create circles for each attribute
 	for i in range(attribute_names.size()):
+		var attribute_name = attribute_names[i]
 		var circle_container = VBoxContainer.new()
-		circle_container.name = attribute_names[i] + "Circle"
+		circle_container.name = attribute_name + "Circle"
 		circle_container.custom_minimum_size = Vector2(80, 80)
 		circle_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		circle_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		circle_container.position = circle_positions[i] - Vector2(40, 40)  # Center the circle
 		
-		# Create the circle background (using a Panel for now, can be replaced with custom drawing)
-		var circle_panel = Panel.new()
-		circle_panel.name = "CircleBackground"
-		circle_panel.custom_minimum_size = Vector2(80, 80)
-		circle_panel.size_flags_horizontal = Control.SIZE_FILL
-		circle_panel.size_flags_vertical = Control.SIZE_FILL
-		
-		# Make the panel circular by using a custom style (basic approach)
-		# In a more advanced implementation, you could use a custom shader or texture
-		
-		circle_container.add_child(circle_panel)
-		
 		# Create attribute name label
 		var name_label = Label.new()
 		name_label.name = "AttributeName"
-		name_label.text = attribute_names[i]
+		name_label.text = attribute_name
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.add_theme_font_size_override("font_size", 10)
 		name_label.size_flags_horizontal = Control.SIZE_FILL
 		name_label.size_flags_vertical = Control.SIZE_FILL
 		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		
-		circle_panel.add_child(name_label)
+		circle_container.add_child(name_label)
 		
 		# Add attribute value label if character is provided
 		if character != null:
+			# Create a container for the framed value
+			var value_container = Control.new()
+			value_container.name = "ValueContainer"
+			value_container.custom_minimum_size = Vector2(50, 50)
+			value_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			value_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			value_container.position = Vector2(15, 45)  # Position below the SVG icon
+			
+			# Add the frame background (z-index: 1 - background)
+			if frame_texture:
+				var frame_background = TextureRect.new()
+				frame_background.name = "ValueFrame"
+				frame_background.texture = frame_texture
+				frame_background.custom_minimum_size = Vector2(50, 50)
+				frame_background.size_flags_horizontal = Control.SIZE_FILL
+				frame_background.size_flags_vertical = Control.SIZE_FILL
+				frame_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				frame_background.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+				frame_background.z_index = 1
+				
+				value_container.add_child(frame_background)
+			
+			# Add attribute SVG illustration inside the frame (z-index: 2 - middle)
+			var svg_name = attribute_svg_files.get(attribute_name, "")
+			if svg_name != "":
+				var svg_texture = load("res://assets/icons/svgs/" + svg_name)
+				if svg_texture:
+					var svg_icon = TextureRect.new()
+					svg_icon.name = "AttributeSVG"
+					svg_icon.texture = svg_texture
+					svg_icon.custom_minimum_size = Vector2(25, 25)  # Reduced from 30x30 to 25x25
+					svg_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+					svg_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+					svg_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+					svg_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+					svg_icon.position = Vector2(12.5, 12.5)  # Center within the 50x50 frame (50-25)/2
+					svg_icon.z_index = 2
+					svg_icon.modulate = Color(1, 1, 1, 0.4)  # Reduce opacity to 40% for less visibility
+					
+					value_container.add_child(svg_icon)
+					print("Added SVG icon inside frame for attribute: ", attribute_name, " - ", svg_name)
+				else:
+					print("Warning: Failed to load SVG for attribute: ", attribute_name, " - ", svg_name)
+			
+			# Create the value label on top of everything (z-index: 3 - foreground)
 			var value_label = Label.new()
 			value_label.name = "AttributeValue"
 			# Get the attribute value from the character's attributes dictionary
 			var attribute_value = 0
-			if character.attributes.has(attribute_names[i]):
-				attribute_value = character.attributes[attribute_names[i]]
+			if character.attributes.has(attribute_name):
+				attribute_value = character.attributes[attribute_name]
 			# Ensure the value is displayed as an integer
 			value_label.text = str(int(attribute_value))
 			value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			value_label.add_theme_font_size_override("font_size", 12)
-			value_label.size_flags_horizontal = Control.SIZE_FILL
-			value_label.size_flags_vertical = Control.SIZE_FILL
-			value_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-			value_label.position.y = 50  # Position below the name
+			value_label.custom_minimum_size = Vector2(50, 50)  # Match frame size
+			value_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			value_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			value_label.z_index = 3
+			value_label.modulate = Color(1, 0.8, 0)  # Golden orange color for better visibility
+			value_label.position = Vector2.ZERO  # Position at the top-left of the container
 			
 			# Debug: Print attribute access
-			print("  Accessing attribute: ", attribute_names[i], " = ", attribute_value)
+			print("  Accessing attribute: ", attribute_name, " = ", attribute_value)
 			
-			circle_panel.add_child(value_label)
+			value_container.add_child(value_label)
+			circle_container.add_child(value_container)
 		
 		# Add the circle to the SVG container
 		svg_container.add_child(circle_container)
 		
-		print("Created attribute circle for: " + attribute_names[i] + " at position: " + str(circle_positions[i]))
+		print("Created attribute circle for: " + attribute_name + " at position: " + str(circle_positions[i]))

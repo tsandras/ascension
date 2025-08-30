@@ -126,6 +126,8 @@ func create_tables():
 		trait_id INTEGER,
 		skill_id INTEGER,
 		attribute_bonuses JSON,
+		master_attribute_bonuses JSON,
+		ability_bonuses JSON,
 		FOREIGN KEY (trait_id) REFERENCES traits(id),
 		FOREIGN KEY (skill_id) REFERENCES abilities(id)
 	);
@@ -136,6 +138,23 @@ func create_tables():
 		print("Error creating nodes table: ", db.error_message)
 	else:
 		print("Nodes table created successfully")
+	
+	# Migrate existing nodes tables to add new bonus columns if they don't exist
+	var nodes_migration_query1 = "ALTER TABLE nodes ADD COLUMN master_attribute_bonuses JSON"
+	db.query(nodes_migration_query1)
+	if not is_query_successful():
+		# Column might already exist, which is fine
+		print("Nodes master_attribute_bonuses column migration note: " + db.error_message)
+	else:
+		print("Nodes table migrated to include master_attribute_bonuses column")
+	
+	var nodes_migration_query2 = "ALTER TABLE nodes ADD COLUMN ability_bonuses JSON"
+	db.query(nodes_migration_query2)
+	if not is_query_successful():
+		# Column might already exist, which is fine
+		print("Nodes ability_bonuses column migration note: " + db.error_message)
+	else:
+		print("Nodes table migrated to include ability_bonuses column")
 	
 	# Create skill_tree table
 	var skill_tree_query = """
@@ -1248,14 +1267,16 @@ func get_last_saved_character() -> Dictionary:
 		return {}
 
 # Node management methods for skill trees
-func save_node(name: String, description: String, icon_name: String = "", node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}) -> int:
+func save_node(name: String, description: String, icon_name: String = "", node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}, master_attribute_bonuses: Dictionary = {}, ability_bonuses: Dictionary = {}) -> int:
 	"""Save a new node to the database"""
 	var json = JSON.new()
-	var bonuses_json = json.stringify(attribute_bonuses) if attribute_bonuses.size() > 0 else ""
+	var attr_bonuses_json = json.stringify(attribute_bonuses) if attribute_bonuses.size() > 0 else ""
+	var master_attr_bonuses_json = json.stringify(master_attribute_bonuses) if master_attribute_bonuses.size() > 0 else ""
+	var ability_bonuses_json = json.stringify(ability_bonuses) if ability_bonuses.size() > 0 else ""
 	
 	var insert_query = """
-	INSERT INTO nodes (name, description, icon_name, node_type, trait_id, skill_id, attribute_bonuses)
-	VALUES ('%s', '%s', '%s', '%s', %s, %s, '%s')
+	INSERT INTO nodes (name, description, icon_name, node_type, trait_id, skill_id, attribute_bonuses, master_attribute_bonuses, ability_bonuses)
+	VALUES ('%s', '%s', '%s', '%s', %s, %s, '%s', '%s', '%s')
 	""" % [
 		name.replace("'", "''"),  # Escape single quotes
 		description.replace("'", "''"),
@@ -1263,7 +1284,9 @@ func save_node(name: String, description: String, icon_name: String = "", node_t
 		node_type,
 		str(trait_id) if trait_id > 0 else "NULL",
 		str(skill_id) if skill_id > 0 else "NULL",
-		bonuses_json
+		attr_bonuses_json,
+		master_attr_bonuses_json,
+		ability_bonuses_json
 	]
 	
 	db.query(insert_query)
@@ -1275,14 +1298,16 @@ func save_node(name: String, description: String, icon_name: String = "", node_t
 		print("Error saving node: ", db.error_message)
 		return -1
 
-func update_node(node_id: int, name: String, description: String, icon_name: String = "", node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}) -> bool:
+func update_node(node_id: int, name: String, description: String, icon_name: String = "", node_type: String = "PASSIVE", trait_id: int = -1, skill_id: int = -1, attribute_bonuses: Dictionary = {}, master_attribute_bonuses: Dictionary = {}, ability_bonuses: Dictionary = {}) -> bool:
 	"""Update an existing node in the database"""
 	var json = JSON.new()
-	var bonuses_json = json.stringify(attribute_bonuses) if attribute_bonuses.size() > 0 else ""
+	var attr_bonuses_json = json.stringify(attribute_bonuses) if attribute_bonuses.size() > 0 else ""
+	var master_attr_bonuses_json = json.stringify(master_attribute_bonuses) if master_attribute_bonuses.size() > 0 else ""
+	var ability_bonuses_json = json.stringify(ability_bonuses) if ability_bonuses.size() > 0 else ""
 	
 	var update_query = """
 	UPDATE nodes 
-	SET name = '%s', description = '%s', icon_name = '%s', node_type = '%s', trait_id = %s, skill_id = %s, attribute_bonuses = '%s'
+	SET name = '%s', description = '%s', icon_name = '%s', node_type = '%s', trait_id = %s, skill_id = %s, attribute_bonuses = '%s', master_attribute_bonuses = '%s', ability_bonuses = '%s'
 	WHERE id = %d
 	""" % [
 		name.replace("'", "''"),  # Escape single quotes
@@ -1291,7 +1316,9 @@ func update_node(node_id: int, name: String, description: String, icon_name: Str
 		node_type,
 		str(trait_id) if trait_id > 0 else "NULL",
 		str(skill_id) if skill_id > 0 else "NULL",
-		bonuses_json,
+		attr_bonuses_json,
+		master_attr_bonuses_json,
+		ability_bonuses_json,
 		node_id
 	]
 	
@@ -1321,6 +1348,26 @@ func get_node_by_id(node_id: int) -> Dictionary:
 		else:
 			node_data.attribute_bonuses_dict = {}
 		
+		# Parse JSON master attribute bonuses
+		if node_data.master_attribute_bonuses:
+			var json = JSON.new()
+			if json.parse(node_data.master_attribute_bonuses) == OK:
+				node_data.master_attribute_bonuses_dict = json.data
+			else:
+				node_data.master_attribute_bonuses_dict = {}
+		else:
+			node_data.master_attribute_bonuses_dict = {}
+		
+		# Parse JSON ability bonuses
+		if node_data.ability_bonuses:
+			var json = JSON.new()
+			if json.parse(node_data.ability_bonuses) == OK:
+				node_data.ability_bonuses_dict = json.data
+			else:
+				node_data.ability_bonuses_dict = {}
+		else:
+			node_data.ability_bonuses_dict = {}
+		
 		return node_data
 	else:
 		print("Node not found with ID: ", node_id)
@@ -1349,6 +1396,26 @@ func get_all_nodes() -> Array:
 					node_data.attribute_bonuses_dict = {}
 			else:
 				node_data.attribute_bonuses_dict = {}
+			
+			# Parse JSON master attribute bonuses
+			if node_data.master_attribute_bonuses:
+				var json = JSON.new()
+				if json.parse(node_data.master_attribute_bonuses) == OK:
+					node_data.master_attribute_bonuses_dict = json.data
+				else:
+					node_data.master_attribute_bonuses_dict = {}
+			else:
+				node_data.master_attribute_bonuses_dict = {}
+			
+			# Parse JSON ability bonuses
+			if node_data.ability_bonuses:
+				var json = JSON.new()
+				if json.parse(node_data.ability_bonuses) == OK:
+					node_data.ability_bonuses_dict = json.data
+				else:
+					node_data.ability_bonuses_dict = {}
+			else:
+				node_data.ability_bonuses_dict = {}
 			
 			nodes.append(node_data)
 		
@@ -1629,7 +1696,9 @@ func seed_nodes():
 			node.node_type,
 			node.trait_id,
 			node.skill_id,
-			node.attribute_bonuses
+			node.attribute_bonuses,
+			node.get("master_attribute_bonuses", {}),
+			node.get("ability_bonuses", {})
 		)
 		
 		if node_id > 0:

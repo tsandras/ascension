@@ -21,7 +21,7 @@ offset_left = -30.0
 offset_top = -30.0
 offset_right = 30.0
 offset_bottom = 30.0
-z_index = 1
+z_index = 2
 
 [node name="Icon" type="TextureRect" parent="IconContainer"]
 layout_mode = 1
@@ -40,7 +40,7 @@ offset_left = -5.0
 offset_top = -5.0
 offset_right = 5.0
 offset_bottom = 5.0
-z_index = 2
+z_index = 1
 
 [node name="Frame" type="TextureRect" parent="FrameContainer"]
 layout_mode = 1
