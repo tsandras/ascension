@@ -179,7 +179,10 @@ func create_tables():
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
 		description TEXT,
+		attribute_bonuses JSON,
 		ability_bonuses JSON,
+		skill_bonuses JSON,
+		starting_equipment TEXT,
 		display_order INTEGER NOT NULL DEFAULT 0
 	);
 	"""
@@ -189,6 +192,21 @@ func create_tables():
 		print("Error creating backgrounds table: ", db.error_message)
 	else:
 		print("Backgrounds table created successfully")
+	
+	# Migrate existing backgrounds tables to add missing columns if they don't exist
+	var backgrounds_migration_queries = [
+		"ALTER TABLE backgrounds ADD COLUMN attribute_bonuses JSON",
+		"ALTER TABLE backgrounds ADD COLUMN skill_bonuses JSON",
+		"ALTER TABLE backgrounds ADD COLUMN starting_equipment TEXT"
+	]
+	
+	for migration_query in backgrounds_migration_queries:
+		db.query(migration_query)
+		if not is_query_successful():
+			# Column might already exist, which is fine
+			print("Backgrounds migration note: " + db.error_message)
+		else:
+			print("Backgrounds table migrated to include new columns")
 	
 	# Create features table
 	var features_query = """
@@ -2115,3 +2133,159 @@ func get_all_features():
 	else:
 		print("Error fetching features: ", db.error_message)
 		return []
+
+# Clear functions for data seeder tool
+func clear_nodes():
+	"""Clear all nodes from the database"""
+	var query = "DELETE FROM nodes"
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully cleared all nodes from database")
+		# Reset auto-increment counter
+		db.query("DELETE FROM sqlite_sequence WHERE name='nodes'")
+	else:
+		print("Error clearing nodes: ", db.error_message)
+
+func clear_traits():
+	"""Clear all traits from the database"""
+	var query = "DELETE FROM traits"
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully cleared all traits from database")
+		# Reset auto-increment counter
+		db.query("DELETE FROM sqlite_sequence WHERE name='traits'")
+	else:
+		print("Error clearing traits: ", db.error_message)
+
+func clear_backgrounds():
+	"""Clear all backgrounds from the database"""
+	var query = "DELETE FROM backgrounds"
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully cleared all backgrounds from database")
+		# Reset auto-increment counter
+		db.query("DELETE FROM sqlite_sequence WHERE name='backgrounds'")
+	else:
+		print("Error clearing backgrounds: ", db.error_message)
+
+func clear_features():
+	"""Clear all features from the database"""
+	var query = "DELETE FROM features"
+	db.query(query)
+	
+	if is_query_successful():
+		print("Successfully cleared all features from database")
+		# Reset auto-increment counter
+		db.query("DELETE FROM sqlite_sequence WHERE name='features'")
+	else:
+		print("Error clearing features: ", db.error_message)
+
+# Create functions for data seeder tool
+func create_node(node_data: Dictionary) -> bool:
+	"""Create a new node in the database"""
+	var query = """
+	INSERT INTO nodes (name, description, icon_name, node_type, trait_id, skill_id, attribute_bonuses, master_attribute_bonuses, ability_bonuses)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	"""
+	
+	var params = [
+		node_data.name,
+		node_data.description,
+		node_data.icon_name,
+		node_data.node_type,
+		node_data.trait_id,
+		node_data.skill_id,
+		JSON.stringify(node_data.attribute_bonuses) if node_data.attribute_bonuses else "{}",
+		JSON.stringify(node_data.master_attribute_bonuses) if node_data.master_attribute_bonuses else "{}",
+		JSON.stringify(node_data.ability_bonuses) if node_data.ability_bonuses else "{}"
+	]
+	
+	db.query_with_bindings(query, params)
+	
+	if is_query_successful():
+		print("Successfully created node: ", node_data.name)
+		return true
+	else:
+		print("Error creating node: ", db.error_message)
+		return false
+
+func create_trait(trait_data: Dictionary) -> bool:
+	"""Create a new trait in the database"""
+	var query = """
+	INSERT INTO traits (name, description, icon_name, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order)
+	VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+	"""
+	
+	var params = [
+		trait_data.name,
+		trait_data.description,
+		trait_data.icon_name,
+		JSON.stringify(trait_data.attribute_bonuses) if trait_data.attribute_bonuses else "{}",
+		JSON.stringify(trait_data.ability_bonuses) if trait_data.ability_bonuses else "{}",
+		JSON.stringify(trait_data.skill_bonuses) if trait_data.skill_bonuses else "{}",
+		trait_data.other_bonuses if trait_data.has("other_bonuses") else ""
+	]
+	
+	db.query_with_bindings(query, params)
+	
+	if is_query_successful():
+		print("Successfully created trait: ", trait_data.name)
+		return true
+	else:
+		print("Error creating trait: ", db.error_message)
+		return false
+
+func create_background(background_data: Dictionary) -> bool:
+	"""Create a new background in the database"""
+	var query = """
+	INSERT INTO backgrounds (name, description, attribute_bonuses, ability_bonuses, skill_bonuses, starting_equipment, display_order)
+	VALUES (?, ?, ?, ?, ?, ?, 0)
+	"""
+	
+	var params = [
+		background_data.name,
+		background_data.description,
+		JSON.stringify(background_data.attribute_bonuses) if background_data.attribute_bonuses else "{}",
+		JSON.stringify(background_data.ability_bonuses) if background_data.ability_bonuses else "{}",
+		JSON.stringify(background_data.skill_bonuses) if background_data.skill_bonuses else "{}",
+		background_data.starting_equipment if background_data.has("starting_equipment") else ""
+	]
+	
+	db.query_with_bindings(query, params)
+	
+	if is_query_successful():
+		print("Successfully created background: ", background_data.name)
+		return true
+	else:
+		print("Error creating background: ", db.error_message)
+		return false
+
+func create_feature(feature_data: Dictionary) -> bool:
+	"""Create a new feature in the database"""
+	var query = """
+	INSERT INTO features (name, description, icon_name, trait_id, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+	"""
+	
+	var params = [
+		feature_data.name,
+		feature_data.description,
+		feature_data.icon_name,
+		feature_data.trait_id,
+		JSON.stringify(feature_data.attribute_bonuses) if feature_data.attribute_bonuses else "{}",
+		JSON.stringify(feature_data.ability_bonuses) if feature_data.ability_bonuses else "{}",
+		JSON.stringify(feature_data.skill_bonuses) if feature_data.skill_bonuses else "{}",
+		feature_data.other_bonuses if feature_data.has("other_bonuses") else ""
+	]
+	
+	db.query_with_bindings(query, params)
+	
+	if is_query_successful():
+		print("Successfully created feature: ", feature_data.name)
+		return true
+	else:
+		print("Error creating feature: ", db.error_message)
+		return false

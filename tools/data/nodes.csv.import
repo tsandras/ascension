@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bcgld83l35hhs"
+
+[deps]
+
+files=["res://tools/data/nodes.icon.translation", "res://tools/data/nodes.node.translation", "res://tools/data/nodes.attribute.translation", "res://tools/data/nodes.master.translation", "res://tools/data/nodes.ability.translation", "res://tools/data/nodes.trait.translation", "res://tools/data/nodes.skill.translation", "res://tools/data/nodes.description.translation"]
+
+source_file="res://tools/data/nodes.csv"
+dest_files=["res://tools/data/nodes.icon.translation", "res://tools/data/nodes.node.translation", "res://tools/data/nodes.attribute.translation", "res://tools/data/nodes.master.translation", "res://tools/data/nodes.ability.translation", "res://tools/data/nodes.trait.translation", "res://tools/data/nodes.skill.translation", "res://tools/data/nodes.description.translation"]
+
+[params]
+
+compress=true
+delimiter=0

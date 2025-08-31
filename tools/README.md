@@ -2,6 +2,45 @@
 
 This directory contains various development and content creation tools for the Ascension game.
 
+## Data Seeder Tool
+
+The Data Seeder Tool is a comprehensive tool for importing game data from CSV files into the Godot game database. It handles the import of **nodes**, **traits**, **backgrounds**, and **features** with special handling for JSON-formatted fields.
+
+### Key Features
+
+- **CSV Import**: Import data from CSV files with automatic column mapping
+- **JSON Field Handling**: Automatic conversion of single-quoted JSON to valid JSON format
+- **Google Sheets Compatibility**: Support for single quotes in CSV cells
+- **Bulk Operations**: Import all data types at once or individually
+- **Sample Data Generation**: Create template CSV files for easy setup
+- **Data Validation**: Automatic type conversion and error handling
+
+### Supported Data Types
+
+- **Nodes**: Skill tree nodes with attributes, abilities, and bonuses
+- **Traits**: Character traits with bonuses and effects
+- **Backgrounds**: Character backgrounds with starting bonuses and equipment
+- **Features**: Character features linked to traits
+
+### JSON Field Support
+
+The tool automatically handles JSON fields like:
+- `{'strength': 1}` → `{"strength": 1}`
+- `{'agility': 1, 'vitality': 1}` → `{"agility": 1, "vitality": 1}`
+- `{}` → `{}` (empty objects)
+- `NULL` → `null` (database null values)
+
+### Usage
+
+1. **Open the Tool**: Open `data_seeder.tscn` in Godot
+2. **Create Samples**: Generate template CSV files if needed
+3. **Import Data**: Use individual or bulk import buttons
+4. **Verify**: Check that data appears in your game
+
+For detailed documentation, see [DATA_SEEDER_README.md](DATA_SEEDER_README.md).
+
+## Skill Tree Creator
+
 ## Skill Tree Creator
 
 The Skill Tree Creator is a visual tool for designing and editing skill trees. It has been enhanced with database integration to manage skill tree nodes.
@@ -101,6 +140,50 @@ The database is automatically seeded with sample nodes including:
 - JSON fields for flexible attribute bonus storage
 - Foreign key relationships with traits and abilities tables
 - Automatic database initialization and seeding
+
+## Node Seeder
+
+A tool for seeding node data from CSV files into the database. This tool is essential for populating the skill tree system with initial data.
+
+### Features
+
+- **CSV Import**: Import node data from CSV files
+- **Sample Data Creation**: Generate sample CSV files with predefined node structures
+- **Database Integration**: Directly seed nodes into the SQLite database
+- **Data Validation**: Parse and validate CSV data before database insertion
+- **Flexible Node Types**: Support for ATTRIBUTE, ABILITY, and MASTER_ATTRIBUTE node types
+
+### CSV Format
+
+The tool expects CSV files with the following columns:
+```csv
+name,icon_name,node_type,attribute_bonuses,master_attribute_bonuses,ability_bonuses,trait_id,skill_id,description
+```
+
+**Column Descriptions:**
+- `name`: Unique identifier for the node
+- `icon_name`: Icon asset name for visual representation
+- `node_type`: Type of node (ATTRIBUTE, ABILITY, MASTER_ATTRIBUTE)
+- `attribute_bonuses`: JSON-style dictionary of attribute bonuses (e.g., {'strength': 1})
+- `master_attribute_bonuses`: JSON-style dictionary of master attribute bonuses
+- `ability_bonuses`: JSON-style dictionary of ability bonuses
+- `trait_id`: Associated trait ID (NULL if none)
+- `skill_id`: Associated skill ID (NULL if none)
+- `description`: Human-readable description of the node
+
+### Using the Tool
+
+1. **Launch**: Open `node_seeder.tscn` in Godot
+2. **Create Sample Data**: Click "Create Sample CSV Files" to generate initial data
+3. **Seed Nodes**: Click "Seed Nodes from CSV" to import data into the database
+4. **Verify**: Check the console output for seeding results
+
+### Sample Data
+
+The tool automatically creates sample nodes including:
+- **Attributes**: strength, intelligence, ruse, agility, resolution, vitality
+- **Abilities**: survival, perception, stealth, knowledge, arcana, sleight of hand, persuasion, athletics
+- **Master Attributes**: speed, magic, resistance
 
 ## Map Seeder
 

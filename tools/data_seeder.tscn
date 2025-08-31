@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://b3it4bn2wwsy8"]
+
+[ext_resource type="Script" uid="uid://bialljojpkaq4" path="res://tools/data_seeder.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://ckydvbibkysv3" path="res://tools/data_seeder_ui.gd" id="2_0"]
+
+[node name="DataSeeder" type="Node"]
+script = ExtResource("1_0")
+
+[node name="DataSeederUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("2_0")

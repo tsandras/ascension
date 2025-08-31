@@ -1,0 +1,110 @@
+[gd_scene load_steps=3 format=3 uid="uid://cvto1srhqq80s"]
+
+[ext_resource type="Script" uid="uid://c0p3samaa6f28" path="res://scenes/ui/main_menu.gd" id="1_0x0x0"]
+[ext_resource type="Script" path="res://tools/node_seeder_ui.gd" id="2_0x0x0"]
+
+[node name="NodeSeeder" type="Node"]
+script = ExtResource("1_0x0x0")
+
+[node name="NodeSeederUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_0x0x0")
+
+[node name="BackgroundColor" type="ColorRect" parent="NodeSeederUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="NodeSeederUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NodeSeederUI/CenterContainer"]
+custom_minimum_size = Vector2(600, 700)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "NODE SEEDER TOOL"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="DescriptionLabel" type="Label" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Tool for seeding node data from CSV files into the database"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Spacer2" type="Control" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="CreateCSVButton" type="Button" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Create Sample CSV Files"
+
+[node name="Spacer3" type="Control" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="SeedNodesButton" type="Button" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Seed Nodes from CSV"
+
+[node name="Spacer4" type="Control" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="SeedAllButton" type="Button" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Seed All Data from CSV"
+
+[node name="Spacer5" type="Control" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="ClearDataButton" type="Button" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Clear All Node Data"
+
+[node name="Spacer6" type="Control" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="QuitButton" type="Button" parent="NodeSeederUI/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Quit Tool"
+
+[connection signal="pressed" from="NodeSeederUI/CenterContainer/VBoxContainer/CreateCSVButton" to="NodeSeederUI" method="_on_create_csv_button_pressed"]
+[connection signal="pressed" from="NodeSeederUI/CenterContainer/VBoxContainer/SeedNodesButton" to="NodeSeederUI" method="_on_seed_nodes_button_pressed"]
+[connection signal="pressed" from="NodeSeederUI/CenterContainer/VBoxContainer/SeedAllButton" to="NodeSeederUI" method="_on_seed_all_button_pressed"]
+[connection signal="pressed" from="NodeSeederUI/CenterContainer/VBoxContainer/ClearDataButton" to="NodeSeederUI" method="_on_clear_data_button_pressed"]
+[connection signal="pressed" from="NodeSeederUI/CenterContainer/VBoxContainer/QuitButton" to="NodeSeederUI" method="_on_quit_button_pressed"]

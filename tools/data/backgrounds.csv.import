@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://4vqpiekcxilf"
+
+[deps]
+
+files=["res://tools/data/backgrounds.description.translation", "res://tools/data/backgrounds.attribute.translation", "res://tools/data/backgrounds.ability.translation", "res://tools/data/backgrounds.skill.translation", "res://tools/data/backgrounds.starting.translation"]
+
+source_file="res://tools/data/backgrounds.csv"
+dest_files=["res://tools/data/backgrounds.description.translation", "res://tools/data/backgrounds.attribute.translation", "res://tools/data/backgrounds.ability.translation", "res://tools/data/backgrounds.skill.translation", "res://tools/data/backgrounds.starting.translation"]
+
+[params]
+
+compress=true
+delimiter=0

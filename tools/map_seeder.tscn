@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://bqxvhxqxqxqxq"]
+[gd_scene load_steps=3 format=3 uid="uid://dn155rtdljr6g"]
 
-[ext_resource type="Script" uid="uid://cjhrs435aytw0" path="res://tools/map_seeder.gd" id="1_0xqxq"]
-[ext_resource type="Script" uid="uid://dipxrk8feeh8d" path="res://tools/map_seeder_ui.gd" id="2_0xqxq"]
+[ext_resource type="Script" path="res://tools/map_seeder.gd" id="1_0xqxq"]
+[ext_resource type="Script" path="res://tools/map_seeder_ui.gd" id="2_0xqxq"]
 
 [node name="MapSeeder" type="Node"]
 script = ExtResource("1_0xqxq")

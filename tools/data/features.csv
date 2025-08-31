@@ -1,0 +1,5 @@
+name,description,icon_name,trait_id,attribute_bonuses,ability_bonuses,skill_bonuses,other_bonuses
+Elf Blood,You have elven heritage,elf_blood,1,{'agility': 1},{'perception': 1},{'arcana': 1},Long lifespan
+Human Adaptability,You adapt quickly to new situations,human_adapt,2,{'intelligence': 1},{'knowledge': 1},{},Bonus experience
+Dwarven Toughness,You are naturally hardy,dwarf_tough,3,{'vitality': 1},{'athletics': 1},{},Poison resistance
+Tiefling Heritage,You have infernal blood,tiefling_herit,4,{'ruse': 1},{'persuasion': 1},{'arcana': 1},Fire resistance
