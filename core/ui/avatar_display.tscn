@@ -1,0 +1,42 @@
+[gd_scene load_steps=3 format=3 uid="uid://dxlhv37vbol5h"]
+
+[ext_resource type="Script" uid="uid://d058vgolr5fai" path="res://core/ui/avatar_display.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dm01ljilpwftt" path="res://assets/ui/avatar_frame.svg" id="2_1hkf8"]
+
+[node name="AvatarDisplay" type="VBoxContainer"]
+custom_minimum_size = Vector2(200, 240)
+offset_right = 431.0
+offset_bottom = 816.0
+scale = Vector2(0.5, 0.5)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_script")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "AVATAR"
+horizontal_alignment = 1
+
+[node name="TitleSpacer" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="AvatarAreaTexture" type="TextureButton" parent="."]
+layout_mode = 2
+texture_normal = ExtResource("2_1hkf8")
+stretch_mode = 4
+
+[node name="AvatarImage" type="TextureRect" parent="AvatarAreaTexture"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 46.0
+offset_top = 44.0
+offset_right = -49.0
+offset_bottom = -69.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5

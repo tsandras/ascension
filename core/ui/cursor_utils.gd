@@ -19,6 +19,15 @@ static func add_cursor_to_control(control: Control):
 	control.mouse_entered.connect(func(): _handle_mouse_entered())
 	control.mouse_exited.connect(func(): _handle_mouse_exited())
 
+static func add_cursor_to_texture_button(texture_button: TextureButton):
+	"""Add cursor functionality to a texture button"""
+	if not texture_button:
+		return
+	
+	# Connect mouse enter/exit signals using lambda functions
+	texture_button.mouse_entered.connect(func(): _handle_mouse_entered())
+	texture_button.mouse_exited.connect(func(): _handle_mouse_exited())
+
 static func _handle_mouse_entered():
 	"""Handle mouse entering a UI element"""
 	if CursorManager:

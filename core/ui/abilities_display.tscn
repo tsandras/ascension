@@ -1,0 +1,184 @@
+[gd_scene load_steps=2 format=3 uid="uid://dxu0qr3va6gr4"]
+
+[ext_resource type="Script" uid="uid://d4a38kcrymmkx" path="res://core/ui/abilities_display.gd" id="1_script"]
+
+[node name="AbilitiesDisplay" type="VBoxContainer"]
+custom_minimum_size = Vector2(320, 400)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_script")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "ABILITIES"
+horizontal_alignment = 1
+
+[node name="TitleSpacer" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="ExpandButton" type="Button" parent="."]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+text = "Click to show all abilities"
+
+[node name="AbilitiesContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SurvivalRow" type="HBoxContainer" parent="AbilitiesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="SurvivalLabel" type="Label" parent="AbilitiesContainer/SurvivalRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Survival:"
+
+[node name="SurvivalValue" type="Label" parent="AbilitiesContainer/SurvivalRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="PerceptionRow" type="HBoxContainer" parent="AbilitiesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="PerceptionLabel" type="Label" parent="AbilitiesContainer/PerceptionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Perception:"
+
+[node name="PerceptionValue" type="Label" parent="AbilitiesContainer/PerceptionRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="StealthRow" type="HBoxContainer" parent="AbilitiesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="StealthLabel" type="Label" parent="AbilitiesContainer/StealthRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Stealth:"
+
+[node name="StealthValue" type="Label" parent="AbilitiesContainer/StealthRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="KnowledgeRow" type="HBoxContainer" parent="AbilitiesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="KnowledgeLabel" type="Label" parent="AbilitiesContainer/KnowledgeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Knowledge:"
+
+[node name="KnowledgeValue" type="Label" parent="AbilitiesContainer/KnowledgeRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="ArcanaRow" type="HBoxContainer" parent="AbilitiesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="ArcanaLabel" type="Label" parent="AbilitiesContainer/ArcanaRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Arcana:"
+
+[node name="ArcanaValue" type="Label" parent="AbilitiesContainer/ArcanaRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="SleightOfHandRow" type="HBoxContainer" parent="AbilitiesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="SleightOfHandLabel" type="Label" parent="AbilitiesContainer/SleightOfHandRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Sleight of Hand:"
+
+[node name="SleightOfHandValue" type="Label" parent="AbilitiesContainer/SleightOfHandRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="PersuasionRow" type="HBoxContainer" parent="AbilitiesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="PersuasionLabel" type="Label" parent="AbilitiesContainer/PersuasionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Persuasion:"
+
+[node name="PersuasionValue" type="Label" parent="AbilitiesContainer/PersuasionRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="AthleticsRow" type="HBoxContainer" parent="AbilitiesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="AthleticsLabel" type="Label" parent="AbilitiesContainer/AthleticsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Athletics:"
+
+[node name="AthleticsValue" type="Label" parent="AbilitiesContainer/AthleticsRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="BottomSpacer" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2

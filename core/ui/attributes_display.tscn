@@ -1,0 +1,207 @@
+[gd_scene load_steps=12 format=3 uid="uid://bvqm8xk2n3y6r"]
+
+[ext_resource type="Script" uid="uid://br605w1wbdq6u" path="res://core/ui/attributes_display.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://b7fpk76ov2xg6" path="res://assets/icons/svgs/speed.svg" id="3_r1kgm"]
+[ext_resource type="Texture2D" uid="uid://cxjeqqfdvqueo" path="res://assets/icons/svgs/resistance.svg" id="5_mcngv"]
+[ext_resource type="Texture2D" uid="uid://bftiyxdbx83mk" path="res://assets/icons/svgs/intelligence.svg" id="6_intelligence"]
+[ext_resource type="Texture2D" uid="uid://d4nrcsbvpsd0o" path="res://assets/icons/svgs/strenght.svg" id="7_strength"]
+[ext_resource type="Texture2D" uid="uid://c2nbglkn6vqq4" path="res://assets/icons/svgs/ruse.svg" id="8_ruse"]
+[ext_resource type="Texture2D" uid="uid://bmnyoleto67t6" path="res://assets/icons/svgs/agility.svg" id="9_agility"]
+[ext_resource type="Texture2D" uid="uid://dp8quxvae07xk" path="res://assets/icons/svgs/resolution.svg" id="10_resolution"]
+[ext_resource type="Texture2D" uid="uid://d1x8378t75vxx" path="res://assets/ui/attributes_frame_with_bg.svg" id="11_3x0g1"]
+[ext_resource type="Texture2D" uid="uid://dwringwwhcfpl" path="res://assets/icons/svgs/vitality.svg" id="11_vitality"]
+[ext_resource type="Texture2D" uid="uid://dh8bwr40dmrmk" path="res://assets/icons/svgs/magic.svg" id="13_r1kgm"]
+
+[node name="AttributesDisplay" type="VBoxContainer"]
+custom_minimum_size = Vector2(500, 400)
+offset_left = 40.0
+offset_top = 3.0
+offset_right = 540.0
+offset_bottom = 403.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_script")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Attributes"
+horizontal_alignment = 1
+
+[node name="AttributesFrameWithBg" type="Sprite2D" parent="."]
+position = Vector2(249, 290)
+scale = Vector2(0.75, 0.75)
+texture = ExtResource("11_3x0g1")
+
+[node name="Speed" type="Sprite2D" parent="AttributesFrameWithBg"]
+modulate = Color(1, 1, 1, 0.4)
+z_index = 2
+position = Vector2(-156, 158)
+scale = Vector2(0.07, 0.07)
+texture = ExtResource("3_r1kgm")
+
+[node name="Magic" type="Sprite2D" parent="AttributesFrameWithBg"]
+modulate = Color(1, 1, 1, 0.4)
+light_mask = 7
+z_index = 2
+position = Vector2(3, -154)
+scale = Vector2(0.07, 0.07)
+texture = ExtResource("13_r1kgm")
+
+[node name="Resistance" type="Sprite2D" parent="AttributesFrameWithBg"]
+modulate = Color(1, 1, 1, 0.4)
+z_index = 2
+position = Vector2(161, 157)
+scale = Vector2(0.07, 0.07)
+texture = ExtResource("5_mcngv")
+
+[node name="IntelligenceBox" type="VBoxContainer" parent="AttributesFrameWithBg"]
+offset_left = -191.0
+offset_top = -166.0
+offset_right = -91.0
+offset_bottom = -66.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+alignment = 1
+
+[node name="IntelligenceValue" type="Label" parent="AttributesFrameWithBg/IntelligenceBox"]
+modulate = Color(1, 0.8, 0, 1)
+z_index = 3
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 34
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Intelligence" type="Sprite2D" parent="AttributesFrameWithBg/IntelligenceBox"]
+modulate = Color(1, 1, 1, 0.4)
+z_index = 2
+position = Vector2(51, 58)
+scale = Vector2(0.06, 0.06)
+texture = ExtResource("6_intelligence")
+
+[node name="StrengthBox" type="VBoxContainer" parent="AttributesFrameWithBg"]
+offset_left = 91.0
+offset_top = -160.0
+offset_right = 191.0
+offset_bottom = -60.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="StrenghtValue" type="Label" parent="AttributesFrameWithBg/StrengthBox"]
+modulate = Color(1, 0.8, 0, 1)
+z_index = 3
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 34
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Strenght" type="Sprite2D" parent="AttributesFrameWithBg/StrengthBox"]
+modulate = Color(1, 1, 1, 0.4)
+position = Vector2(51, 54)
+scale = Vector2(0.06, 0.06)
+texture = ExtResource("7_strength")
+
+[node name="RuseCircle" type="VBoxContainer" parent="AttributesFrameWithBg"]
+offset_left = -124.0
+offset_top = 206.0
+offset_right = -24.0
+offset_bottom = 306.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="RuseValue" type="Label" parent="AttributesFrameWithBg/RuseCircle"]
+modulate = Color(1, 0.8, 0, 1)
+z_index = 3
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 34
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Ruse" type="Sprite2D" parent="AttributesFrameWithBg/RuseCircle"]
+modulate = Color(1, 1, 1, 0.4)
+position = Vector2(52, 51)
+scale = Vector2(0.06, 0.06)
+texture = ExtResource("8_ruse")
+
+[node name="AgilityCircle" type="VBoxContainer" parent="AttributesFrameWithBg"]
+offset_left = -264.0
+offset_top = -19.0
+offset_right = -164.0
+offset_bottom = 81.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="AgilityValue" type="Label" parent="AttributesFrameWithBg/AgilityCircle"]
+modulate = Color(1, 0.8, 0, 1)
+z_index = 3
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 34
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Agility" type="Sprite2D" parent="AttributesFrameWithBg/AgilityCircle"]
+modulate = Color(1, 1, 1, 0.4)
+position = Vector2(47, 52)
+scale = Vector2(0.06, 0.06)
+texture = ExtResource("9_agility")
+
+[node name="ResolutionCircle" type="VBoxContainer" parent="AttributesFrameWithBg"]
+offset_left = 168.0
+offset_top = -23.0
+offset_right = 268.0
+offset_bottom = 77.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="ResolutionValue" type="Label" parent="AttributesFrameWithBg/ResolutionCircle"]
+modulate = Color(1, 0.8, 0, 1)
+z_index = 3
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 34
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Resolution" type="Sprite2D" parent="AttributesFrameWithBg/ResolutionCircle"]
+modulate = Color(1, 1, 1, 0.4)
+position = Vector2(51, 51)
+scale = Vector2(0.06, 0.06)
+texture = ExtResource("10_resolution")
+
+[node name="VitalityCircle" type="VBoxContainer" parent="AttributesFrameWithBg"]
+offset_left = 18.0
+offset_top = 207.0
+offset_right = 118.0
+offset_bottom = 307.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="VitalityValue" type="Label" parent="AttributesFrameWithBg/VitalityCircle"]
+modulate = Color(1, 0.8, 0, 1)
+z_index = 3
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 34
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Vitality" type="Sprite2D" parent="AttributesFrameWithBg/VitalityCircle"]
+modulate = Color(1, 1, 1, 0.4)
+position = Vector2(50, 52)
+scale = Vector2(0.06, 0.06)
+texture = ExtResource("11_vitality")

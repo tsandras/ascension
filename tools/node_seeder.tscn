@@ -1,7 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://cvto1srhqq80s"]
+[gd_scene load_steps=2 format=3 uid="uid://cvto1srhqq80s"]
 
 [ext_resource type="Script" uid="uid://c0p3samaa6f28" path="res://scenes/ui/main_menu.gd" id="1_0x0x0"]
-[ext_resource type="Script" path="res://tools/node_seeder_ui.gd" id="2_0x0x0"]
 
 [node name="NodeSeeder" type="Node"]
 script = ExtResource("1_0x0x0")
@@ -13,7 +12,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("2_0x0x0")
 
 [node name="BackgroundColor" type="ColorRect" parent="NodeSeederUI"]
 layout_mode = 1

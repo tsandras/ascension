@@ -1,27 +1,6 @@
 extends RefCounted
 class_name UIManager
 
-# Apply consistent styling to common UI elements based on UIConstants
-
-static func setup_main_menu(scene: Control):
-	"""Apply main menu styling using UIConstants"""
-	var container = scene.get_node("CenterContainer/VBoxContainer")
-	var new_game_btn = scene.get_node("CenterContainer/VBoxContainer/NewGameButton")
-	var quit_btn = scene.get_node("CenterContainer/VBoxContainer/QuitButton")
-	var spacer1 = scene.get_node("CenterContainer/VBoxContainer/Spacer1")
-	var spacer2 = scene.get_node("CenterContainer/VBoxContainer/Spacer2")
-	
-	# Apply container size
-	container.custom_minimum_size = UIConstants.CONTAINER_MAIN_MENU
-	
-	# Apply button sizes
-	new_game_btn.custom_minimum_size = UIConstants.BUTTON_MAIN_MENU
-	quit_btn.custom_minimum_size = UIConstants.BUTTON_MAIN_MENU
-	
-	# Apply spacing
-	spacer1.custom_minimum_size = Vector2(0, UIConstants.MainMenu.TITLE_SPACER)
-	spacer2.custom_minimum_size = Vector2(0, UIConstants.MainMenu.BUTTON_SPACER)
-
 static func setup_character_creation_step1(scene: Control):
 	"""Apply character creation step 1 styling using UIConstants"""
 	var container = scene.get_node("CenterContainer/VBoxContainer")

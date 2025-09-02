@@ -1,26 +1,86 @@
-extends RefCounted
+extends HBoxContainer
 class_name CarouselPicker
+
+## CarouselPicker - Manages a carousel selection UI component
+##
+## This scene contains the visual elements including:
+## - Left navigation texture button (with arrow icon)
+## - Center display label with tooltip support
+## - Right navigation texture button (with arrow icon)
+##
+## Usage:
+##   var carousel_picker = preload("res://core/ui/carousel_picker.tscn").instantiate()
+##   parent_node.add_child(carousel_picker)
+##   carousel_picker.set_items(items_array, "name", "description")
+##   carousel_picker.selection_changed.connect(_on_carousel_selection_changed)
 
 # Carousel configuration
 var current_index: int = 0
 var items: Array = []
 var item_names: Array = []
+var item_name_key: String = "name"
+var description_key: String = "description"
 
-# UI elements (will be set when create_carousel is called)
-var left_button: Button
-var right_button: Button
-var display_label: Label
-var container: Control
+# UI elements (referenced from the scene)
+@onready var left_button: TextureButton = $LeftButtonContainer/LeftButton
+@onready var right_button: TextureButton = $RightButtonContainer/RightButton
+@onready var display_label: Label = $DisplayLabel
 
-func create_carousel(items_data: Array, item_name_key: String = "name", description_key: String = "description", container_parent: Control = null) -> Control:
-	"""Create a carousel UI for selecting from a list of items"""
+@export var click_sound_enabled: bool = true
+@export var sound_volume: float = -10.0
+
+# Signals
+signal selection_changed(item_index: int, item_data: Dictionary)
+signal left_button_pressed()
+signal right_button_pressed()
+
+func _ready():
+	"""Initialize the carousel picker scene"""
+	print("CarouselPicker scene initialized")
 	
-	print("Carousel: Creating carousel with %d items" % items_data.size())
+	# Connect button signals
+	if left_button:
+		left_button.pressed.connect(_on_left_button_pressed)
+		left_button.mouse_entered.connect(_on_left_button_hover_entered)
+		left_button.mouse_exited.connect(_on_left_button_hover_exited)
+	
+	if right_button:
+		right_button.pressed.connect(_on_right_button_pressed)
+		right_button.mouse_entered.connect(_on_right_button_hover_entered)
+		right_button.mouse_exited.connect(_on_right_button_hover_exited)
+	
+	if display_label:
+		# Style the label to match the UI theme
+		display_label.add_theme_color_override("font_color", Color.WHITE)
+		# Ensure tooltip is enabled and visible
+		display_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	
+	# Set separation between elements
+	add_theme_constant_override("separation", 10)
+	
+	# Initialize audio volume for both buttons
+	if left_button and left_button.has_node("AudioStreamPlayer"):
+		left_button.get_node("AudioStreamPlayer").volume_db = sound_volume
+	if right_button and right_button.has_node("AudioStreamPlayer"):
+		right_button.get_node("AudioStreamPlayer").volume_db = sound_volume
+	
+	# Initialize with empty state
+	update_display()
+	update_button_states()
+	CursorUtils.add_cursor_to_texture_button(left_button)
+	CursorUtils.add_cursor_to_texture_button(right_button)
+
+func set_items(items_data: Array, name_key: String = "name", desc_key: String = "description"):
+	"""Set the items for the carousel"""
+	print("Carousel: Setting items with %d items" % items_data.size())
 	print("Carousel: Items data: ", items_data)
 	
 	# Store the items and extract names
 	items = items_data
+	item_name_key = name_key
+	description_key = desc_key
 	item_names = []
+	
 	for item in items:
 		if item.has(item_name_key):
 			item_names.append(item[item_name_key])
@@ -29,109 +89,12 @@ func create_carousel(items_data: Array, item_name_key: String = "name", descript
 	
 	print("Carousel: Extracted names: ", item_names)
 	
-	# Create the carousel container
-	var carousel_container = HBoxContainer.new()
-	carousel_container.name = "CarouselContainer"
-	carousel_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	carousel_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	carousel_container.add_theme_constant_override("separation", 10)
-	carousel_container.custom_minimum_size = Vector2(300, 60)  # Ensure minimum size
+	# Reset to first item
+	current_index = 0
 	
-	# No background panel needed - let it blend with the UI
-	# The carousel will inherit the parent's styling
-	
-	# Create left navigation button
-	left_button = Button.new()
-	left_button.text = "◀"
-	left_button.custom_minimum_size = Vector2(50, 50)
-	left_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	left_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	left_button.pressed.connect(_on_left_button_pressed)
-	left_button.add_theme_font_size_override("font_size", 20)
-	
-	# Style the button to match the UI theme
-	left_button.add_theme_color_override("font_color", Color.WHITE)
-	left_button.add_theme_color_override("font_focus_color", Color.WHITE)
-	left_button.add_theme_color_override("font_hover_color", Color.WHITE)
-	
-	# Add hover effect
-	left_button.mouse_entered.connect(_on_left_button_hover_entered)
-	left_button.mouse_exited.connect(_on_left_button_hover_exited)
-	
-	# Create center display label with tooltip support
-	display_label = Label.new()
-	display_label.text = get_current_item_name()
-	display_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	display_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	display_label.custom_minimum_size = Vector2(200, 50)
-	display_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	display_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	display_label.add_theme_font_size_override("font_size", 18)
-	
-	# Style the label to match the UI theme
-	display_label.add_theme_color_override("font_color", Color.WHITE)
-	
-	# Ensure tooltip is enabled and visible
-	display_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	
-	# Add tooltip to display label
-	var initial_description = get_current_item_description(description_key)
-	display_label.tooltip_text = initial_description
-	print("Carousel: Initial tooltip set to: %s" % initial_description)
-	print("Carousel: Description key used: %s" % description_key)
-	
-	# Debug: Print first item data
-	if items.size() > 0:
-		var first_item = items[0]
-		print("Carousel: First item data: ", first_item)
-		print("Carousel: First item has description key: ", first_item.has(description_key))
-		if first_item.has(description_key):
-			print("Carousel: First item description: ", first_item[description_key])
-	
-	# Debug: Set a fallback text if no items
-	if items.size() == 0:
-		display_label.text = "No races available"
-		print("Carousel: No items, setting fallback text")
-	
-	# Create right navigation button
-	right_button = Button.new()
-	right_button.text = "▶"
-	right_button.custom_minimum_size = Vector2(50, 50)
-	right_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	right_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	right_button.pressed.connect(_on_right_button_pressed)
-	right_button.add_theme_font_size_override("font_size", 20)
-	
-	# Style the button to match the UI theme
-	right_button.add_theme_color_override("font_color", Color.WHITE)
-	right_button.add_theme_color_override("font_focus_color", Color.WHITE)
-	right_button.add_theme_color_override("font_hover_color", Color.WHITE)
-	
-	# Add hover effect
-	right_button.mouse_entered.connect(_on_right_button_hover_entered)
-	right_button.mouse_exited.connect(_on_right_button_hover_exited)
-	
-	# Add elements to container
-	carousel_container.add_child(left_button)
-	carousel_container.add_child(display_label)
-	carousel_container.add_child(right_button)
-	
-	# Store container reference
-	container = carousel_container
-	
-	# Update button states
+	# Update display
+	update_display()
 	update_button_states()
-	
-	# Add to parent if provided
-	if container_parent:
-		print("Carousel: Adding to parent: ", container_parent)
-		container_parent.add_child(carousel_container)
-		print("Carousel: Added to parent, parent now has %d children" % container_parent.get_child_count())
-	else:
-		print("Carousel: No parent provided")
-	
-	print("Carousel: Final carousel container: ", carousel_container)
-	return carousel_container
 
 func _on_left_button_pressed():
 	"""Handle left button press - go to previous item"""
@@ -143,6 +106,14 @@ func _on_left_button_pressed():
 			print("Carousel: Wrapped to end - New index: %d" % current_index)
 		update_display()
 		update_button_states()
+		# Emit signals
+		left_button_pressed.emit()
+		selection_changed.emit(current_index, get_current_item())
+
+		# Play click sound from left button's audio player
+		if click_sound_enabled and left_button and left_button.has_node("AudioStreamPlayer"):
+			left_button.get_node("AudioStreamPlayer").volume_db = sound_volume
+			left_button.get_node("AudioStreamPlayer").play()
 
 func _on_right_button_pressed():
 	"""Handle right button press - go to next item"""
@@ -154,6 +125,14 @@ func _on_right_button_pressed():
 			print("Carousel: Wrapped to beginning - New index: %d" % current_index)
 		update_display()
 		update_button_states()
+		# Emit signals
+		right_button_pressed.emit()
+		selection_changed.emit(current_index, get_current_item())
+
+		# Play click sound from right button's audio player
+		if click_sound_enabled and right_button and right_button.has_node("AudioStreamPlayer"):
+			right_button.get_node("AudioStreamPlayer").volume_db = sound_volume
+			right_button.get_node("AudioStreamPlayer").play()
 
 func update_display():
 	"""Update the display label with current item"""
@@ -162,16 +141,16 @@ func update_display():
 		ensure_valid_index()
 		display_label.text = get_current_item_name()
 		# Update tooltip with current item description
-		var current_description = get_current_item_description()
+		var current_description = get_current_item_description(description_key)
 		display_label.tooltip_text = current_description
 		print("Carousel display updated - Index: %d, Item: %s, Tooltip: %s" % [current_index, get_current_item_name(), current_description])
 		
 		# Debug: Print current item data
 		var current_item = get_current_item()
 		print("Carousel: Current item data: ", current_item)
-		print("Carousel: Has description key: ", current_item.has("description"))
-		if current_item.has("description"):
-			print("Carousel: Description value: ", current_item["description"])
+		print("Carousel: Has description key (%s): %s" % [description_key, current_item.has(description_key)])
+		if current_item.has(description_key):
+			print("Carousel: Description value: ", current_item[description_key])
 	else:
 		# No items or no display label
 		if display_label:
@@ -264,23 +243,6 @@ func set_current_index(index: int):
 		update_button_states()
 		print("Carousel: Set index to %d" % current_index)
 
-func set_items(new_items: Array, item_name_key: String = "name"):
-	"""Update the items in the carousel"""
-	items = new_items
-	item_names = []
-	for item in items:
-		if item.has(item_name_key):
-			item_names.append(item[item_name_key])
-		else:
-			item_names.append(str(item))
-	
-	# Reset to first item if current index is out of bounds
-	if current_index >= items.size():
-		current_index = 0
-	
-	update_display()
-	update_button_states()
-
 func get_items() -> Array:
 	"""Get all items in the carousel"""
 	return items
@@ -317,3 +279,17 @@ func _on_right_button_hover_exited():
 	"""Handle right button hover exit"""
 	if right_button:
 		right_button.modulate = Color.WHITE  # Return to normal
+
+# Audio control methods
+func set_sound_enabled(enabled: bool):
+	"""Enable or disable click sounds"""
+	click_sound_enabled = enabled
+
+func set_sound_volume(volume: float):
+	"""Set the click sound volume"""
+	sound_volume = volume
+	# Update existing audio players
+	if left_button and left_button.has_node("AudioStreamPlayer"):
+		left_button.get_node("AudioStreamPlayer").volume_db = sound_volume
+	if right_button and right_button.has_node("AudioStreamPlayer"):
+		right_button.get_node("AudioStreamPlayer").volume_db = sound_volume

@@ -1,39 +1,54 @@
-extends RefCounted
+extends VBoxContainer
 class_name AbilitiesDisplay
 
-# Constants for abilities display
-const ABILITY_ROW_HEIGHT = 40
-const ABILITY_ROW_SPACING = 5
+## AbilitiesDisplay - Manages the abilities display scene
+##
+## This scene contains the visual elements including:
+## - Title label
+## - Expand/collapse button  
+## - 8 ability value labels for all abilities
+## - Status label
+##
+## Usage:
+##   var abilities_display = preload("res://core/ui/abilities_display.tscn").instantiate()
+##   parent_node.add_child(abilities_display)
+##   abilities_display.update_abilities_from_character(character)
 
-# Store UI elements for each ability
-var ability_ui_elements = {}
+# The 8 ability names (must match the order in allocation_manager.gd)
+var ability_names = ["Survival", "Perception", "Stealth", "Knowledge", "Arcana", "SleightOfHand", "Persuasion", "Athletics"]
+
+# Map ability names to their value label node paths in the scene
+var ability_value_paths = {
+	"Survival": "AbilitiesContainer/SurvivalRow/SurvivalValue",
+	"Perception": "AbilitiesContainer/PerceptionRow/PerceptionValue",
+	"Stealth": "AbilitiesContainer/StealthRow/StealthValue",
+	"Knowledge": "AbilitiesContainer/KnowledgeRow/KnowledgeValue",
+	"Arcana": "AbilitiesContainer/ArcanaRow/ArcanaValue",
+	"SleightOfHand": "AbilitiesContainer/SleightOfHandRow/SleightOfHandValue",
+	"Persuasion": "AbilitiesContainer/PersuasionRow/PersuasionValue",
+	"Athletics": "AbilitiesContainer/AthleticsRow/AthleticsValue"
+}
+
+# Store the abilities manager
+var abilities_manager: AllocationManager
 # Track expanded state
 var is_expanded = false
 
-func create_abilities_area(character: Character) -> Control:
-	"""Create the abilities display area with allocation controls"""
-	var abilities_container = VBoxContainer.new()
-	abilities_container.name = "AbilitiesContainer"
-	abilities_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+func _ready():
+	"""Initialize the abilities display"""
+	print("AbilitiesDisplay scene initialized")
 	
-	# Create abilities label
-	var abilities_label = Label.new()
-	abilities_label.text = "ABILITIES"
-	abilities_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	abilities_label.add_theme_font_size_override("font_size", 16)
-	abilities_container.add_child(abilities_label)
-	
+	# Connect the expand button
+	var expand_button = get_node("ExpandButton")
+	if expand_button:
+		expand_button.pressed.connect(_on_expand_button_pressed)
+
+func initialize_abilities_manager(character: Character):
+	"""Initialize the abilities manager and apply bonuses"""
 	# Create abilities allocation manager
-	var abilities_manager = AllocationManager.new("abilities", "abilities", 4)
+	abilities_manager = AllocationManager.new("abilities", "abilities", 4)
 	print("Created abilities manager with %d abilities" % abilities_manager.get_item_names().size())
 	print("Initial ability values: ", abilities_manager.get_all_item_values())
-	
-	# Create clickable header to expand/collapse
-	var header_button = Button.new()
-	header_button.text = "Click to show all abilities"
-	header_button.custom_minimum_size = Vector2(0, 30)
-	header_button.pressed.connect(_on_header_button_pressed.bind(abilities_container, abilities_manager))
-	abilities_container.add_child(header_button)
 	
 	# Apply trait bonuses if character has them
 	if character and character.race_name != "":
@@ -63,71 +78,77 @@ func create_abilities_area(character: Character) -> Control:
 	else:
 		print("No background name in character: ", character.background_name if character else "no character")
 	
-	# Create UI for each ability - show abilities with > 1 point or that have bonuses
-	var ability_names = abilities_manager.get_item_names()
-	print("Creating UI for abilities. Total abilities: ", ability_names.size())
-	for ability_name in ability_names:
-		var ability_value = abilities_manager.get_item_value(ability_name)
-		var base_value = abilities_manager.get_item_base_value(ability_name)
-		print("  %s: value=%d, base=%d, should_show=%s" % [ability_name, ability_value, base_value, str(ability_value > 1 or ability_value > base_value)])
-		# Show abilities with more than 1 point OR abilities that have been boosted by bonuses
-		if ability_value > 1 or ability_value > base_value:
-			create_ability_row(abilities_container, ability_name, abilities_manager)
-			print("    Created UI row for %s" % ability_name)
-	
-	# Store the full list for expansion
-	abilities_container.set_meta("all_ability_names", ability_names)
-	
-	# Create points display
-	var points_label = Label.new()
-	points_label.text = "Trait and background bonuses applied to abilities"
-	points_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	abilities_container.add_child(points_label)
-	
-	# Store the manager for later access
-	abilities_container.set_meta("abilities_manager", abilities_manager)
-	abilities_container.set_meta("points_label", points_label)
-	
-	return abilities_container
+	# Update the display
+	update_abilities_display()
+	update_visibility_based_on_values()
 
-func create_ability_row(container: VBoxContainer, ability_name: String, abilities_manager: AllocationManager):
-	"""Create a row for ability allocation"""
-	# Create horizontal container for this ability
-	var h_container = HBoxContainer.new()
-	h_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	h_container.custom_minimum_size = Vector2(0, ABILITY_ROW_HEIGHT)
+func update_abilities_from_character(character: Character):
+	"""Update the abilities display with character data"""
+	if not character:
+		print("Warning: No character provided to AbilitiesDisplay")
+		return
 	
-	# Create ability name label
-	var name_label = Label.new()
-	name_label.text = ability_name + ":"
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.add_theme_font_size_override("font_size", 14)
+	print("AbilitiesDisplay updating with character:")
+	print("  Name: ", character.name)
+	print("  Race: ", character.race_name)
+	print("  Background: ", character.background_name)
 	
-	# Create value label
-	var value_label = Label.new()
-	var current_value = abilities_manager.get_item_value(ability_name)
-	value_label.text = str(current_value)
-	value_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	value_label.custom_minimum_size = Vector2(50, 0)
-	value_label.add_theme_font_size_override("font_size", 14)
+	# Initialize the abilities manager with character data
+	initialize_abilities_manager(character)
+
+func update_abilities_display():
+	"""Update the ability values in the display"""
+	if not abilities_manager:
+		print("Warning: No abilities manager available")
+		return
 	
-	# Add visual indicator for race bonuses only
-	if abilities_manager.race_bonuses.has(ability_name):
-		value_label.text += " (race bonus)"
+	print("AbilitiesDisplay updating values")
 	
-	# Add elements to container
-	h_container.add_child(name_label)
-	h_container.add_child(value_label)
+	# Update each ability value
+	for ability_name in ability_names:
+		var value_path = ability_value_paths.get(ability_name, "")
+		if value_path != "":
+			var value_label = get_node_or_null(value_path)
+			if value_label:
+				var ability_value = abilities_manager.get_item_value(ability_name)
+				# Ensure the value is displayed as an integer
+				value_label.text = str(int(ability_value))
+				
+				# Add visual indicator for race bonuses only
+				if abilities_manager.race_bonuses.has(ability_name):
+					value_label.text += " (race bonus)"
+				
+				print("  Updated %s: %d" % [ability_name, ability_value])
+			else:
+				print("Warning: Could not find value label for %s at path: %s" % [ability_name, value_path])
+		else:
+			print("Warning: No path mapping for ability: %s" % ability_name)
+
+func update_visibility_based_on_values():
+	"""Show/hide ability rows based on values (like the original dynamic behavior)"""
+	if not abilities_manager:
+		return
 	
-	# Add to abilities container
-	container.add_child(h_container)
-	
-	# Store references for easy access
-	ability_ui_elements[ability_name] = {
-		"container": h_container,
-		"label": name_label,
-		"value_label": value_label
-	}
+	# If not expanded, only show abilities with > 1 point or that have bonuses
+	if not is_expanded:
+		for ability_name in ability_names:
+			var ability_value = abilities_manager.get_item_value(ability_name)
+			var base_value = abilities_manager.get_item_base_value(ability_name)
+			var should_show = ability_value > 1 or ability_value > base_value
+			
+			# Get the row container
+			var row_path = "AbilitiesContainer/%sRow" % ability_name.replace(" ", "")
+			var row_container = get_node_or_null(row_path)
+			if row_container:
+				row_container.visible = should_show
+				print("  %s row visibility: %s (value=%d, base=%d)" % [ability_name, should_show, ability_value, base_value])
+	else:
+		# Show all abilities when expanded
+		for ability_name in ability_names:
+			var row_path = "AbilitiesContainer/%sRow" % ability_name.replace(" ", "")
+			var row_container = get_node_or_null(row_path)
+			if row_container:
+				row_container.visible = true
 
 func apply_trait_bonuses(abilities_manager: AllocationManager, trait_data: Dictionary):
 	"""Apply trait bonuses to abilities"""
@@ -227,124 +248,88 @@ func apply_background_bonuses(abilities_manager: AllocationManager, background_d
 	print("Final abilities after background bonuses: ", final_abilities)
 	print("Background bonuses applied to abilities successfully")
 
-func _on_header_button_pressed(container: Control, abilities_manager: AllocationManager):
-	"""Handle header button press to expand/collapse abilities"""
+func _on_expand_button_pressed():
+	"""Handle expand button press to expand/collapse abilities"""
 	is_expanded = !is_expanded
 	
-	var header_button = container.get_child(1)  # The button is the second child
-	var all_ability_names = container.get_meta("all_ability_names")
+	var expand_button = get_node("ExpandButton")
+	if expand_button:
+		if is_expanded:
+			# Show all abilities
+			expand_button.text = "Click to show only high abilities"
+		else:
+			# Show only abilities with > 1 point or bonuses
+			expand_button.text = "Click to show all abilities"
 	
-	if is_expanded:
-		# Show all abilities
-		header_button.text = "Click to show only high abilities"
-		show_all_abilities(container, abilities_manager, all_ability_names)
-	else:
-		# Show only abilities with > 1 point or bonuses
-		header_button.text = "Click to show all abilities"
-		show_filtered_abilities(container, abilities_manager, all_ability_names)
+	# Update visibility
+	update_visibility_based_on_values()
 
-func show_all_abilities(container: Control, abilities_manager: AllocationManager, all_ability_names: Array):
-	"""Show all abilities"""
-	# Remove existing ability rows (keep label, button, and points label)
-	var children_to_remove = []
-	for i in range(2, container.get_child_count() - 1):  # Skip label, button, and points label
-		children_to_remove.append(container.get_child(i))
-	
-	for child in children_to_remove:
-		container.remove_child(child)
-		child.queue_free()
-	
-	# Add all abilities
-	for ability_name in all_ability_names:
-		create_ability_row(container, ability_name, abilities_manager)
+func reset_to_defaults():
+	"""Reset all ability values to default (0)"""
+	for ability_name in ability_names:
+		var value_path = ability_value_paths.get(ability_name, "")
+		if value_path != "":
+			var value_label = get_node_or_null(value_path)
+			if value_label:
+				value_label.text = "0"
+				print("Reset %s to default value: 0" % ability_name)
 
-func show_filtered_abilities(container: Control, abilities_manager: AllocationManager, all_ability_names: Array):
-	"""Show only abilities with more than 1 point or that have bonuses"""
-	# Remove existing ability rows (keep label, button, and points label)
-	var children_to_remove = []
-	for i in range(2, container.get_child_count() - 1):  # Skip label, button, and points label
-		children_to_remove.append(container.get_child(i))
+func update_abilities_from_dict(abilities_dict: Dictionary):
+	"""Update ability values directly from a dictionary"""
+	print("AbilitiesDisplay updating values from dictionary: ", abilities_dict)
 	
-	for child in children_to_remove:
-		container.remove_child(child)
-		child.queue_free()
-	
-	# Add abilities with > 1 point OR abilities that have been boosted by bonuses
-	for ability_name in all_ability_names:
-		var ability_value = abilities_manager.get_item_value(ability_name)
-		var base_value = abilities_manager.get_item_base_value(ability_name)
-		if ability_value > 1 or ability_value > base_value:
-			create_ability_row(container, ability_name, abilities_manager)
+	for ability_name in ability_names:
+		var value_path = ability_value_paths.get(ability_name, "")
+		if value_path != "":
+			var value_label = get_node_or_null(value_path)
+			if value_label:
+				var ability_value = abilities_dict.get(ability_name, 0)
+				# Ensure the value is displayed as an integer
+				value_label.text = str(int(ability_value))
+				print("  Updated %s: %d" % [ability_name, ability_value])
 
-func update_ability_ui(ability_name: String, abilities_manager: AllocationManager, container: Control):
+func update_ability_ui(ability_name: String):
 	"""Update the UI for a specific ability"""
-	if not ability_ui_elements.has(ability_name):
+	if not abilities_manager:
 		return
 	
-	var ui_elements = ability_ui_elements[ability_name]
-	var current_value = abilities_manager.get_item_value(ability_name)
-	
-	# Update value display
-	ui_elements.value_label.text = str(current_value)
-	
-	# Add visual feedback for race-bonused abilities
-	if abilities_manager.race_bonuses.has(ability_name):
-		var race_bonus = abilities_manager.race_bonuses[ability_name]
-		var base_value = abilities_manager.get_item_base_value(ability_name)
-		var minimum_value = base_value + race_bonus
-		
-		# Add visual indicator to value label for race bonuses
-		if current_value > base_value:
-			ui_elements.value_label.text = str(current_value) + " (race bonus)"
-	
+	var value_path = ability_value_paths.get(ability_name, "")
+	if value_path != "":
+		var value_label = get_node_or_null(value_path)
+		if value_label:
+			var current_value = abilities_manager.get_item_value(ability_name)
+			
+			# Update value display
+			value_label.text = str(current_value)
+			
+			# Add visual indicator for race bonuses only
+			if abilities_manager.race_bonuses.has(ability_name):
+				value_label.text += " (race bonus)"
 
 
-func get_abilities_manager(container: Control) -> AllocationManager:
-	"""Get the abilities manager from the container"""
-	if container.has_meta("abilities_manager"):
-		return container.get_meta("abilities_manager")
-	return null
+func get_abilities_manager() -> AllocationManager:
+	"""Get the abilities manager from this display"""
+	return abilities_manager
 
-func get_ability_values(container: Control) -> Dictionary:
-	"""Get the current ability values from the container"""
-	var abilities_manager = get_abilities_manager(container)
+func get_ability_values() -> Dictionary:
+	"""Get the current ability values from this display"""
 	if abilities_manager:
 		return abilities_manager.get_character_items()
 	return {}
 
-func can_continue(container: Control) -> bool:
+func can_continue() -> bool:
 	"""Check if all ability points have been spent"""
-	var abilities_manager = get_abilities_manager(container)
 	if abilities_manager:
 		return abilities_manager.all_points_spent()
 	return false
 
-func get_remaining_points(container: Control) -> int:
+func get_remaining_points() -> int:
 	"""Get the remaining ability points"""
-	var abilities_manager = get_abilities_manager(container)
 	if abilities_manager:
 		return abilities_manager.get_remaining_points()
 	return 0
 
-func refresh_abilities_display(container: Control):
+func refresh_abilities_display():
 	"""Refresh the abilities display to show current values"""
-	var abilities_manager = get_abilities_manager(container)
-	if not abilities_manager:
-		return
-	
-	# Update all ability value labels
-	for ability_name in ability_ui_elements:
-		if ability_ui_elements.has(ability_name):
-			var ui_elements = ability_ui_elements[ability_name]
-			var current_value = abilities_manager.get_item_value(ability_name)
-			var base_value = abilities_manager.get_item_base_value(ability_name)
-			
-			# Update value display
-			ui_elements.value_label.text = str(current_value)
-			
-			# Add visual indicator for race bonuses only
-			if abilities_manager.race_bonuses.has(ability_name):
-				ui_elements.value_label.text += " (race bonus)"
-			else:
-				# Remove any existing bonus indicators
-				ui_elements.value_label.text = str(current_value)
+	update_abilities_display()
+	update_visibility_based_on_values()

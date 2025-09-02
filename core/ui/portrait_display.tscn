@@ -1,0 +1,42 @@
+[gd_scene load_steps=3 format=3 uid="uid://ddb5d40d8og1o"]
+
+[ext_resource type="Script" uid="uid://b3ik8ds3fotg5" path="res://core/ui/portrait_display.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://ce52gigkd34lo" path="res://assets/ui/portrait_frame.svg" id="2_dy6le"]
+
+[node name="PortraitDisplay" type="VBoxContainer"]
+custom_minimum_size = Vector2(200, 240)
+offset_right = 661.0
+offset_bottom = 702.0
+scale = Vector2(0.5, 0.5)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_script")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "PORTRAIT"
+horizontal_alignment = 1
+
+[node name="TitleSpacer" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="PortraitAreaTexture" type="TextureButton" parent="."]
+layout_mode = 2
+texture_normal = ExtResource("2_dy6le")
+stretch_mode = 4
+
+[node name="PortraitImage" type="TextureRect" parent="PortraitAreaTexture"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 34.0
+offset_top = 48.0
+offset_right = -33.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5

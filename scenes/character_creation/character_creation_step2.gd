@@ -240,9 +240,7 @@ func update_ui():
 
 	
 	# Update continue button state using UIManager
-	var continue_button = get_node("CenterContainer/VBoxContainer/ButtonsContainer/ContinueButton")
 	var can_continue = ability_manager.all_points_spent()
-	UIManager.apply_button_state(continue_button, can_continue)
 
 func _on_back_button_pressed():
 	# Save current progress before going back to step 1

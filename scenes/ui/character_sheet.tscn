@@ -1,12 +1,14 @@
 [gd_scene load_steps=2 format=3 uid="uid://bgxflsq24w5d5"]
 
-[ext_resource type="Script" path="res://scenes/ui/character_sheet.gd" id="1_0x0x0"]
+[ext_resource type="Script" uid="uid://cnobg0gd3j3uh" path="res://scenes/ui/character_sheet.gd" id="1_0x0x0"]
 
 [node name="CharacterSheet" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_0x0x0")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -14,6 +16,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.5)
 
 [node name="SheetContainer" type="Control" parent="."]
@@ -27,12 +31,16 @@ offset_left = -400.0
 offset_top = -300.0
 offset_right = 400.0
 offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Background" type="ColorRect" parent="SheetContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0.2, 0.2, 0.2, 0.95)
 
 [node name="Border" type="NinePatchRect" parent="SheetContainer"]
@@ -40,7 +48,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.8, 0.8, 0.8, 1)
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="SheetContainer"]
 layout_mode = 1
@@ -51,6 +60,8 @@ offset_left = 20.0
 offset_top = 20.0
 offset_right = -20.0
 offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="HeaderContainer" type="HBoxContainer" parent="SheetContainer/VBoxContainer"]
 layout_mode = 2
@@ -62,32 +73,31 @@ size_flags_horizontal = 3
 
 [node name="CharacterName" type="Label" parent="SheetContainer/VBoxContainer/HeaderContainer/CharacterInfo"]
 layout_mode = 2
-text = "Character Name"
-theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Character Name"
 
 [node name="RaceInfo" type="Label" parent="SheetContainer/VBoxContainer/HeaderContainer/CharacterInfo"]
 layout_mode = 2
-text = "Race (Sex)"
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "Race (Sex)"
 
 [node name="AvatarContainer" type="VBoxContainer" parent="SheetContainer/VBoxContainer/HeaderContainer"]
 layout_mode = 2
-size_flags_horizontal = 1
 
 [node name="AvatarSprite" type="TextureRect" parent="SheetContainer/VBoxContainer/HeaderContainer/AvatarContainer"]
-layout_mode = 2
 custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 expand_mode = 1
 stretch_mode = 5
 
 [node name="CloseButton" type="Button" parent="SheetContainer/VBoxContainer/HeaderContainer"]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 text = "X"
-custom_minimum_size = Vector2(30, 30)
 
 [node name="HSeparator" type="HSeparator" parent="SheetContainer/VBoxContainer"]
 layout_mode = 2
@@ -97,74 +107,67 @@ layout_mode = 2
 
 [node name="StatsTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsSection"]
 layout_mode = 2
-text = "Character Stats"
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "Character Stats"
 
 [node name="StatsGrid" type="GridContainer" parent="SheetContainer/VBoxContainer/StatsSection"]
 layout_mode = 2
 columns = 3
-offset_left = 20.0
 
 [node name="PVMaxLabel" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
-text = "PV Max:"
 size_flags_horizontal = 3
+text = "PV Max:"
 
 [node name="PVMaxValue" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
 text = "0"
-size_flags_horizontal = 1
 
 [node name="EnduranceMaxLabel" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
-text = "Endurance Max:"
 size_flags_horizontal = 3
+text = "Endurance Max:"
 
 [node name="EnduranceMaxValue" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
 text = "0"
-size_flags_horizontal = 1
 
 [node name="ManaMaxLabel" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
-text = "Mana Max:"
 size_flags_horizontal = 3
+text = "Mana Max:"
 
 [node name="ManaMaxValue" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
 text = "0"
-size_flags_horizontal = 1
 
 [node name="SkillSlotsMaxLabel" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
-text = "Skill Slots Max:"
 size_flags_horizontal = 3
+text = "Skill Slots Max:"
 
 [node name="SkillSlotsMaxValue" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
 text = "0"
-size_flags_horizontal = 1
 
 [node name="BlockMaxLabel" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
-text = "Block Max:"
 size_flags_horizontal = 3
+text = "Block Max:"
 
 [node name="BlockMaxValue" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
 text = "0"
-size_flags_horizontal = 1
 
 [node name="WillpowerMaxLabel" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
-text = "Willpower Max:"
 size_flags_horizontal = 3
+text = "Willpower Max:"
 
 [node name="WillpowerMaxValue" type="Label" parent="SheetContainer/VBoxContainer/StatsSection/StatsGrid"]
 layout_mode = 2
 text = "0"
-size_flags_horizontal = 1
 
 [node name="HSeparator2" type="HSeparator" parent="SheetContainer/VBoxContainer"]
 layout_mode = 2
@@ -182,26 +185,24 @@ layout_mode = 2
 
 [node name="AttributesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection"]
 layout_mode = 2
-text = "Attributes"
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "Attributes"
 
 [node name="AttributesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AttributesSection"]
 layout_mode = 2
-offset_left = 20.0
 
 [node name="AbilitiesSection" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn"]
 layout_mode = 2
 
 [node name="AbilitiesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection"]
 layout_mode = 2
-text = "Abilities"
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "Abilities"
 
 [node name="AbilitiesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/LeftColumn/AbilitiesSection"]
 layout_mode = 2
-offset_left = 20.0
 
 [node name="RightColumn" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer"]
 layout_mode = 2
@@ -212,23 +213,21 @@ layout_mode = 2
 
 [node name="CompetencesTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection"]
 layout_mode = 2
-text = "Competences"
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "Competences"
 
 [node name="CompetencesList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/CompetencesSection"]
 layout_mode = 2
-offset_left = 20.0
 
 [node name="SkillsSection" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn"]
 layout_mode = 2
 
 [node name="SkillsTitle" type="Label" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/SkillsSection"]
 layout_mode = 2
-text = "Skills"
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "Skills"
 
 [node name="SkillsList" type="VBoxContainer" parent="SheetContainer/VBoxContainer/StatsContainer/RightColumn/SkillsSection"]
 layout_mode = 2
-offset_left = 20.0 

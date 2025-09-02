@@ -143,16 +143,22 @@ func create_tables():
 	var nodes_migration_query1 = "ALTER TABLE nodes ADD COLUMN master_attribute_bonuses JSON"
 	db.query(nodes_migration_query1)
 	if not is_query_successful():
-		# Column might already exist, which is fine
-		print("Nodes master_attribute_bonuses column migration note: " + db.error_message)
+		# Check if it's a duplicate column error
+		if "duplicate column name" in db.error_message:
+			print("Nodes master_attribute_bonuses column already exists")
+		else:
+			print("Nodes master_attribute_bonuses column migration note: " + db.error_message)
 	else:
 		print("Nodes table migrated to include master_attribute_bonuses column")
 	
 	var nodes_migration_query2 = "ALTER TABLE nodes ADD COLUMN ability_bonuses JSON"
 	db.query(nodes_migration_query2)
 	if not is_query_successful():
-		# Column might already exist, which is fine
-		print("Nodes ability_bonuses column migration note: " + db.error_message)
+		# Check if it's a duplicate column error
+		if "duplicate column name" in db.error_message:
+			print("Nodes ability_bonuses column already exists")
+		else:
+			print("Nodes ability_bonuses column migration note: " + db.error_message)
 	else:
 		print("Nodes table migrated to include ability_bonuses column")
 	
@@ -203,8 +209,11 @@ func create_tables():
 	for migration_query in backgrounds_migration_queries:
 		db.query(migration_query)
 		if not is_query_successful():
-			# Column might already exist, which is fine
-			print("Backgrounds migration note: " + db.error_message)
+			# Check if it's a duplicate column error
+			if "duplicate column name" in db.error_message:
+				print("Backgrounds column already exists")
+			else:
+				print("Backgrounds migration note: " + db.error_message)
 		else:
 			print("Backgrounds table migrated to include new columns")
 	
@@ -235,8 +244,11 @@ func create_tables():
 	var features_migration_query = "ALTER TABLE features ADD COLUMN trait_id INTEGER"
 	db.query(features_migration_query)
 	if not is_query_successful():
-		# Column might already exist, which is fine
-		print("Features trait column migration note: " + db.error_message)
+		# Check if it's a duplicate column error
+		if "duplicate column name" in db.error_message:
+			print("Features trait_id column already exists")
+		else:
+			print("Features trait column migration note: " + db.error_message)
 	else:
 		print("Features table migrated to include trait_id column")
 	
@@ -270,8 +282,11 @@ func create_tables():
 	var migration_query = "ALTER TABLE character ADD COLUMN feature_id INTEGER"
 	db.query(migration_query)
 	if not is_query_successful():
-		# Column might already exist, which is fine
-		print("Feature column migration note: " + db.error_message)
+		# Check if it's a duplicate column error
+		if "duplicate column name" in db.error_message:
+			print("Character feature_id column already exists")
+		else:
+			print("Feature column migration note: " + db.error_message)
 	else:
 		print("Character table migrated to include feature_id column")
 	
