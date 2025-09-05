@@ -1,5 +1,9 @@
-name,description,attribute_bonuses,ability_bonuses,skill_bonuses,starting_equipment
-Soldier,You served in the military,{'strength': 1, 'vitality': 1},{'athletics': 1},{'survival': 1},Weapon and armor
-Scholar,You studied at a university,{'intelligence': 1, 'resolution': 1},{'knowledge': 1},{'arcana': 1},Books and writing supplies
-Rogue,You lived on the streets,{'agility': 1, 'ruse': 1},{'stealth': 1},{'sleight of hand': 1},Lockpicks and dark clothing
-Merchant,You ran a business,{'ruse': 1, 'persuasion': 1},{'persuasion': 1},{'knowledge': 1},Trade goods and money
+name,ability_bonuses,description
+soldier,"{'athletics': 1, 'perception': 1}",Was a soldier
+scholar,"{'knowledge': 1, 'arcana': 1}",Was a scholar
+acolyte,"{'knowledge': 1, 'insight': 1}",Was a acolyte
+artisan,"{'insight': 1, 'persuasion': 1}",Was a artisan
+criminal,"{'stealth': 1, 'sleight of hand': 1}",Was a criminal
+entertainer,"{'athletics': 1, 'persuasion': 1}",Was a entertainer
+noble,"{'knowledge': 1, 'persuasion': 1}",Was a noble
+outlander,"{'survival': 1, 'perception': 1}",Was a outlander

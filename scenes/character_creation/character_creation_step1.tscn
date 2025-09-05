@@ -48,7 +48,9 @@ alignment = 1
 [node name="AttributesDisplay" parent="." instance=ExtResource("2_ibld1")]
 layout_mode = 0
 offset_left = -5.0
+offset_top = 0.0
 offset_right = 495.0
+offset_bottom = 400.0
 
 [node name="Carousels" type="VBoxContainer" parent="."]
 custom_minimum_size = Vector2(320, 0)

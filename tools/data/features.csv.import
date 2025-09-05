@@ -6,10 +6,10 @@ uid="uid://cf1ik1dhk6a3y"
 
 [deps]
 
-files=["res://tools/data/features.description.translation", "res://tools/data/features.icon.translation", "res://tools/data/features.trait.translation", "res://tools/data/features.attribute.translation", "res://tools/data/features.ability.translation", "res://tools/data/features.skill.translation", "res://tools/data/features.other.translation"]
+files=["res://tools/data/features.trait.translation", "res://tools/data/features.attribute.translation", "res://tools/data/features.description.translation"]
 
 source_file="res://tools/data/features.csv"
-dest_files=["res://tools/data/features.description.translation", "res://tools/data/features.icon.translation", "res://tools/data/features.trait.translation", "res://tools/data/features.attribute.translation", "res://tools/data/features.ability.translation", "res://tools/data/features.skill.translation", "res://tools/data/features.other.translation"]
+dest_files=["res://tools/data/features.trait.translation", "res://tools/data/features.attribute.translation", "res://tools/data/features.description.translation"]
 
 [params]
 

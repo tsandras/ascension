@@ -99,10 +99,10 @@ func create_tables():
 		name TEXT NOT NULL UNIQUE,
 		description TEXT,
 		icon_name TEXT,
-		attribute_bonuses JSON,
-		ability_bonuses JSON,
-		skill_bonuses JSON,
-		other_bonuses JSON,
+		point_bonuses TEXT,
+		attribute_scaling_bonuses TEXT,
+		master_attribute_scaling_bonuses TEXT,
+		others_bonuses TEXT,
 		display_order INTEGER NOT NULL DEFAULT 0
 	);
 	"""
@@ -239,6 +239,22 @@ func create_tables():
 		print("Error creating features table: ", db.error_message)
 	else:
 		print("Features table created successfully")
+	
+	# Create personalities table
+	var personalities_query = """
+	CREATE TABLE IF NOT EXISTS personalities (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		description TEXT,
+		display_order INTEGER NOT NULL DEFAULT 0
+	);
+	"""
+	
+	db.query(personalities_query)
+	if not is_query_successful():
+		print("Error creating personalities table: ", db.error_message)
+	else:
+		print("Personalities table created successfully")
 	
 	# Migrate existing features tables to add trait_id column if it doesn't exist
 	var features_migration_query = "ALTER TABLE features ADD COLUMN trait_id INTEGER"
@@ -527,61 +543,40 @@ func seed_traits():
 			"name": "Polyvalent",
 			"description": "Humans are adaptable and versatile, gaining small bonuses to all areas of expertise",
 			"icon_name": "hobbit",
-			"attribute_bonuses": [],
-			"ability_bonuses": [],
-			"competence_bonuses": [
-				{"name": "free", "value": 1}
-			],
-			"other_bonuses": [
-				{"type": "critical_chance", "value": 5},
-			],
+			"point_bonuses": "1:4",
+			"attribute_scaling_bonuses": "",
+			"master_attribute_scaling_bonuses": "",
+			"others_bonuses": "10% [Chance avoidance]; 10% to [Critical chance]",
 			"display_order": 1
 		},
 		{
 			"name": "Ancient Wisdom",
 			"description": "Elfs possess centuries of accumulated knowledge and unshakeable mental fortitude",
 			"icon_name": "magic_book",
-			"attribute_bonuses": [
-				{"name": "stamina", "value": -1},
-				{"name": "willpower", "value": 1}
-			],
-			"ability_bonuses": [],
-			"competence_bonuses": [
-				{"name": "knowledge", "value": 2}
-			],
-			"other_bonuses": [
-				{"type": "resistance", "value": 5, "subtype": "magical"}
-			],
+			"point_bonuses": "",
+			"attribute_scaling_bonuses": "{intelligence}x2 [MP]",
+			"master_attribute_scaling_bonuses": "",
+			"others_bonuses": "Long lifespan",
 			"display_order": 2
 		},
 		{
 			"name": "Divine Heritage",
 			"description": "Celestial-blooded carry divine blessings, excelling in protection and social grace",
 			"icon_name": "giant",
-			"attribute_bonuses": [
-				{"name": "essence", "value": 1}
-			],
-			"ability_bonuses": [],
-			"competence_bonuses": [],
-			"other_bonuses": [
-				{"type": "resistance", "value": 15, "subtype": "fire"},
-				{"type": "resistance", "value": 15, "subtype": "lightning"}
-			],
+			"point_bonuses": "",
+			"attribute_scaling_bonuses": "{agility}x0.25 [AP]; {agility}x0.5 to [Physical damage]",
+			"master_attribute_scaling_bonuses": "",
+			"others_bonuses": "Fire and lightning resistance",
 			"display_order": 3
 		},
 		{
 			"name": "Infernal Power",
 			"description": "Infernal-blooded channel raw dark power, devastating in combat but consuming",
 			"icon_name": "lion",
-			"attribute_bonuses": [
-				{"name": "essence", "value": 1}
-			],
-			"ability_bonuses": [],
-			"competence_bonuses": [],
-			"other_bonuses": [
-				{"type": "resistance", "value": 15, "subtype": "fire"},
-				{"type": "resistance", "value": 15, "subtype": "cold"}
-			],
+			"point_bonuses": "",
+			"attribute_scaling_bonuses": "{strenght} [MP]; {strenght} to [Critical chance]",
+			"master_attribute_scaling_bonuses": "",
+			"others_bonuses": "Fire and cold resistance",
 			"display_order": 4
 		}
 	]
@@ -589,16 +584,16 @@ func seed_traits():
 	# Insert each trait
 	for trait_data in traits_data:
 		var insert_query = """
-		INSERT INTO traits (name, description, icon_name, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order)
+		INSERT INTO traits (name, description, icon_name, point_bonuses, attribute_scaling_bonuses, master_attribute_scaling_bonuses, others_bonuses, display_order)
 		VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)
 		""" % [
 			trait_data.name,
 			trait_data.description,
 			trait_data.icon_name,
-			JSON.stringify(trait_data.attribute_bonuses),
-			JSON.stringify(trait_data.ability_bonuses),
-			JSON.stringify(trait_data.competence_bonuses),
-			JSON.stringify(trait_data.other_bonuses),
+			trait_data.get("point_bonuses", ""),
+			trait_data.get("attribute_scaling_bonuses", ""),
+			trait_data.get("master_attribute_scaling_bonuses", ""),
+			trait_data.get("others_bonuses", ""),
 			trait_data.display_order
 		]
 		
@@ -2008,42 +2003,26 @@ func get_race_traits(race_name: String) -> Array:
 	if is_query_successful():
 		var traits = []
 		for trait_data in db.query_result:
-			# Parse JSON bonuses
-			if trait_data.attribute_bonuses:
-				var json = JSON.new()
-				if json.parse(trait_data.attribute_bonuses) == OK:
-					trait_data.attribute_bonuses_dict = json.data
-				else:
-					trait_data.attribute_bonuses_dict = {}
+			# Parse new trait fields
+			if trait_data.point_bonuses:
+				trait_data.point_bonuses_text = trait_data.point_bonuses
 			else:
-				trait_data.attribute_bonuses_dict = {}
+				trait_data.point_bonuses_text = ""
 			
-			if trait_data.ability_bonuses:
-				var json = JSON.new()
-				if json.parse(trait_data.ability_bonuses) == OK:
-					trait_data.ability_bonuses_dict = json.data
-				else:
-					trait_data.ability_bonuses_dict = {}
+			if trait_data.attribute_scaling_bonuses:
+				trait_data.attribute_scaling_bonuses_text = trait_data.attribute_scaling_bonuses
 			else:
-				trait_data.ability_bonuses_dict = {}
+				trait_data.attribute_scaling_bonuses_text = ""
 			
-			if trait_data.skill_bonuses:
-				var json = JSON.new()
-				if json.parse(trait_data.skill_bonuses) == OK:
-					trait_data.skill_bonuses_dict = json.data
-				else:
-					trait_data.skill_bonuses_dict = {}
+			if trait_data.master_attribute_scaling_bonuses:
+				trait_data.master_attribute_scaling_bonuses_text = trait_data.master_attribute_scaling_bonuses
 			else:
-				trait_data.skill_bonuses_dict = {}
+				trait_data.master_attribute_scaling_bonuses_text = ""
 			
-			if trait_data.other_bonuses:
-				var json = JSON.new()
-				if json.parse(trait_data.other_bonuses) == OK:
-					trait_data.other_bonuses_dict = json.data
-				else:
-					trait_data.other_bonuses_dict = {}
+			if trait_data.others_bonuses:
+				trait_data.others_bonuses_text = trait_data.others_bonuses
 			else:
-				trait_data.other_bonuses_dict = {}
+				trait_data.others_bonuses_text = ""
 			
 			traits.append(trait_data)
 		
@@ -2230,18 +2209,18 @@ func create_node(node_data: Dictionary) -> bool:
 func create_trait(trait_data: Dictionary) -> bool:
 	"""Create a new trait in the database"""
 	var query = """
-	INSERT INTO traits (name, description, icon_name, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, display_order)
+	INSERT INTO traits (name, description, icon_name, point_bonuses, attribute_scaling_bonuses, master_attribute_scaling_bonuses, others_bonuses, display_order)
 	VALUES (?, ?, ?, ?, ?, ?, ?, 0)
 	"""
 	
 	var params = [
 		trait_data.name,
-		trait_data.description,
-		trait_data.icon_name,
-		JSON.stringify(trait_data.attribute_bonuses) if trait_data.attribute_bonuses else "{}",
-		JSON.stringify(trait_data.ability_bonuses) if trait_data.ability_bonuses else "{}",
-		JSON.stringify(trait_data.skill_bonuses) if trait_data.skill_bonuses else "{}",
-		trait_data.other_bonuses if trait_data.has("other_bonuses") else ""
+		trait_data.description if trait_data.has("description") else "",
+		trait_data.icon_name if trait_data.has("icon_name") else "",
+		trait_data.point_bonuses if trait_data.has("point_bonuses") else "",
+		trait_data.attribute_scaling_bonuses if trait_data.has("attribute_scaling_bonuses") else "",
+		trait_data.master_attribute_scaling_bonuses if trait_data.has("master_attribute_scaling_bonuses") else "",
+		trait_data.others_bonuses if trait_data.has("others_bonuses") else ""
 	]
 	
 	db.query_with_bindings(query, params)
@@ -2304,3 +2283,97 @@ func create_feature(feature_data: Dictionary) -> bool:
 	else:
 		print("Error creating feature: ", db.error_message)
 		return false
+
+func create_race(race_data: Dictionary) -> bool:
+	"""Create a new race in the database"""
+	var query = """
+	INSERT INTO races (name, description, attribute_bonuses, display_order)
+	VALUES (?, ?, ?, 0)
+	"""
+	
+	var params = [
+		race_data.name,
+		race_data.description,
+		JSON.stringify(race_data.attribute_bonuses) if race_data.has("attribute_bonuses") else "{}"
+	]
+	
+	db.query_with_bindings(query, params)
+	
+	if is_query_successful():
+		print("Successfully created race: ", race_data.name)
+		# Handle traits if provided
+		if race_data.has("traits") and race_data.traits != null and race_data.traits != "":
+			handle_race_traits(race_data.name, race_data.traits)
+		return true
+	else:
+		print("Error creating race: ", db.error_message)
+		return false
+
+func create_personality(personality_data: Dictionary) -> bool:
+	"""Create a new personality in the database"""
+	var query = """
+	INSERT INTO personalities (name, description, display_order)
+	VALUES (?, ?, 0)
+	"""
+	
+	var params = [
+		personality_data.name,
+		personality_data.description
+	]
+	
+	db.query_with_bindings(query, params)
+	
+	if is_query_successful():
+		print("Successfully created personality: ", personality_data.name)
+		return true
+	else:
+		print("Error creating personality: ", db.error_message)
+		return false
+
+func clear_races():
+	"""Clear all races from the database"""
+	var query = "DELETE FROM races"
+	db.query(query)
+	if is_query_successful():
+		print("Races cleared successfully")
+	else:
+		print("Error clearing races: ", db.error_message)
+
+func clear_personalities():
+	"""Clear all personalities from the database"""
+	var query = "DELETE FROM personalities"
+	db.query(query)
+	if is_query_successful():
+		print("Personalities cleared successfully")
+	else:
+		print("Error clearing personalities: ", db.error_message)
+
+func handle_race_traits(race_name: String, traits_string: String):
+	"""Handle race traits by parsing comma-separated trait names and creating associations"""
+	if traits_string == null or traits_string == "":
+		return
+	
+	# Get race ID
+	var race = get_race_by_name(race_name)
+	if not race:
+		print("ERROR: Race not found for traits: ", race_name)
+		return
+	
+	var race_id = race.id
+	var trait_names = traits_string.split(",")
+	
+	for trait_name in trait_names:
+		trait_name = trait_name.strip_edges()
+		if trait_name != "":
+			var traitv = get_trait_by_name(trait_name)
+			if traitv:
+				# Create race-trait association
+				var query = "INSERT OR IGNORE INTO races_traits (race_id, trait_id) VALUES (?, ?)"
+				var params = [race_id, traitv.id]
+				db.query_with_bindings(query, params)
+				if is_query_successful():
+					print("Associated trait '", trait_name, "' with race '", race_name, "'")
+				else:
+					print("Error associating trait '", trait_name, "' with race '", race_name, "': ", db.error_message)
+			else:
+				print("WARNING: Trait not found for race association: ", trait_name)

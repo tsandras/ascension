@@ -1,0 +1,9 @@
+name,attribute_bonuses,master_attribute_bonuses,traits,description
+human,{},,quick learner,The humans are numerous
+elf,"{'agility': 1, 'intelligence': 1}",,magic affinity,The elfs are rare
+dwarf,"{'vitality': 1, 'resolution': 1}",,extraordinary vigor,The dwarfs live under mountains
+hobbit,"{'agility': 1, 'ruse': 1}",,"small, lucky",The hobbits are lucky
+orc,"{'strength': 1, 'vitality': 1}",,extraordinary force,The orc are strong
+troll,"{'vitality': 1, 'strength': 1}",{'resistance': 1},"regeneration, big, slow learner",The troll are resistante
+gnoll,{'agility': 1},{'speed': 1},"extraordinary reflex, slow learner",The gnoll are quick
+dragonborn,{'strength': 1},{'magic': 1},"magic resistance, slow learner",The dragonborn are strange

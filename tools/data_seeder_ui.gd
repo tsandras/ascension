@@ -49,39 +49,65 @@ func create_ui():
 	spacer2.custom_minimum_size = Vector2(0, 20)
 	container.add_child(spacer2)
 	
-	# Seeding buttons
+	# Seeding buttons - in dependency order
 	var seed_label = Label.new()
-	seed_label.text = "Seed Data from CSV:"
+	seed_label.text = "Seed Data from CSV (in dependency order):"
 	seed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	container.add_child(seed_label)
 	
-	var seed_nodes_btn = Button.new()
-	seed_nodes_btn.text = "Seed Nodes from CSV"
-	seed_nodes_btn.custom_minimum_size = Vector2(200, 40)
-	seed_nodes_btn.pressed.connect(_on_seed_nodes_pressed)
-	container.add_child(seed_nodes_btn)
-	
+	# First: Traits (no dependencies)
 	var seed_traits_btn = Button.new()
-	seed_traits_btn.text = "Seed Traits from CSV"
-	seed_traits_btn.custom_minimum_size = Vector2(200, 40)
+	seed_traits_btn.text = "1. Seed Traits from CSV (FIRST - no dependencies)"
+	seed_traits_btn.custom_minimum_size = Vector2(300, 40)
 	seed_traits_btn.pressed.connect(_on_seed_traits_pressed)
 	container.add_child(seed_traits_btn)
 	
+	# Second: Personalities (no dependencies)
+	var seed_personalities_btn = Button.new()
+	seed_personalities_btn.text = "2. Seed Personalities from CSV"
+	seed_personalities_btn.custom_minimum_size = Vector2(300, 40)
+	seed_personalities_btn.pressed.connect(_on_seed_personalities_pressed)
+	container.add_child(seed_personalities_btn)
+	
+	# Third: Races (depends on traits)
+	var seed_races_btn = Button.new()
+	seed_races_btn.text = "3. Seed Races from CSV (needs traits)"
+	seed_races_btn.custom_minimum_size = Vector2(300, 40)
+	seed_races_btn.pressed.connect(_on_seed_races_pressed)
+	container.add_child(seed_races_btn)
+	
+	# Fourth: Backgrounds (no dependencies)
 	var seed_backgrounds_btn = Button.new()
-	seed_backgrounds_btn.text = "Seed Backgrounds from CSV"
-	seed_backgrounds_btn.custom_minimum_size = Vector2(200, 40)
+	seed_backgrounds_btn.text = "4. Seed Backgrounds from CSV"
+	seed_backgrounds_btn.custom_minimum_size = Vector2(300, 40)
 	seed_backgrounds_btn.pressed.connect(_on_seed_backgrounds_pressed)
 	container.add_child(seed_backgrounds_btn)
 	
+	# Fifth: Features (depends on traits)
 	var seed_features_btn = Button.new()
-	seed_features_btn.text = "Seed Features from CSV"
-	seed_features_btn.custom_minimum_size = Vector2(200, 40)
+	seed_features_btn.text = "5. Seed Features from CSV (needs traits)"
+	seed_features_btn.custom_minimum_size = Vector2(300, 40)
 	seed_features_btn.pressed.connect(_on_seed_features_pressed)
 	container.add_child(seed_features_btn)
 	
+	# Sixth: Nodes (depends on traits and skills)
+	var seed_nodes_btn = Button.new()
+	seed_nodes_btn.text = "6. Seed Nodes from CSV (needs traits & skills)"
+	seed_nodes_btn.custom_minimum_size = Vector2(300, 40)
+	seed_nodes_btn.pressed.connect(_on_seed_nodes_pressed)
+	container.add_child(seed_nodes_btn)
+	
+	# Special: Seed with traits first (for dependencies)
+	var seed_with_traits_btn = Button.new()
+	seed_with_traits_btn.text = "Seed Data with Traits First (auto dependency order)"
+	seed_with_traits_btn.custom_minimum_size = Vector2(300, 40)
+	seed_with_traits_btn.pressed.connect(_on_seed_with_traits_pressed)
+	container.add_child(seed_with_traits_btn)
+	
+	# All at once
 	var seed_all_btn = Button.new()
-	seed_all_btn.text = "Seed All Data from CSV"
-	seed_all_btn.custom_minimum_size = Vector2(200, 40)
+	seed_all_btn.text = "Seed All Data from CSV (full dependency order)"
+	seed_all_btn.custom_minimum_size = Vector2(300, 40)
 	seed_all_btn.pressed.connect(_on_seed_all_pressed)
 	container.add_child(seed_all_btn)
 	
@@ -126,6 +152,18 @@ func _on_seed_backgrounds_pressed():
 func _on_seed_features_pressed():
 	print("Seeding features from CSV...")
 	data_seeder.seed_features_from_csv()
+
+func _on_seed_personalities_pressed():
+	print("Seeding personalities from CSV...")
+	data_seeder.seed_personalities_from_csv()
+
+func _on_seed_races_pressed():
+	print("Seeding races from CSV...")
+	data_seeder.seed_races_from_csv()
+
+func _on_seed_with_traits_pressed():
+	print("Seeding data with traits first...")
+	data_seeder.seed_with_traits_first()
 
 func _on_seed_all_pressed():
 	print("Seeding all data from CSV...")

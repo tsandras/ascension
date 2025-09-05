@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://c2fjgcb8jbl7m"
+
+[deps]
+
+files=["res://tools/data/personalities.description.translation"]
+
+source_file="res://tools/data/personalities.csv"
+dest_files=["res://tools/data/personalities.description.translation"]
+
+[params]
+
+compress=true
+delimiter=0

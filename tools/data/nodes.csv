@@ -1,18 +1,24 @@
-name,icon_name,node_type,attribute_bonuses,master_attribute_bonuses,ability_bonuses,trait_id,skill_id,description
-strength,strength,ATTRIBUTE,{'strength': 1},{},{},NULL,NULL,Physical strength and power
-intelligence,intelligence,ATTRIBUTE,{'intelligence': 1},{},{},NULL,NULL,Reasoning and learning ability
-ruse,ruse,ATTRIBUTE,{'ruse': 1},{},{},NULL,NULL,Cunning and deception
-agility,agility,ATTRIBUTE,{'agility': 1},{},{},NULL,NULL,Physical agility and reflexes
-resolution,resolution,ATTRIBUTE,{'resolution': 1},{},{},NULL,NULL,Mental resilience and determination
-vitality,vitality,ATTRIBUTE,{'vitality': 1},{},{},NULL,NULL,Endurance and vitality
-survival,survival,ABILITY,{},{},{'survival': 1},NULL,NULL,Wilderness survival skills
-perception,perception,ABILITY,{},{},{'perception': 1},NULL,NULL,Alertness and awareness
-stealth,stealth,ABILITY,{},{},{'stealth': 1},NULL,NULL,Sneaking and hiding
-knowledge,knowledge,ABILITY,{},{},{'knowledge': 1},NULL,NULL,Academic and scholarly knowledge
-arcana,arcana,ABILITY,{},{},{'arcana': 1},NULL,NULL,Magical knowledge and theory
-sleight of hand,sleight of hand,ABILITY,{},{},{'sleight of hand': 1},NULL,NULL,Pickpocketing and manual dexterity
-persuasion,persuasion,ABILITY,{},{},{'persuasion': 1},NULL,NULL,Social influence and diplomacy
-athletics,athletics,ABILITY,{},{},{'athletics': 1},NULL,NULL,Physical sports and acrobatics
-speed,speed,MASTER_ATTRIBUTE,{},{'speed': 1},{},NULL,NULL,Overall movement and reaction speed
-magic,magic,MASTER_ATTRIBUTE,{},{'magic': 1},{},NULL,NULL,Magical power and energy
-resistance,resistance,MASTER_ATTRIBUTE,{},{'resistance': 1},{},NULL,NULL,Overall damage resistance
+name,icon_name,node_type,attribute_bonuses,master_attribute_bonuses,ability_bonuses,trait,skill,description
+strength,strength,ATTRIBUTE,{'strength': 1},{},{},NULL,NULL,
+intelligence,intelligence,ATTRIBUTE,{'intelligence': 1},{},{},NULL,NULL,
+ruse,ruse,ATTRIBUTE,{'ruse': 1},{},{},NULL,NULL,
+agility,agility,ATTRIBUTE,{'agility': 1},{},{},NULL,NULL,
+resolution,resolution,ATTRIBUTE,{'resolution': 1},{},{},NULL,NULL,
+vitality,vitality,ATTRIBUTE,{'vitality': 1},{},{},NULL,NULL,
+survival,survival,ABILITY,{},{},{'survival': 1},NULL,NULL,
+perception,perception,ABILITY,{},{},{'perception': 1},NULL,NULL,
+stealth,stealth,ABILITY,{},{},{'stealth': 1},NULL,NULL,
+knowledge,knowledge,ABILITY,{},{},{'knowledge': 1},NULL,NULL,
+arcana,arcana,ABILITY,{},{},{'arcana': 1},NULL,NULL,
+sleight of hand,sleight of hand,ABILITY,{},{},{'sleight of hand': 1},NULL,NULL,
+persuasion,persuasion,ABILITY,{},{},{'persuasion': 1},NULL,NULL,
+athletics,athletics,ABILITY,{},{},{'athletics': 1},NULL,NULL,
+insight,insight,ABILITY,{},{},{'insight': 1},NULL,NULL,
+speed,speed,MASTER_ATTRIBUTE,{},{'speed': 1},{},NULL,NULL,
+magic,magic,MASTER_ATTRIBUTE,{},{'magic': 1},{},NULL,NULL,
+resistance,resistance,MASTER_ATTRIBUTE,{},{'resistance': 1},{},NULL,NULL,
+sneak attack,sneak_attack,ACTIVE,{},{},{},NULL,sneak attack,
+heavy blow,heavy_blow,ACTIVE,{},{},{},NULL,heavy blow,
+counterattack,counterattack,ACTIVE,{},{},{},NULL,counterattack,
+sniper,sniper,ACTIVE,{},{},{},NULL,sniper,
+fire bolt,fire_bolt,ACTIVE,{},{},{},NULL,fire_bolt,

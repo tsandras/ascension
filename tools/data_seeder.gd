@@ -33,6 +33,8 @@ func create_sample_csv_files():
 	create_sample_traits_csv()
 	create_sample_backgrounds_csv()
 	create_sample_features_csv()
+	create_sample_races_csv()
+	create_sample_personalities_csv()
 	print("Sample CSV files created")
 
 # Force create sample CSV files (overwrite existing)
@@ -41,11 +43,13 @@ func force_create_sample_csv_files():
 	create_sample_traits_csv()
 	create_sample_backgrounds_csv()
 	create_sample_features_csv()
+	create_sample_races_csv()
+	create_sample_personalities_csv()
 	print("Sample CSV files force created (overwritten)")
 
 # Create sample nodes CSV
 func create_sample_nodes_csv():
-	var csv_content = """name,icon_name,node_type,attribute_bonuses,master_attribute_bonuses,ability_bonuses,trait_id,skill_id,description
+	var csv_content = """name,icon_name,node_type,attribute_bonuses,master_attribute_bonuses,ability_bonuses,trait,skill,description
 strength,strength,ATTRIBUTE,{'strength': 1},{},{},NULL,NULL,Physical strength and power
 intelligence,intelligence,ATTRIBUTE,{'intelligence': 1},{},{},NULL,NULL,Reasoning and learning ability
 ruse,ruse,ATTRIBUTE,{'ruse': 1},{},{},NULL,NULL,Cunning and deception
@@ -74,11 +78,18 @@ resistance,resistance,MASTER_ATTRIBUTE,{},{'resistance': 1},{},NULL,NULL,Overall
 
 # Create sample traits CSV
 func create_sample_traits_csv():
-	var csv_content = """name,description,icon_name,attribute_bonuses,ability_bonuses,skill_bonuses,other_bonuses
-Elf Blood,You have elven heritage,elf_blood,{'agility': 1},{'perception': 1},{'arcana': 1},Long lifespan
-Human Adaptability,You adapt quickly to new situations,human_adapt,{'intelligence': 1},{'knowledge': 1},{},Bonus experience
-Dwarven Toughness,You are naturally hardy,dwarf_tough,{'vitality': 1},{'athletics': 1},{},Poison resistance
-Tiefling Heritage,You have infernal blood,tiefling_herit,{'ruse': 1},{'persuasion': 1},{'arcana': 1},Fire resistance"""
+	var csv_content = """name,icon_name,point_bonuses,attribute_scaling_bonuses,master_attribute_scaling_bonuses,others_bonuses
+big,big,,-{agility}x0.5 [Ward]; {strenght}x0.5 to [Physical damage],,
+small,small,,{agility}x0.5 [Ward]; -{strenght}x0.5 to [Physical damage],,
+magic resistance,magic_resistance,,,{magic} [magic RP]; {magic}x4 to [Magic tenacity],
+regeneration,regeneration,,,,regenerate 5% {HP} per round
+extraordinary vigor,extraordinary_vigor,,{vigor}x2 [physical Tenacity],,
+extraordinary reflex,extraordinary_reflex,,,,first physical attack/round have 100% [Chance avoidance]
+extraordinary force,extraordinary_force,,{strenght}x0.5 to [Physical damage],,
+slow learner,slow_learner,-1:4,,,
+quick learner,quick_learner,1:4,,,
+lucky,lucky,,,,10% [Chance avoidance]; 10% to [Critical chance]
+magic affinity,magic_affinity,,{intelligence}x2 [MP],,"""
 	
 	var file = FileAccess.open("res://tools/data/traits.csv", FileAccess.WRITE)
 	if file:
@@ -90,11 +101,15 @@ Tiefling Heritage,You have infernal blood,tiefling_herit,{'ruse': 1},{'persuasio
 
 # Create sample backgrounds CSV
 func create_sample_backgrounds_csv():
-	var csv_content = """name,description,attribute_bonuses,ability_bonuses,skill_bonuses,starting_equipment
-Soldier,You served in the military,{'strength': 1, 'vitality': 1},{'athletics': 1},{'survival': 1},Weapon and armor
-Scholar,You studied at a university,{'intelligence': 1, 'resolution': 1},{'knowledge': 1},{'arcana': 1},Books and writing supplies
-Rogue,You lived on the streets,{'agility': 1, 'ruse': 1},{'stealth': 1},{'sleight of hand': 1},Lockpicks and dark clothing
-Merchant,You ran a business,{'ruse': 1, 'persuasion': 1},{'persuasion': 1},{'knowledge': 1},Trade goods and money"""
+	var csv_content = """name,ability_bonuses,description
+soldier,"{'athletics': 1, 'perception': 1}",Was a soldier
+scholar,"{'knowledge': 1, 'arcana': 1}",Was a scholar
+acolyte,"{'knowledge': 1, 'insight': 1}",Was a acolyte
+artisan,"{'insight': 1, 'persuasion': 1}",Was a artisan
+criminal,"{'stealth': 1, 'sleight of hand': 1}",Was a criminal
+entertainer,"{'athletics': 1, 'persuasion': 1}",Was a entertainer
+noble,"{'knowledge': 1, 'persuasion': 1}",Was a noble
+outlander,"{'survival': 1, 'perception': 1}",Was a outlander"""
 	
 	var file = FileAccess.open("res://tools/data/backgrounds.csv", FileAccess.WRITE)
 	if file:
@@ -106,11 +121,14 @@ Merchant,You ran a business,{'ruse': 1, 'persuasion': 1},{'persuasion': 1},{'kno
 
 # Create sample features CSV
 func create_sample_features_csv():
-	var csv_content = """name,description,icon_name,trait_id,attribute_bonuses,ability_bonuses,skill_bonuses,other_bonuses
-Elf Blood,You have elven heritage,elf_blood,1,{'agility': 1},{'perception': 1},{'arcana': 1},Long lifespan
-Human Adaptability,You adapt quickly to new situations,human_adapt,2,{'intelligence': 1},{'knowledge': 1},{},Bonus experience
-Dwarven Toughness,You are naturally hardy,dwarf_tough,3,{'vitality': 1},{'athletics': 1},{},Poison resistance
-Tiefling Heritage,You have infernal blood,tiefling_herit,4,{'ruse': 1},{'persuasion': 1},{'arcana': 1},Fire resistance"""
+	var csv_content = """name,trait,attribute_bonuses,description
+mist-touched,mist-touched,{'resolution': 1},The magic mist infected the character
+astral symbiosis,astral symbiosis,{'intelligence': 1},The character have a astral symbiot
+diviner,diviner,{'ruse': 1},The character have superior visions
+celestial-blooded,celestial-blooded,{'agility': 1},The character have celestial ancestors
+infernal-blooded,infernal-blooded,{'strength': 1},The character have infernal ancestors
+dhampire,dhampyre,{'vitality': 1},The character have a vampire as parent
+heros,heros,{},The character is a hero"""
 	
 	var file = FileAccess.open("res://tools/data/features.csv", FileAccess.WRITE)
 	if file:
@@ -119,6 +137,44 @@ Tiefling Heritage,You have infernal blood,tiefling_herit,4,{'ruse': 1},{'persuas
 		print("Created sample features.csv")
 	else:
 		print("ERROR: Could not create features.csv")
+
+# Create sample races CSV
+func create_sample_races_csv():
+	var csv_content = """name,attribute_bonuses,master_attribute_bonuses,traits,description
+human,{},,quick learner,The humans are numerous
+elf,"{'agility': 1, 'intelligence': 1}",,magic affinity,The elfs are rare
+dwarf,"{'vitality': 1, 'resolution': 1}",,extraordinary vigor,The dwarfs live under mountains
+hobbit,"{'agility': 1, 'ruse': 1}",,"small, lucky",The hobbits are lucky
+orc,"{'strength': 1, 'vitality': 1}",,extraordinary force,The orc are strong
+troll,"{'vitality': 1, 'strength': 1}",{'resistance': 1},"regeneration, big, slow learner",The troll are resistante
+gnoll,{'agility': 1},{'speed': 1},"extraordinary reflex, slow learner",The gnoll are quick
+dragonborn,{'strength': 1},{'magic': 1},"magic resistance, slow learner",The dragonborn are strange"""
+	
+	var file = FileAccess.open("res://tools/data/races.csv", FileAccess.WRITE)
+	if file:
+		file.store_string(csv_content)
+		file.close()
+		print("Created sample races.csv")
+	else:
+		print("ERROR: Could not create races.csv")
+
+# Create sample personalities CSV
+func create_sample_personalities_csv():
+	var csv_content = """name,description
+degenerate,a degenerate person
+righteous,a righteous person
+vengeful,a vengeful person
+altruistic,a altruistic person
+ambitious,a ambitious person
+greed,a greed person"""
+	
+	var file = FileAccess.open("res://tools/data/personalities.csv", FileAccess.WRITE)
+	if file:
+		file.store_string(csv_content)
+		file.close()
+		print("Created sample personalities.csv")
+	else:
+		print("ERROR: Could not create personalities.csv")
 
 # Read CSV file and return array of dictionaries
 func read_csv_file(file_path: String) -> Array:
@@ -141,8 +197,8 @@ func read_csv_file(file_path: String) -> Array:
 			headers = line.split(",")
 			is_first_line = false
 		else:
-			# Parse data line
-			var values = line.split(",")
+			# Parse data line - handle CSV with commas inside quoted fields
+			var values = parse_csv_line(line)
 			var row = {}
 			
 			for i in range(headers.size()):
@@ -151,11 +207,22 @@ func read_csv_file(file_path: String) -> Array:
 				
 				# Handle JSON fields (replace single quotes with double quotes)
 				if header in ["attribute_bonuses", "master_attribute_bonuses", "ability_bonuses", "skill_bonuses", "other_bonuses", "starting_equipment"]:
-					if value != "{}" and value != "NULL":
+					if value != "{}" and value != "NULL" and value != "":
+						# Remove surrounding quotes if present
+						if value.begins_with('"') and value.ends_with('"'):
+							value = value.substr(1, value.length() - 2)
 						value = parse_json_field(value)
 					else:
 						value = {}
-				elif value == "NULL":
+				elif header == "traits":
+					# Traits is a comma-separated string, not JSON
+					if value == "NULL" or value == "":
+						value = null
+					else:
+						# Remove surrounding quotes if present
+						if value.begins_with('"') and value.ends_with('"'):
+							value = value.substr(1, value.length() - 2)
+				elif value == "NULL" or value == "":
 					value = null
 				
 				row[header] = value
@@ -164,6 +231,39 @@ func read_csv_file(file_path: String) -> Array:
 	
 	file.close()
 	return lines
+
+# Parse CSV line handling commas inside quoted fields
+func parse_csv_line(line: String) -> Array:
+	var values = []
+	var current_value = ""
+	var in_quotes = false
+	var i = 0
+	
+	while i < line.length():
+		var char = line[i]
+		
+		if char == '"':
+			if in_quotes and i + 1 < line.length() and line[i + 1] == '"':
+				# Escaped quote
+				current_value += '"'
+				i += 2
+				continue
+			else:
+				# Toggle quote state
+				in_quotes = !in_quotes
+		elif char == ',' and not in_quotes:
+			# End of field
+			values.append(current_value)
+			current_value = ""
+		else:
+			current_value += char
+		
+		i += 1
+	
+	# Add the last field
+	values.append(current_value)
+	
+	return values
 
 # Parse JSON field, handling single quotes for Google Sheets compatibility
 func parse_json_field(field_value: String):
@@ -207,6 +307,32 @@ func convert_floats_to_ints(data):
 	else:
 		return data
 
+# Helper function to get trait ID by name
+func get_trait_id_by_name(trait_name) -> int:
+	if trait_name == null or trait_name == "NULL" or (trait_name is String and trait_name.is_empty()):
+		return 0
+	
+	var traitv = database_manager.get_trait_by_name(trait_name)
+	if traitv:
+		return traitv.id
+	else:
+		print("WARNING: Trait not found: ", trait_name)
+		return 0
+
+# Helper function to get skill ID by name (assuming skills are stored as abilities)
+func get_skill_id_by_name(skill_name) -> int:
+	if skill_name == null or skill_name == "NULL" or (skill_name is String and skill_name.is_empty()):
+		return 0
+	
+	var ability = database_manager.get_ability_by_name(skill_name)
+	if ability:
+		return ability.id
+	else:
+		print("WARNING: Skill/Ability not found: ", skill_name)
+		return 0
+
+# Helper functions now use actual database manager methods
+
 # Seed nodes from CSV
 func seed_nodes_from_csv():
 	print("Seeding nodes from CSV...")
@@ -228,15 +354,10 @@ func seed_nodes_from_csv():
 			"attribute_bonuses": row.attribute_bonuses,
 			"master_attribute_bonuses": row.master_attribute_bonuses,
 			"ability_bonuses": row.ability_bonuses,
-			"trait_id": row.trait_id,
-			"skill_id": row.skill_id,
+			"trait_id": get_trait_id_by_name(row.trait),
+			"skill_id": get_skill_id_by_name(row.skill),
 			"description": row.description
 		}
-		
-		# Debug: Print JSON parsing info
-		print("Raw attribute_bonuses: ", row.attribute_bonuses)
-		print("Parsed attribute_bonuses: ", node_data.attribute_bonuses)
-		print("Final JSON string: ", JSON.stringify(node_data.attribute_bonuses))
 		
 		database_manager.create_node(node_data)
 	
@@ -258,12 +379,12 @@ func seed_traits_from_csv():
 	for row in csv_data:
 		var trait_data = {
 			"name": row.name,
-			"description": row.description,
+			"description": "",  # No description in new CSV
 			"icon_name": row.icon_name,
-			"attribute_bonuses": row.attribute_bonuses,
-			"ability_bonuses": row.ability_bonuses,
-			"skill_bonuses": row.skill_bonuses,
-			"other_bonuses": row.other_bonuses
+			"point_bonuses": row.point_bonuses if row.has("point_bonuses") else "",
+			"attribute_scaling_bonuses": row.attribute_scaling_bonuses if row.has("attribute_scaling_bonuses") else "",
+			"master_attribute_scaling_bonuses": row.master_attribute_scaling_bonuses if row.has("master_attribute_scaling_bonuses") else "",
+			"others_bonuses": row.others_bonuses if row.has("others_bonuses") else ""
 		}
 		
 		database_manager.create_trait(trait_data)
@@ -287,10 +408,10 @@ func seed_backgrounds_from_csv():
 		var background_data = {
 			"name": row.name,
 			"description": row.description,
-			"attribute_bonuses": row.attribute_bonuses,
+			"attribute_bonuses": {},
 			"ability_bonuses": row.ability_bonuses,
-			"skill_bonuses": row.skill_bonuses,
-			"starting_equipment": row.starting_equipment
+			"skill_bonuses": {},
+			"starting_equipment": ""
 		}
 		
 		database_manager.create_background(background_data)
@@ -314,17 +435,66 @@ func seed_features_from_csv():
 		var feature_data = {
 			"name": row.name,
 			"description": row.description,
-			"icon_name": row.icon_name,
-			"trait_id": row.trait_id,
+			"icon_name": "",
+			"trait_id": get_trait_id_by_name(row.trait),
 			"attribute_bonuses": row.attribute_bonuses,
-			"ability_bonuses": row.ability_bonuses,
-			"skill_bonuses": row.skill_bonuses,
-			"other_bonuses": row.other_bonuses
+			"ability_bonuses": {},
+			"skill_bonuses": {},
+			"other_bonuses": ""
 		}
 		
 		database_manager.create_feature(feature_data)
 	
 	print("Features seeded successfully!")
+
+# Seed races from CSV
+func seed_races_from_csv():
+	print("Seeding races from CSV...")
+	
+	var csv_data = read_csv_file("res://tools/data/races.csv")
+	if csv_data.is_empty():
+		print("ERROR: No data found in races.csv")
+		return
+	
+	# Clear existing races
+	database_manager.clear_races()
+	
+	# Insert new races
+	for row in csv_data:
+		var race_data = {
+			"name": row.name,
+			"description": row.description,
+			"attribute_bonuses": row.attribute_bonuses,
+			"master_attribute_bonuses": row.master_attribute_bonuses,
+			"traits": row.traits
+		}
+		
+		database_manager.create_race(race_data)
+	
+	print("Races seeded successfully!")
+
+# Seed personalities from CSV
+func seed_personalities_from_csv():
+	print("Seeding personalities from CSV...")
+	
+	var csv_data = read_csv_file("res://tools/data/personalities.csv")
+	if csv_data.is_empty():
+		print("ERROR: No data found in personalities.csv")
+		return
+	
+	# Clear existing personalities
+	database_manager.clear_personalities()
+	
+	# Insert new personalities
+	for row in csv_data:
+		var personality_data = {
+			"name": row.name,
+			"description": row.description
+		}
+		
+		database_manager.create_personality(personality_data)
+	
+	print("Personalities seeded successfully!")
 
 # Clear all game data
 func clear_all_game_data():
@@ -333,13 +503,27 @@ func clear_all_game_data():
 	database_manager.clear_traits()
 	database_manager.clear_backgrounds()
 	database_manager.clear_features()
+	database_manager.clear_races()
+	database_manager.clear_personalities()
 	print("All game data cleared!")
 
-# Seed all data from CSV files
+# Seed all data from CSV files (in dependency order)
 func seed_all_from_csv():
 	print("Seeding all data from CSV files...")
+	# Seed in dependency order: traits first, then others
+	seed_traits_from_csv()
+	seed_personalities_from_csv()
+	seed_races_from_csv()
+	seed_backgrounds_from_csv()
+	seed_features_from_csv()
 	seed_nodes_from_csv()
+	print("All data seeded successfully!")
+
+# Seed data with traits first (for dependencies)
+func seed_with_traits_first():
+	print("Seeding data with traits first...")
 	seed_traits_from_csv()
 	seed_backgrounds_from_csv()
 	seed_features_from_csv()
-	print("All data seeded successfully!")
+	seed_nodes_from_csv()
+	print("Data with traits seeded successfully!")

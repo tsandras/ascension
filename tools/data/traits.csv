@@ -1,5 +1,19 @@
-name,description,icon_name,attribute_bonuses,ability_bonuses,skill_bonuses,other_bonuses
-Elf Blood,You have elven heritage,elf_blood,{'agility': 1},{'perception': 1},{'arcana': 1},Long lifespan
-Human Adaptability,You adapt quickly to new situations,human_adapt,{'intelligence': 1},{'knowledge': 1},{},Bonus experience
-Dwarven Toughness,You are naturally hardy,dwarf_tough,{'vitality': 1},{'athletics': 1},{},Poison resistance
-Tiefling Heritage,You have infernal blood,tiefling_herit,{'ruse': 1},{'persuasion': 1},{'arcana': 1},Fire resistance
+name,icon_name,point_bonuses,attribute_scaling_bonuses,master_attribute_scaling_bonuses,others_bonuses
+big,big,,-{agility}x0.5 [Ward]; {strenght}x0.5 to [Physical damage],,
+small,small,,{agility}x0.5 [Ward]; -{strenght}x0.5 to [Physical damage],,
+magic resistance,magic_resistance,,,{magic} [magic RP]; {magic}x4 to [Magic tenacity],
+regeneration,regeneration,,,,regenerate 5% {HP} per round
+extraordinary vigor,extraordinary_vigor,,{vigor}x2 [physical Tenacity],,
+extraordinary reflex,extraordinary_reflex,,,,first physical attack/round have 100% [Chance avoidance]
+extraordinary force,extraordinary_force,,{strenght}x0.5 to [Physical damage],,
+slow learner,slow_learner,-1:4,,,
+quick learner,quick_learner,1:4,,,
+lucky,lucky,,,,10% [Chance avoidance]; 10% to [Critical chance]
+magic affinity,magic_affinity,,{intelligence}x2 [MP],,
+mist-touched,mist_touched,,{resolution}x0.25 [RP]; {resolution}x0.5 to [Magic damage],,
+astral symbiosis,astral_symbiosis,,{intelligence}x0.25 to [Spell Duration]; {intelligence} to [Critical chance],,
+diviner,diviner,,"{ruse} to [Initiative], {ruse} [Ward]",,
+celestial-blooded,celestial_blooded,,{agility}x0.25 [AP]; {agility}x0.5 to [Physical damage],,
+infernal-blooded,infernal_blooded,,{strenght} [MP]; {strenght} to [Critical chance],,
+dhampire,dhampire,,{vitality} to [physical Tenacity];{vitality}x0.5 to [Physical damage],,
+heros,heros,,{attributes}x0.25 to [Damage]; {attributes}x0.5 to [Tenacity],,

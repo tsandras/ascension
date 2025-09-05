@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://n466gu7d5rba"
+
+[deps]
+
+files=["res://tools/data/races.attribute.translation", "res://tools/data/races.master.translation", "res://tools/data/races.traits.translation", "res://tools/data/races.description.translation"]
+
+source_file="res://tools/data/races.csv"
+dest_files=["res://tools/data/races.attribute.translation", "res://tools/data/races.master.translation", "res://tools/data/races.traits.translation", "res://tools/data/races.description.translation"]
+
+[params]
+
+compress=true
+delimiter=0

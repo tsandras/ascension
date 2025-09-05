@@ -1,9 +1,0 @@
-name,initials,texture_path,description,display_order
-Desert Landmark 1,D1,res://assets/overlays/landmark_desert_1.png,A mysterious desert landmark,1
-Desert Landmark 2,D2,res://assets/overlays/landmark_desert_2.png,An ancient desert structure,2
-Desert Landmark 4,D4,res://assets/overlays/landmark_desert_4.png,A weathered desert monument,3
-Desert Landmark 7,D7,res://assets/overlays/landmark_desert_7.png,A hidden desert oasis,4
-Desert Landmark 9,D9,res://assets/overlays/landmark_desert_9.png,A grand desert temple,5
-Sample Landmark 1,S1,res://assets/overlays/landmark_sample_1.png,A mysterious landmark,6
-Sample Landmark 4,S4,res://assets/overlays/landmark_sample_4.png,An ancient structure,7
-Sample Landmark 5,S5,res://assets/overlays/landmark_sample_5.png,A weathered monument,8
