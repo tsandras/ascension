@@ -276,6 +276,7 @@ func create_tables():
 		race_id INTEGER,
 		background_id INTEGER,
 		feature_id INTEGER,
+		personality_id INTEGER,
 		sex TEXT NOT NULL,
 		portrait TEXT,
 		avatar TEXT,
@@ -284,7 +285,8 @@ func create_tables():
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (race_id) REFERENCES races(id),
 		FOREIGN KEY (background_id) REFERENCES backgrounds(id),
-		FOREIGN KEY (feature_id) REFERENCES features(id)
+		FOREIGN KEY (feature_id) REFERENCES features(id),
+		FOREIGN KEY (personality_id) REFERENCES personalities(id)
 	);
 	"""
 	
@@ -981,13 +983,17 @@ func get_trait_by_id(trait_id: int):
 		return null
 
 func get_trait_by_name(trait_name: String):
-	var query = "SELECT * FROM traits WHERE name = '%s'" % trait_name
-	db.query(query)
+	var query = "SELECT * FROM traits WHERE name = ?"
+	var params = [trait_name]
+	print("DEBUG: get_trait_by_name query: ", query, " with param: ", trait_name)
+	db.query_with_bindings(query, params)
 	var result = db.query_result
 	
 	if result.size() > 0:
+		print("DEBUG: Found trait: ", result[0])
 		return result[0]
 	else:
+		print("DEBUG: Trait not found: ", trait_name)
 		return null
 
 # Map and Tile database functions
@@ -1137,7 +1143,7 @@ func close_database():
 		db.close_db()
 
 
-func save_character(character_name: String, race_name: String, background_name: String, feature_name: String, sex: String, portrait: String, avatar: String, attributes: Dictionary, abilities: Dictionary) -> int:
+func save_character(character_name: String, race_name: String, background_name: String, feature_name: String, personality_name: String, sex: String, portrait: String, avatar: String, attributes: Dictionary, abilities: Dictionary) -> int:
 	"""Save a character to the database and return the character ID"""
 	print("Saving character: " + character_name)
 	
@@ -1165,15 +1171,23 @@ func save_character(character_name: String, race_name: String, background_name: 
 	
 	var feature_id = feature.id
 	
+	# Get personality ID from personality name
+	var personality = get_personality_by_name(personality_name)
+	if not personality:
+		print("Error: Personality not found: " + personality_name)
+		return -1
+	
+	var personality_id = personality.id
+	
 	# Convert dictionaries to JSON strings for SQLite JSON columns
 	var attributes_json = JSON.stringify(attributes)
 	var abilities_json = JSON.stringify(abilities)
 	
 	# Insert character into database
 	var insert_query = """
-	INSERT INTO character (name, race_id, background_id, feature_id, sex, portrait, avatar, attributes, abilities)
-	VALUES ('%s', %d, %d, %d, '%s', '%s', '%s', '%s', '%s')
-	""" % [character_name, race_id, background_id, feature_id, sex, portrait, avatar, attributes_json, abilities_json]
+	INSERT INTO character (name, race_id, background_id, feature_id, personality_id, sex, portrait, avatar, attributes, abilities)
+	VALUES ('%s', %d, %d, %d, %d, '%s', '%s', '%s', '%s', '%s')
+	""" % [character_name, race_id, background_id, feature_id, personality_id, sex, portrait, avatar, attributes_json, abilities_json]
 	
 	db.query(insert_query)
 	if not is_query_successful():
@@ -1590,23 +1604,51 @@ func get_skill_tree_by_id(tree_id: int) -> Dictionary:
 
 func get_all_skill_trees() -> Array:
 	"""Get all skill trees from the database"""
-	var query = "SELECT * FROM skill_tree ORDER BY name"
+	# First check if there are any skill trees
+	var count_query = "SELECT COUNT(*) as count FROM skill_tree"
+	db.query(count_query)
+	if is_query_successful() and db.query_result.size() > 0:
+		print("DEBUG: Total skill trees in database: ", db.query_result[0].count)
+	else:
+		print("DEBUG: Could not get skill tree count")
 	
+	var query = "SELECT id, name, description, data FROM skill_tree ORDER BY name"
+	
+	print("DEBUG: Executing query: ", query)
 	db.query(query)
+	
 	if is_query_successful():
+		print("DEBUG: Query successful, result size: ", db.query_result.size())
+		print("DEBUG: Raw query result: ", db.query_result)
+		
 		var trees = []
-		for tree_data in db.query_result:
-			# Parse JSON data
-			if tree_data.data:
-				var json = JSON.new()
-				if json.parse(tree_data.data) == OK:
-					tree_data.data_dict = json.data
+		for i in range(db.query_result.size()):
+			var tree_data = db.query_result[i]
+			print("DEBUG: Tree data %d: ", i, tree_data)
+			print("DEBUG: Tree data type: ", typeof(tree_data))
+			
+			# Check if this is a proper dictionary with data
+			if typeof(tree_data) == TYPE_DICTIONARY and tree_data.has("id") and tree_data.has("name"):
+				print("DEBUG: Valid tree data found")
+				print("DEBUG: Tree ID: ", tree_data.id)
+				print("DEBUG: Tree name: ", tree_data.name)
+				
+				# Parse JSON data
+				if tree_data.has("data") and tree_data.data:
+					var json = JSON.new()
+					if json.parse(tree_data.data) == OK:
+						tree_data.data_dict = json.data
+						print("DEBUG: Parsed data_dict: ", tree_data.data_dict)
+					else:
+						tree_data.data_dict = {}
+						print("DEBUG: Failed to parse JSON data")
 				else:
 					tree_data.data_dict = {}
+					print("DEBUG: No data field")
+				
+				trees.append(tree_data)
 			else:
-				tree_data.data_dict = {}
-			
-			trees.append(tree_data)
+				print("DEBUG: Invalid tree data structure, skipping")
 		
 		print("Successfully fetched %d skill trees from database" % trees.size())
 		return trees
@@ -2128,6 +2170,34 @@ func get_all_features():
 		print("Error fetching features: ", db.error_message)
 		return []
 
+func get_all_personalities():
+	"""Get all personalities from the database"""
+	var query = "SELECT * FROM personalities ORDER BY display_order"
+	db.query(query)
+	
+	if is_query_successful():
+		var personalities = []
+		for personality_data in db.query_result:
+			personalities.append(personality_data)
+		
+		print("Successfully fetched %d personalities from database" % personalities.size())
+		return personalities
+	else:
+		print("Error fetching personalities: ", db.error_message)
+		return []
+
+func get_personality_by_name(personality_name: String):
+	"""Get a personality by name"""
+	var query = "SELECT * FROM personalities WHERE name = ?"
+	var params = [personality_name]
+	db.query_with_bindings(query, params)
+	var result = db.query_result
+	
+	if result.size() > 0:
+		return result[0]
+	else:
+		return null
+
 # Clear functions for data seeder tool
 func clear_nodes():
 	"""Clear all nodes from the database"""
@@ -2351,7 +2421,10 @@ func clear_personalities():
 func handle_race_traits(race_name: String, traits_string: String):
 	"""Handle race traits by parsing comma-separated trait names and creating associations"""
 	if traits_string == null or traits_string == "":
+		print("DEBUG: No traits string for race: ", race_name)
 		return
+	
+	print("DEBUG: Processing traits for race '%s': '%s'" % [race_name, traits_string])
 	
 	# Get race ID
 	var race = get_race_by_name(race_name)
@@ -2361,9 +2434,11 @@ func handle_race_traits(race_name: String, traits_string: String):
 	
 	var race_id = race.id
 	var trait_names = traits_string.split(",")
+	print("DEBUG: Split trait names: ", trait_names)
 	
 	for trait_name in trait_names:
 		trait_name = trait_name.strip_edges()
+		print("DEBUG: Looking for trait: '%s'" % trait_name)
 		if trait_name != "":
 			var traitv = get_trait_by_name(trait_name)
 			if traitv:

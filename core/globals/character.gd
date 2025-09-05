@@ -8,6 +8,7 @@ var name: String = ""
 var race_name: String = ""
 var background_name: String = ""
 var feature_name: String = ""
+var personality_name: String = ""
 var sex: String = ""
 var portrait: String = ""
 var avatar: String = ""
@@ -51,6 +52,7 @@ static func load_from_db(character_id: int = -1) -> Character:
 	character.race_name = character_data.race_name
 	character.background_name = character_data.background_name if character_data.has("background_name") else ""
 	character.feature_name = character_data.feature_name if character_data.has("feature_name") else ""
+	character.personality_name = character_data.personality_name if character_data.has("personality_name") else ""
 	character.sex = character_data.sex
 	character.created_at = character_data.created_at
 	
@@ -77,6 +79,7 @@ static func load_from_creation() -> Character:
 	character.race_name = CharacterCreation.selected_race
 	character.background_name = CharacterCreation.selected_background
 	character.feature_name = CharacterCreation.selected_feature
+	character.personality_name = CharacterCreation.selected_personality
 	character.sex = CharacterCreation.selected_sex
 	character.portrait = CharacterCreation.selected_portrait
 	character.avatar = CharacterCreation.selected_avatar
@@ -109,6 +112,7 @@ func save_to_db() -> int:
 		race_name, 
 		background_name, 
 		feature_name, 
+		personality_name, 
 		sex, 
 		portrait, 
 		avatar, 
@@ -132,6 +136,7 @@ static func load_from_db_result(character_data: Dictionary) -> Character:
 	character.race_name = character_data.race_name
 	character.background_name = character_data.background_name if character_data.has("background_name") else ""
 	character.feature_name = character_data.feature_name if character_data.has("feature_name") else ""
+	character.personality_name = character_data.personality_name if character_data.has("personality_name") else ""
 	character.sex = character_data.sex
 	character.portrait = character_data.get("portrait", "")
 	character.avatar = character_data.get("avatar", "")
@@ -153,6 +158,7 @@ func get_character_data() -> Dictionary:
 		"race_name": race_name,
 		"background_name": background_name,
 		"feature_name": feature_name,
+		"personality_name": personality_name,
 		"sex": sex,
 		"portrait": portrait,
 		"avatar": avatar,

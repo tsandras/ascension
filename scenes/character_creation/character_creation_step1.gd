@@ -5,6 +5,7 @@ var attribute_manager: AllocationManager
 var race_manager: AllocationManager
 var background_manager: AllocationManager
 var features_manager: AllocationManager
+var personality_manager: AllocationManager
 var attributes_display: AttributesDisplay
 var abilities_display: AbilitiesDisplay
 
@@ -15,11 +16,13 @@ var abilities_display: AbilitiesDisplay
 @onready var race_container = $Carousels/RaceContainer
 @onready var background_container = $Carousels/BackgroundContainer
 @onready var features_container = $Carousels/FeaturesContainer
+@onready var personality_container = $Carousels/PersonalityContainer
 
 # Carousel references (from scene)
 @onready var race_carousel = $Carousels/RaceContainer/RaceCarousel
 @onready var background_carousel = $Carousels/BackgroundContainer/BackgroundCarousel
 @onready var features_carousel = $Carousels/FeaturesContainer/FeaturesCarousel
+@onready var personality_carousel = $Carousels/PersonalityContainer/PersonalityCarousel
 
 @onready var attributes_display_node = $AttributesDisplay
 @onready var abilities_display_node = $AbilitiesDisplay
@@ -50,6 +53,7 @@ func _ready():
 	race_manager = AllocationManager.new("races", "races", 0)  # Races don't use points
 	background_manager = AllocationManager.new("backgrounds", "backgrounds", 0)  # Backgrounds don't use points
 	features_manager = AllocationManager.new("features", "features", 0)  # Features don't use points
+	personality_manager = AllocationManager.new("personalities", "personalities", 0)  # Personalities don't use points
 	attributes_display = AttributesDisplay.new()
 	# AbilitiesDisplay will be loaded from scene file
 	print("DEBUG: Managers initialized")
@@ -131,6 +135,15 @@ func load_existing_character_data():
 	else:
 		print("DEBUG: No existing feature selection found")
 	
+	# Load selected personality
+	if CharacterCreation.selected_personality != "":
+		personality_manager.select_personality(CharacterCreation.selected_personality)
+		# Note: Personality carousel will be created later in generate_portrait_avatar_ui()
+		# Personality selection will be applied after carousel creation
+		print("Loaded selected personality: " + CharacterCreation.selected_personality)
+	else:
+		print("DEBUG: No existing personality selection found")
+	
 	# Load selected portrait
 	if CharacterCreation.selected_portrait != "":
 		set_selected_portrait(CharacterCreation.selected_portrait)
@@ -174,24 +187,24 @@ func setup_carousels():
 	
 	race_carousel.set_items(races, "name", "description")
 	race_carousel.selection_changed.connect(_on_race_carousel_changed)
-	CursorUtils.add_cursor_to_texture_button(race_carousel.left_button)
-	CursorUtils.add_cursor_to_texture_button(race_carousel.right_button)
 	
 	# Setup background carousel
 	var backgrounds = DatabaseManager.get_all_backgrounds()
 	print("Setting up background carousel with %d backgrounds" % backgrounds.size())
 	background_carousel.set_items(backgrounds, "name", "description")
 	background_carousel.selection_changed.connect(_on_background_carousel_changed)
-	CursorUtils.add_cursor_to_texture_button(background_carousel.left_button)
-	CursorUtils.add_cursor_to_texture_button(background_carousel.right_button)
 	
 	# Setup features carousel
 	var features = DatabaseManager.get_all_features()
 	print("Setting up features carousel with %d features" % features.size())
 	features_carousel.set_items(features, "name", "description")
 	features_carousel.selection_changed.connect(_on_features_carousel_changed)
-	CursorUtils.add_cursor_to_texture_button(features_carousel.left_button)
-	CursorUtils.add_cursor_to_texture_button(features_carousel.right_button)
+	
+	# Setup personality carousel
+	var personalities = DatabaseManager.get_all_personalities()
+	print("Setting up personality carousel with %d personalities" % personalities.size())
+	personality_carousel.set_items(personalities, "name", "description")
+	personality_carousel.selection_changed.connect(_on_personality_carousel_changed)
 	
 	print("DEBUG: Carousels setup complete")
 
@@ -245,9 +258,11 @@ func setup_portrait_avatar_displays():
 	var selected_race = race_manager.get_selected_race() if race_manager else ""
 	var selected_background = background_manager.get_selected_background() if background_manager else ""
 	var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+	var selected_personality = personality_manager.get_selected_personality() if personality_manager else ""
 	character.race_name = selected_race
 	character.background_name = selected_background
 	character.feature_name = selected_feature
+	character.personality_name = selected_personality
 	character.sex = selected_sex
 	character.portrait = get_selected_portrait()
 	character.avatar = get_selected_avatar()
@@ -270,6 +285,7 @@ func setup_portrait_avatar_displays():
 	call_deferred("_set_initial_race_selection")
 	call_deferred("_set_initial_background_selection") 
 	call_deferred("_set_initial_features_selection")
+	call_deferred("_set_initial_personality_selection")
 
 func get_attributes_area() -> Control:
 	"""Get the attributes area node - useful for other parts of the game"""
@@ -288,9 +304,11 @@ func update_attributes_display():
 		var selected_race = race_manager.get_selected_race() if race_manager else ""
 		var selected_background = background_manager.get_selected_background() if background_manager else ""
 		var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+		var selected_personality = personality_manager.get_selected_personality() if personality_manager else ""
 		character.race_name = selected_race
 		character.background_name = selected_background
 		character.feature_name = selected_feature
+		character.personality_name = selected_personality
 		character.sex = selected_sex
 		character.portrait = get_selected_portrait()
 		character.avatar = get_selected_avatar()
@@ -390,6 +408,30 @@ func _set_initial_features_selection():
 	else:
 		print("Warning: No features available for initial selection")
 
+func _set_initial_personality_selection():
+	"""Set initial personality selection after carousel is ready"""
+	print("DEBUG: _set_initial_personality_selection called")
+	if not personality_carousel:
+		print("Warning: Personality carousel not available for initial selection")
+		return
+		
+	var personalities = DatabaseManager.get_all_personalities()
+	print("DEBUG: Found %d personalities in database" % personalities.size())
+	if personalities.size() > 0:
+		# If we have a previously selected personality, set it in the carousel
+		if CharacterCreation.selected_personality != "":
+			var personality_index = personality_carousel.find_item_index_by_name(CharacterCreation.selected_personality, "name")
+			if personality_index >= 0:
+				personality_carousel.set_current_index(personality_index)
+				print("Set carousel to previously selected personality: " + CharacterCreation.selected_personality)
+		
+		# Trigger the personality selection change to update UI
+		print("DEBUG: Triggering personality carousel change...")
+		var current_personality_data = personality_carousel.get_current_item()
+		_on_personality_carousel_changed(personality_carousel.get_current_index(), current_personality_data)
+	else:
+		print("Warning: No personalities available for initial selection")
+
 func _on_background_carousel_changed(item_index: int, item_data: Dictionary):
 	"""Handle background selection change in the carousel (new signal pattern)"""
 	print("DEBUG: _on_background_carousel_changed called with index: %d" % item_index)
@@ -415,7 +457,19 @@ func _on_features_carousel_changed(item_index: int, item_data: Dictionary):
 	
 	print("DEBUG: _on_features_carousel_changed completed")
 
-
+func _on_personality_carousel_changed(item_index: int, item_data: Dictionary):
+	"""Handle personality selection change in the carousel (new signal pattern)"""
+	print("DEBUG: _on_personality_carousel_changed called with index: %d" % item_index)
+	print("DEBUG: Selected personality data: ", item_data)
+	
+	if item_data and item_data.has("name"):
+		var personality_name = item_data.name
+		print("DEBUG: Calling _on_personality_selected with: ", personality_name)
+		_on_personality_selected(personality_name)
+	else:
+		print("Warning: No valid personality data in carousel")
+	
+	print("DEBUG: _on_personality_carousel_changed completed")
 
 func _on_background_selected(background_name: String):
 	"""Handle background selection"""
@@ -438,6 +492,12 @@ func _on_background_selected(background_name: String):
 			
 			# Update background carousel display
 			update_background_carousel_display()
+			
+			# Update trait display to show background trait icon
+			var selected_race = race_manager.get_selected_race() if race_manager else ""
+			if selected_race != "":
+				print("Updating trait display for background: " + background_name)
+				update_trait_display(selected_race)
 			
 			# Update the UI to reflect changes
 			update_ui()
@@ -527,7 +587,49 @@ func _on_feature_selected(feature_name: String):
 	
 	print("DEBUG: _on_feature_selected completed")
 
+func _on_personality_selected(personality_name: String):
+	"""Handle personality selection"""
+	print("DEBUG: _on_personality_selected called with personality: ", personality_name)
+	
+	if personality_manager.select_personality(personality_name):
+		print("DEBUG: Personality selection successful")
+		# Get personality data for the selected personality
+		var personalities = DatabaseManager.get_all_personalities()
+		var selected_personality = null
+		for personality in personalities:
+			if personality.name == personality_name:
+				selected_personality = personality
+				break
+		
+		if selected_personality:
+			# Store personality data for character creation
+			CharacterCreation.current_personality_data = selected_personality
+			
+			# Update personality carousel display
+			update_personality_carousel_display()
+			
+			# Update the UI to reflect changes
+			update_ui()
+			
+			print("Personality selected: " + personality_name)
+			print("Personality data structure: ", selected_personality.keys())
+		else:
+			print("Warning: Could not find personality data for: " + personality_name)
+	else:
+		print("Warning: Could not select personality: " + personality_name)
+	
+	print("DEBUG: _on_personality_selected completed")
 
+func update_personality_carousel_display():
+	"""Update the personality carousel display to show current selection"""
+	if personality_carousel and personality_carousel.has_items():
+		var current_personality = personality_carousel.get_current_item()
+		if current_personality.has("name"):
+			# Update the carousel display
+			personality_carousel.update_display()
+			print("Personality carousel display updated")
+	else:
+		print("Personality carousel not available for update")
 
 func update_features_carousel_display():
 	"""Update the features carousel display to show current selection"""
@@ -743,6 +845,18 @@ func update_trait_display(race_name: String):
 				print("DEBUG: Feature '%s' has trait: %s" % [selected_feature, feature.trait_data.name])
 				# Add feature trait to the list
 				all_traits.append(feature.trait_data)
+	
+	# Check if selected background has a trait icon (using background name as icon name)
+	var selected_background = background_manager.get_selected_background() if background_manager else ""
+	if selected_background != "":
+		print("DEBUG: Background '%s' selected, adding trait icon" % selected_background)
+		# Create a trait data structure for the background icon
+		var background_trait_data = {
+			"name": selected_background,
+			"description": "Background trait",
+			"icon_name": selected_background  # Use background name as icon name
+		}
+		all_traits.append(background_trait_data)
 	
 	print("DEBUG: Total traits to display: ", all_traits.size())
 	
@@ -985,6 +1099,10 @@ func update_ui():
 	if features_carousel:
 		update_features_carousel_display()
 	
+	# Update personality carousel display (only if it exists)
+	if personality_carousel:
+		update_personality_carousel_display()
+	
 	# Update trait display based on selected race
 	print("DEBUG: Calling race_manager.get_selected_race()...")
 	var selected_race = race_manager.get_selected_race()
@@ -1006,14 +1124,15 @@ func update_ui():
 	var race_selected = race_manager.all_points_spent()
 	var background_selected = background_manager.all_points_spent()
 	var features_selected = features_manager.all_points_spent()
+	var personality_selected = personality_manager.all_points_spent()
 	var has_name = character_name.length() > 0
 	var has_sex = selected_sex != ""
 	var has_portrait = get_selected_portrait() != ""
 	var has_avatar = get_selected_avatar() != ""
 	
-	print("DEBUG: Continue conditions: attributes_spent=%s, race_selected=%s, background_selected=%s, features_selected=%s, has_name=%s, has_sex=%s, has_portrait=%s, has_avatar=%s" % [attributes_spent, race_selected, background_selected, features_selected, has_name, has_sex, has_portrait, has_avatar])
+	print("DEBUG: Continue conditions: attributes_spent=%s, race_selected=%s, background_selected=%s, features_selected=%s, personality_selected=%s, has_name=%s, has_sex=%s, has_portrait=%s, has_avatar=%s" % [attributes_spent, race_selected, background_selected, features_selected, personality_selected, has_name, has_sex, has_portrait, has_avatar])
 	
-	var can_continue = attributes_spent and race_selected and background_selected and features_selected and has_name and has_sex and has_portrait and has_avatar
+	var can_continue = attributes_spent and race_selected and background_selected and features_selected and personality_selected and has_name and has_sex and has_portrait and has_avatar
 
 func _on_back_button_pressed():
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
@@ -1044,6 +1163,12 @@ func _on_continue_button_pressed():
 		print("Cannot continue: You must select a feature before proceeding!")
 		return
 	
+	var personality_selected = personality_manager.all_points_spent()
+	print("DEBUG: Personality selected: %s" % personality_selected)
+	if not personality_selected:
+		print("Cannot continue: You must select a personality before proceeding!")
+		return
+	
 	# Check if character name is provided
 	var character_name = get_character_name()
 	if character_name.length() == 0:
@@ -1057,13 +1182,15 @@ func _on_continue_button_pressed():
 	var selected_race = race_manager.get_selected_race()
 	var selected_background = background_manager.get_selected_background() if background_manager else ""
 	var selected_feature = features_manager.get_selected_feature() if features_manager else ""
-	print("DEBUG: Storing step 1 data - race: '%s', background: '%s', feature: '%s'" % [selected_race, selected_background, selected_feature])
+	var selected_personality = personality_manager.get_selected_personality() if personality_manager else ""
+	print("DEBUG: Storing step 1 data - race: '%s', background: '%s', feature: '%s', personality: '%s'" % [selected_race, selected_background, selected_feature, selected_personality])
 	
 	CharacterCreation.set_step1_data(
 		character_name,
 		selected_race,
 		selected_background,
 		selected_feature,
+		selected_personality,
 		selected_sex,
 		get_selected_portrait(),
 		get_selected_avatar(),
@@ -1101,9 +1228,11 @@ func update_abilities_display():
 		var selected_race = race_manager.get_selected_race() if race_manager else ""
 		var selected_background = background_manager.get_selected_background() if background_manager else ""
 		var selected_feature = features_manager.get_selected_feature() if features_manager else ""
+		var selected_personality = personality_manager.get_selected_personality() if personality_manager else ""
 		character.race_name = selected_race
 		character.background_name = selected_background
 		character.feature_name = selected_feature
+		character.personality_name = selected_personality
 		character.sex = selected_sex
 		character.portrait = get_selected_portrait()
 		character.avatar = get_selected_avatar()

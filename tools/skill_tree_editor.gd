@@ -1,12 +1,12 @@
 extends Control
 
 const NODE_SCENES = {
-	"PASSIVE": preload("res://tools/skill_node.tscn"),
-	"ACTIVE": preload("res://tools/skill_node.tscn"),
-	"IMPROVEMENT": preload("res://tools/skill_node.tscn"),
-	"MASTER_ATTRIBUTE": preload("res://tools/skill_node.tscn"),
-	"ATTRIBUTE": preload("res://tools/skill_node.tscn"),
-	"EMPTY": preload("res://tools/skill_node.tscn")
+	"PASSIVE": SkillTreeUtil.SKILL_NODE_SCENE,
+	"ACTIVE": SkillTreeUtil.SKILL_NODE_SCENE,
+	"IMPROVEMENT": SkillTreeUtil.SKILL_NODE_SCENE,
+	"MASTER_ATTRIBUTE": SkillTreeUtil.SKILL_NODE_SCENE,
+	"ATTRIBUTE": SkillTreeUtil.SKILL_NODE_SCENE,
+	"EMPTY": SkillTreeUtil.SKILL_NODE_SCENE
 }
 
 const NODE_SIZES = {
@@ -97,10 +97,19 @@ func _handle_left_click(position: Vector2):
 		"CONNECT":
 			_handle_connection_click(position)
 		"EDIT":
-			_select_node_at_position(position)
+			var clicked_node = _get_node_at_position(position)
+			if clicked_node:
+				# Deselect other nodes first
+				_deselect_all_nodes()
+				_select_node_at_position(position)
+			else:
+				# Clicked on empty space, deselect all nodes
+				_deselect_all_nodes()
 
 func _handle_left_release(position: Vector2):
 	if current_mode == "EDIT" and selected_node:
+		# Reset visual feedback
+		selected_node.modulate = Color.WHITE
 		selected_node = null
 
 func _handle_right_click(position: Vector2):
@@ -192,8 +201,10 @@ func _select_node_at_position(position: Vector2):
 	if node:
 		selected_node = node
 		drag_offset = position - node.position
+		# Visual feedback for selection
+		node.modulate = Color.YELLOW
 		# Update node info panel
-		skill_tree_creator.update_node_info(node.get_node_name(), node.get_node_description())
+		skill_tree_creator.update_node_info(node.get_node_name(), node.get_node_description() if node.get_node_description() != null else "")
 
 func _delete_node_at_position(position: Vector2):
 	var node = _get_node_at_position(position)
@@ -218,19 +229,20 @@ func _get_node_at_position(position: Vector2) -> Control:
 	print("Looking for node at position: ", position)  # Debug output
 	print("Total nodes: ", nodes.size())  # Debug output
 	
+	# Try both the utility function and manual search
+	var found_node = SkillTreeUtil.get_node_at_position(nodes, position)
+	if found_node:
+		print("Found node via utility: ", found_node.get_node_name())  # Debug output
+		return found_node
+	
+	# Fallback manual search with more debugging
 	for i in range(nodes.size()):
 		var node = nodes[i]
 		var node_rect = Rect2(node.position, node.size)
 		
-		print("Node ", i, " position: ", node.position, " size: ", node.size)  # Debug output
-		print("  Node rect: ", node_rect, " (from ", node_rect.position, " to ", node_rect.end, ")")  # Debug output
-		print("  Distance from click: ", position.distance_to(node.position + node.size/2))  # Debug output
-		
 		# Try both exact rect check and distance check
 		var in_rect = node_rect.has_point(position)
 		var close_enough = position.distance_to(node.position + node.size/2) < 100  # Increased to 100px tolerance
-		
-		print("  In rect: ", in_rect, " Close enough: ", close_enough)  # Debug output
 		
 		if in_rect or close_enough:
 			print("Found node at index: ", i)  # Debug output
@@ -241,104 +253,27 @@ func _get_node_at_position(position: Vector2) -> Control:
 
 func _on_node_selected(node: Control):
 	selected_node = node
-	skill_tree_creator.update_node_info(node.get_node_name(), node.get_node_description())
+	skill_tree_creator.update_node_info(node.get_node_name(), node.get_node_description() if node.get_node_description() != null else "")
 
 func _on_node_dragged(node: Control, offset: Vector2):
 	if current_mode == "EDIT":
+		# Set the selected node and drag offset for mouse motion handling
+		selected_node = node
 		drag_offset = offset
 
-func _is_valid_polygon(points: Array) -> bool:
-	# Check if polygon has at least 3 points
-	if points.size() < 3:
-		return false
-	
-	# Check if all points are valid Vector2
-	for point in points:
-		if not point is Vector2:
-			return false
-		if point.x == INF or point.y == INF or point.x == -INF or point.y == -INF:
-			return false
-		if point.x == NAN or point.y == NAN:
-			return false
-	
-	# Check if polygon has area (not all points in a line)
-	var first_point = points[0]
-	var second_point = points[1]
-	var direction = (second_point - first_point).normalized()
-	
-	var all_in_line = true
-	for i in range(2, points.size()):
-		var point = points[i]
-		var to_first = (point - first_point).normalized()
-		if abs(to_first.dot(direction)) < 0.99:  # Allow small deviation
-			all_in_line = false
-			break
-	
-	return not all_in_line
+func _deselect_all_nodes():
+	"""Deselect all nodes and reset their visual appearance"""
+	for node in nodes:
+		node.modulate = Color.WHITE
+	selected_node = null
+
 
 
 
 func _draw():
-	# Draw connections
-	for connection in connections:
-		if connection.from_node and connection.to_node and is_instance_valid(connection.from_node) and is_instance_valid(connection.to_node):
-			var from_pos = connection.from_node.position + connection.from_node.size / 2
-			var to_pos = connection.to_node.position + connection.to_node.size / 2
-			
-			# Check if positions are valid and not too close
-			if from_pos.distance_to(to_pos) < 5.0:
-				continue  # Skip connections that are too close
-			
-			# Draw curvy connection line
-			_draw_curved_connection(from_pos, to_pos)
-			
-			# Draw arrow at the end (only if there's enough distance)
-			if from_pos.distance_to(to_pos) > 20.0:
-				var direction = (to_pos - from_pos).normalized()
-				var arrow_size = 8.0
-				var arrow_pos = to_pos - direction * arrow_size
-				
-				# Ensure arrow points are valid
-				var perp = Vector2(-direction.y, direction.x)
-				var arrow_point1 = arrow_pos + direction * arrow_size + perp * arrow_size * 0.5
-				var arrow_point2 = arrow_pos + direction * arrow_size - perp * arrow_size * 0.5
-				
-				# Validate polygon points before drawing
-				var polygon_points = [to_pos, arrow_point1, arrow_point2]
-				if _is_valid_polygon(polygon_points):
-					draw_colored_polygon(polygon_points, Color(1, 0.8, 0))  # Golden orange color
+	# Draw all connections using utility
+	SkillTreeUtil.draw_all_connections(self, connections, SkillTreeConstants.CONNECTION_COLOR)
 
-func _draw_curved_connection(from_pos: Vector2, to_pos: Vector2):
-	"""Draw a curved connection line between two points"""
-	var distance = from_pos.distance_to(to_pos)
-	var line_color = Color(1, 0.8, 0)  # Golden orange color
-	var line_width = 3.0
-	
-	# Calculate control points for the curve
-	var mid_point = (from_pos + to_pos) / 2
-	var direction = (to_pos - from_pos).normalized()
-	var perp = Vector2(-direction.y, direction.x)
-	
-	# Curve intensity - adjust this value to control how curved the lines are
-	var curve_intensity = min(distance * 0.3, 30.0)  # Maximum curve of 30 pixels
-	
-	# Control point for the curve
-	var control_point = mid_point + perp * curve_intensity
-	
-	# Draw the curved line using multiple line segments
-	var segments = max(int(distance / 10.0), 8)  # At least 8 segments, more for longer lines
-	var prev_point = from_pos
-	
-	for i in range(1, segments + 1):
-		var t = float(i) / float(segments)
-		
-		# Quadratic Bezier curve calculation
-		var t_inv = 1.0 - t
-		var current_point = t_inv * t_inv * from_pos + 2 * t_inv * t * control_point + t * t * to_pos
-		
-		# Draw line segment
-		draw_line(prev_point, current_point, line_color, line_width)
-		prev_point = current_point
 
 func get_nodes_data() -> Array:
 	var nodes_data = []
@@ -450,8 +385,8 @@ func load_skill_tree_data(skill_tree_data: Dictionary):
 				print("Calling node.setup(", node_type, ", ", final_position, ")")
 				node.setup(node_type, final_position)
 				node.position = final_position
-				node.set_node_name(full_node_data.name)
-				node.set_node_description(full_node_data.description)
+				node.set_node_name(full_node_data.get("name", ""))
+				node.set_node_description(full_node_data.get("description", ""))
 				
 				# Set icon if available
 				if full_node_data.has("icon_name") and full_node_data.icon_name:
@@ -517,10 +452,8 @@ func clear_all():
 	# Clear connections
 	connections.clear()
 	
-	# Clear nodes
-	for node in nodes:
-		node.queue_free()
-	nodes.clear()
+	# Clear nodes using utility
+	SkillTreeUtil.clear_skill_tree_nodes(nodes)
 	
 	# Clear selection
 	selected_node = null
@@ -561,8 +494,8 @@ func add_database_node(node_data: Dictionary):
 	# Set up the node with database data
 	print("Calling node.setup(", node_type, ", Vector2(100, 100))")
 	node.setup(node_type, Vector2(100, 100))
-	node.set_node_name(node_data.name)
-	node.set_node_description(node_data.description)
+	node.set_node_name(node_data.get("name", ""))
+	node.set_node_description(node_data.get("description", ""))
 	
 	# Set icon if available
 	if node_data.has("icon_name") and node_data.icon_name:

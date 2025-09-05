@@ -114,10 +114,12 @@ func _load_frame():
 			print("Fallback frame not found: ", frame_path)
 
 func _on_gui_input(event: InputEvent):
-	# Let SkillTreeEditor handle input in connect mode
+	# Let SkillTreeEditor handle input in connect mode and edit mode
 	var skill_tree_editor = get_parent()
-	if skill_tree_editor.has_method("get_current_mode") and skill_tree_editor.get_current_mode() == "CONNECT":
-		return  # Don't consume the event in connect mode
+	if skill_tree_editor.has_method("get_current_mode"):
+		var current_mode = skill_tree_editor.get_current_mode()
+		if current_mode == "CONNECT" or current_mode == "EDIT":
+			return  # Don't consume the event in connect or edit mode
 	
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -204,12 +206,20 @@ func get_node_description() -> String:
 func get_icon_name() -> String:
 	return icon_name
 
-func set_node_name(new_name: String):
-	node_name = new_name
+func set_node_name(new_name):
+	# Handle null, undefined, or empty names
+	if new_name == null or new_name == "":
+		node_name = "Node"
+	else:
+		node_name = str(new_name)
 	call_deferred("_update_appearance")
 
-func set_node_description(new_description: String):
-	description = new_description
+func set_node_description(new_description):
+	# Handle null, undefined, or empty descriptions
+	if new_description == null or new_description == "":
+		description = ""
+	else:
+		description = str(new_description)
 
 func _draw():
 	# Draw node type indicator (single type per node)

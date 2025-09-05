@@ -7,7 +7,7 @@ const NODE_SIZES = {
 	"ACTIVE": Vector2(100, 100),
 	"IMPROVEMENT": Vector2(100, 100),
 	"MASTER_ATTRIBUTE": Vector2(150, 150),
-	"ATTRIBUTE": Vector2(100, 100),
+	"ATTRIBUTE": Vector2(120, 120),
 	"ABILITY": Vector2(75, 75),
 	"EMPTY": Vector2(40, 40)
 }
@@ -18,7 +18,7 @@ const ICON_SIZES = {
 	"ACTIVE": Vector2(70, 70),         # 100x100 node, 80x80 icon
 	"IMPROVEMENT": Vector2(80, 80),    # 100x100 node, 80x80 icon
 	"MASTER_ATTRIBUTE": Vector2(75, 75), # 150x150 node, 120x120 icon
-	"ATTRIBUTE": Vector2(80, 80),      # 100x100 node, 80x80 icon
+	"ATTRIBUTE": Vector2(65, 65),      # 100x100 node, 80x80 icon
 	"ABILITY": Vector2(40, 40),        # 75x75 node, 40x40 icon
 	"EMPTY": Vector2(30, 30)           # 40x40 node, 30x30 icon
 }
@@ -67,6 +67,16 @@ const Z_INDEX = {
 	"FRAME": 1,
 	"ICON": 2
 }
+
+const CONNECTION_COLOR = Color("#FAB85F")
+
+const CONNECTION_DOTTED_COLOR = Color("#FAB85F")
+
+const CONNECTION_DOTTED_WIDTH = 3.0
+
+const CONNECTION_DOTTED_GAP = 6.0
+
+const CONNECTION_DOTTED_LENGTH = 6.0
 
 # Node type validation
 static func is_valid_node_type(node_type: String) -> bool:

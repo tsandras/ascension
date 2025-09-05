@@ -229,11 +229,15 @@ func _connect_node_info_signals():
 	if node_desc_edit:
 		node_desc_edit.text_changed.connect(_on_node_desc_changed)
 
-func update_node_info(name: String, description: String):
+func update_node_info(name, description):
+	# Handle null or undefined values
+	var safe_name = name if name != null else ""
+	var safe_description = description if description != null else ""
+	
 	if node_name_value:
-		node_name_value.text = name
+		node_name_value.text = str(safe_name)
 	if node_desc_edit:
-		node_desc_edit.text = description
+		node_desc_edit.text = str(safe_description)
 
 # Node Management Methods
 func _initialize_node_management():

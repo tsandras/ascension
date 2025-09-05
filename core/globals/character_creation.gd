@@ -5,6 +5,7 @@ var character_name: String = ""
 var selected_race: String = ""
 var selected_background: String = ""
 var selected_feature: String = ""
+var selected_personality: String = ""
 var selected_sex: String = ""
 var selected_portrait: String = ""
 var selected_avatar: String = ""
@@ -13,6 +14,7 @@ var abilities: Dictionary = {}
 var current_trait_data: Dictionary = {}
 var current_background_data: Dictionary = {}
 var current_feature_data: Dictionary = {}
+var current_personality_data: Dictionary = {}
 
 func reset_character_data():
 	"""Reset all character creation data"""
@@ -20,6 +22,7 @@ func reset_character_data():
 	selected_race = ""
 	selected_background = ""
 	selected_feature = ""
+	selected_personality = ""
 	selected_sex = ""
 	selected_portrait = ""
 	selected_avatar = ""
@@ -29,18 +32,20 @@ func reset_character_data():
 	current_trait_data.clear()
 	current_background_data.clear()
 	current_feature_data.clear()
+	current_personality_data.clear()
 
-func set_step1_data(char_name: String, race: String, background: String, feature: String, sex: String, portrait: String, avatar: String, attr: Dictionary):
+func set_step1_data(char_name: String, race: String, background: String, feature: String, personality: String, sex: String, portrait: String, avatar: String, attr: Dictionary):
 	"""Store data from character creation step 1"""
 	character_name = char_name
 	selected_race = race
 	selected_background = background
 	selected_feature = feature
+	selected_personality = personality
 	selected_sex = sex
 	selected_portrait = portrait
 	selected_avatar = avatar
 	attributes = attr.duplicate()
-	print("Stored step 1 data - Name: %s, Race: %s, Background: %s, Feature: %s, Sex: %s, Portrait: %s, Avatar: %s" % [character_name, selected_race, selected_background, selected_feature, selected_sex, selected_portrait, selected_avatar])
+	print("Stored step 1 data - Name: %s, Race: %s, Background: %s, Feature: %s, Personality: %s, Sex: %s, Portrait: %s, Avatar: %s" % [character_name, selected_race, selected_background, selected_feature, selected_personality, selected_sex, selected_portrait, selected_avatar])
 
 func set_step2_data(abil: Dictionary):
 	"""Store data from character creation step 2"""

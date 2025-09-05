@@ -472,6 +472,25 @@ func seed_races_from_csv():
 		database_manager.create_race(race_data)
 	
 	print("Races seeded successfully!")
+	
+	# Debug: List all traits in database
+	print("DEBUG: Listing all traits in database:")
+	var all_traits = database_manager.get_all_traits()
+	for traitv in all_traits:
+		print("  Trait: '%s' (ID: %d)" % [traitv.name, traitv.id])
+	
+	# Debug: Test trait lookups for each race
+	print("DEBUG: Testing trait lookups:")
+	var test_races = ["human", "elf", "dwarf", "hobbit"]
+	for race_name in test_races:
+		var race = database_manager.get_race_by_name(race_name)
+		if race and race.has("traits") and race.traits != null and race.traits != "":
+			print("  Race '%s' traits: '%s'" % [race_name, race.traits])
+			var trait_names = race.traits.split(",")
+			for trait_name in trait_names:
+				trait_name = trait_name.strip_edges()
+				var found_trait = database_manager.get_trait_by_name(trait_name)
+				print("    Trait '%s': %s" % [trait_name, "FOUND" if found_trait else "NOT FOUND"])
 
 # Seed personalities from CSV
 func seed_personalities_from_csv():
