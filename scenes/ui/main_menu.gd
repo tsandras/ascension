@@ -5,10 +5,6 @@ func _ready():
 	
 	# Note: Cursor functionality is now automatically handled by MyButton, MyTextureButton, and MyControl classes
 
-func _on_new_game_button_pressed():
-	# Navigate to character creation step 1 (attributes & race)
-	print("Starting new game - creating character...")
-	get_tree().change_scene_to_file("res://scenes/character_creation/character_creation_step1.tscn")
 
 func _on_generic_button_3_button_pressed():
 	# Load the last saved character and navigate to game world

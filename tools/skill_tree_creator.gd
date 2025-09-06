@@ -163,18 +163,6 @@ func _on_save_pressed():
 	else:
 		print("DatabaseManager not available")
 
-func _on_save_file_selected(path: String):
-	var skill_tree_data = {
-		"name": skill_tree_name_edit.text if skill_tree_name_edit else "",
-		"nodes": skill_tree_editor.get_nodes_data(),
-		"connections": skill_tree_editor.get_connections_data()
-	}
-	
-	var file = FileAccess.open(path, FileAccess.WRITE)
-	if file:
-		file.store_string(JSON.stringify(skill_tree_data, "\t"))
-		file.close()
-		print("Skill tree saved to: ", path)
 
 func _on_load_pressed():
 	var file_dialog = FileDialog.new()
@@ -215,10 +203,6 @@ func _on_clear_pressed():
 	if skill_tree_name_edit:
 		skill_tree_name_edit.text = ""
 
-func _on_node_name_changed():
-	# Note: Node names are now read-only from the database
-	# This function is kept for compatibility but no longer needed
-	pass
 
 func _on_node_desc_changed():
 	if node_desc_edit:
@@ -352,57 +336,6 @@ func _on_add_database_node_pressed():
 	
 	print("Added database node: ", node_data.name)
 
-func _on_save_new_node_pressed():
-	var description = new_node_desc_edit.text.strip_edges()
-	
-	# Note: Node name is now determined by the database selection
-	# We'll use the selected database node's name
-	
-	if not DatabaseManager:
-		print("Error: DatabaseManager not available")
-		return
-	
-	# Get selected trait and skill IDs
-	var trait_id = new_node_trait_select.get_selected_id()
-	var skill_id = new_node_skill_select.get_selected_id()
-	
-	# Convert -1 to actual NULL for database
-	if trait_id == -1:
-		trait_id = -1  # Keep as -1, will be converted to NULL in database
-	if skill_id == -1:
-		skill_id = -1  # Keep as -1, will be converted to NULL in database
-	
-	# Save the node to database (default to PASSIVE type)
-	# Note: We need to get the name from the selected database node
-	var selected_node_id = database_node_select.get_selected_id()
-	if selected_node_id == -1:
-		print("Please select a node from the database first")
-		return
-	
-	var selected_node = DatabaseManager.get_node_by_id(selected_node_id)
-	if selected_node.size() == 0:
-		print("Error: Could not retrieve selected node data")
-		return
-	
-	var node_id = DatabaseManager.save_node(selected_node.name, description, "", "PASSIVE", trait_id, skill_id, {}, {}, {})
-	
-	if node_id > 0:
-		print("Node saved successfully with ID: ", node_id)
-		
-		# Clear the form
-		new_node_name_value.text = "Auto-generated from database"
-		new_node_desc_edit.text = ""
-		new_node_trait_select.select(0)
-		new_node_skill_select.select(0)
-		
-		# Refresh the database nodes list
-		_populate_database_nodes()
-		
-		# Add the new node to the skill tree editor
-		var node_data = DatabaseManager.get_node_by_id(node_id)
-		skill_tree_editor.add_database_node(node_data)
-	else:
-		print("Failed to save node")
 
 func refresh_node_management():
 	_populate_database_nodes()

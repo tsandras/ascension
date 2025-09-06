@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://cdtkotoedapae"]
+[gd_scene load_steps=8 format=3 uid="uid://cdtkotoedapae"]
 
 [ext_resource type="Script" uid="uid://cvh8rrwf56okr" path="res://scenes/character_creation/character_creation_step1.gd" id="1_wqe2v"]
 [ext_resource type="PackedScene" uid="uid://bvqm8xk2n3y6r" path="res://core/ui/attributes_display.tscn" id="2_ibld1"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://dxu0qr3va6gr4" path="res://core/ui/abilities_display.tscn" id="4_ygvi6"]
 [ext_resource type="PackedScene" uid="uid://ddb5d40d8og1o" path="res://core/ui/portrait_display.tscn" id="5_portrait"]
 [ext_resource type="PackedScene" uid="uid://dxlhv37vbol5h" path="res://core/ui/avatar_display.tscn" id="6_avatar"]
+[ext_resource type="PackedScene" uid="uid://4g07n77w0fvv" path="res://scenes/ui/skill_trees_display.tscn" id="7_3savc"]
 
 [node name="CharacterCreationStep1" type="Control"]
 layout_mode = 3
@@ -212,3 +213,10 @@ offset_left = 564.0
 offset_top = 121.0
 offset_right = 1225.0
 offset_bottom = 823.0
+
+[node name="SkillTreesDisplay" parent="." instance=ExtResource("7_3savc")]
+layout_mode = 1
+offset_left = 1171.0
+offset_top = 80.0
+offset_right = -6.0
+offset_bottom = -263.0

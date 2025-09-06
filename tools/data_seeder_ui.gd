@@ -26,28 +26,6 @@ func create_ui():
 	spacer1.custom_minimum_size = Vector2(0, 20)
 	container.add_child(spacer1)
 	
-	# Sample CSV creation buttons
-	var sample_label = Label.new()
-	sample_label.text = "Sample CSV Files:"
-	sample_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	container.add_child(sample_label)
-	
-	var create_samples_btn = Button.new()
-	create_samples_btn.text = "Create Sample CSV Files"
-	create_samples_btn.custom_minimum_size = Vector2(200, 40)
-	create_samples_btn.pressed.connect(_on_create_samples_pressed)
-	container.add_child(create_samples_btn)
-	
-	var force_create_btn = Button.new()
-	force_create_btn.text = "Force Create Sample CSV Files (Overwrite)"
-	force_create_btn.custom_minimum_size = Vector2(200, 40)
-	force_create_btn.pressed.connect(_on_force_create_samples_pressed)
-	container.add_child(force_create_btn)
-	
-	# Spacer
-	var spacer2 = Control.new()
-	spacer2.custom_minimum_size = Vector2(0, 20)
-	container.add_child(spacer2)
 	
 	# Seeding buttons - in dependency order
 	var seed_label = Label.new()
@@ -129,13 +107,6 @@ func create_ui():
 	container.add_child(clear_all_btn)
 
 # Button event handlers
-func _on_create_samples_pressed():
-	print("Creating sample CSV files...")
-	data_seeder.create_sample_csv_files()
-
-func _on_force_create_samples_pressed():
-	print("Force creating sample CSV files...")
-	data_seeder.force_create_sample_csv_files()
 
 func _on_seed_nodes_pressed():
 	print("Seeding nodes from CSV...")

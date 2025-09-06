@@ -23,7 +23,7 @@ var current_node_type: String = "PASSIVE"
 var current_mode: String = "PLACE"
 
 var nodes: Array[Control] = []
-var connections: Array[Dictionary] = []
+var connection_instances: Array[Control] = []
 var selected_node: Control = null
 var connecting_node: Control = null
 var drag_offset: Vector2 = Vector2.ZERO
@@ -178,23 +178,15 @@ func _create_connection(from_node: Control, to_node: Control):
 	print("Creating connection from ", from_node.name, " to ", to_node.name)  # Debug output
 	
 	# Check if connection already exists
-	for connection in connections:
-		if (connection.from_node == from_node and connection.to_node == to_node) or \
-		   (connection.from_node == to_node and connection.to_node == from_node):
+	for connection in connection_instances:
+		if is_instance_valid(connection) and connection.is_connected_to_node(from_node) and connection.is_connected_to_node(to_node):
 			print("Connection already exists, skipping")  # Debug output
 			return
 	
-	var connection = {
-		"from_node": from_node,
-		"to_node": to_node,
-		"id": str(randi())
-	}
-	
-	connections.append(connection)
-	print("Connection created! Total connections: ", connections.size())  # Debug output
-	
-	# Create visual connection line
-	queue_redraw()
+	# Create connection instance
+	var connection_instance = SkillTreeUtil.create_connection(from_node, to_node, -1, -1, self, SkillTreeUtil.DEFAULT_CONNECTION_COLOR)
+	connection_instances.append(connection_instance)
+	print("Connection created! Total connections: ", connection_instances.size())  # Debug output
 
 func _select_node_at_position(position: Vector2):
 	var node = _get_node_at_position(position)
@@ -210,9 +202,11 @@ func _delete_node_at_position(position: Vector2):
 	var node = _get_node_at_position(position)
 	if node:
 		# Remove connections involving this node
-		connections = connections.filter(func(conn): 
-			return conn.from_node != node and conn.to_node != node
-		)
+		for i in range(connection_instances.size() - 1, -1, -1):
+			var connection = connection_instances[i]
+			if is_instance_valid(connection) and connection.is_connected_to_node(node):
+				connection.cleanup()
+				connection_instances.remove_at(i)
 		
 		# Remove node
 		nodes.erase(node)
@@ -222,8 +216,6 @@ func _delete_node_at_position(position: Vector2):
 		if selected_node == node:
 			selected_node = null
 			skill_tree_creator.update_node_info("", "")
-		
-		queue_redraw()
 
 func _get_node_at_position(position: Vector2) -> Control:
 	print("Looking for node at position: ", position)  # Debug output
@@ -271,8 +263,8 @@ func _deselect_all_nodes():
 
 
 func _draw():
-	# Draw all connections using utility
-	SkillTreeUtil.draw_all_connections(self, connections, SkillTreeConstants.CONNECTION_COLOR)
+	# No longer needed - connections are now scene instances
+	pass
 
 
 func get_nodes_data() -> Array:
@@ -298,19 +290,20 @@ func get_nodes_data() -> Array:
 
 func get_connections_data() -> Array:
 	var connections_data = []
-	for connection in connections:
-		var from_node = connection.from_node
-		var to_node = connection.to_node
-		
-		# Get database IDs if available, otherwise use array indices as fallback
-		var from_id = from_node.get_meta("database_id") if from_node.has_meta("database_id") else nodes.find(from_node)
-		var to_id = to_node.get_meta("database_id") if to_node.has_meta("database_id") else nodes.find(to_node)
-		
-		if from_id != -1 and to_id != -1:
-			connections_data.append({
-				"from_node_id": from_id,
-				"to_node_id": to_id
-			})
+	for connection in connection_instances:
+		if is_instance_valid(connection):
+			var from_node = connection.get_from_node()
+			var to_node = connection.get_to_node()
+			
+			# Get database IDs if available, otherwise use array indices as fallback
+			var from_id = from_node.get_meta("database_id") if from_node.has_meta("database_id") else nodes.find(from_node)
+			var to_id = to_node.get_meta("database_id") if to_node.has_meta("database_id") else nodes.find(to_node)
+			
+			if from_id != -1 and to_id != -1:
+				connections_data.append({
+					"from_node_id": from_id,
+					"to_node_id": to_id
+				})
 	return connections_data
 
 func load_skill_tree_data(skill_tree_data: Dictionary):
@@ -445,12 +438,15 @@ func load_skill_tree_data(skill_tree_data: Dictionary):
 		else:
 			print("Warning: Could not find nodes for connection: from=", from_id, " to=", to_id)
 	
-	print("Skill tree loading complete. Loaded ", nodes.size(), " nodes and ", connections.size(), " connections")
+	print("Skill tree loading complete. Loaded ", nodes.size(), " nodes and ", connection_instances.size(), " connections")
 	queue_redraw()
 
 func clear_all():
-	# Clear connections
-	connections.clear()
+	# Clear connection instances
+	for connection in connection_instances:
+		if is_instance_valid(connection):
+			connection.cleanup()
+	connection_instances.clear()
 	
 	# Clear nodes using utility
 	SkillTreeUtil.clear_skill_tree_nodes(nodes)
@@ -461,8 +457,6 @@ func clear_all():
 	
 	# Clear node info
 	skill_tree_creator.update_node_info("", "")
-	
-	queue_redraw()
 
 func update_selected_node_name(name: String):
 	if selected_node:

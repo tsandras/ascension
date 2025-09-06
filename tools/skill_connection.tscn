@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8x7oak2m5p1q"]
+
+[ext_resource type="Script" path="res://tools/skill_connection.gd" id="1_script"]
+
+[node name="SkillConnection" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Line2D" type="Line2D" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+width = 3.0
+default_color = Color(0.98, 0.72, 0.37, 1)

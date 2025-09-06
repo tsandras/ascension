@@ -17,8 +17,6 @@ func _ready():
 	# Create tables if they don't exist
 	create_tables()
 	
-	# Seed initial data if needed
-	seed_data()
 
 func create_tables():
 	# Create attributes table (updated base_value to 0)
@@ -139,28 +137,6 @@ func create_tables():
 	else:
 		print("Nodes table created successfully")
 	
-	# Migrate existing nodes tables to add new bonus columns if they don't exist
-	var nodes_migration_query1 = "ALTER TABLE nodes ADD COLUMN master_attribute_bonuses JSON"
-	db.query(nodes_migration_query1)
-	if not is_query_successful():
-		# Check if it's a duplicate column error
-		if "duplicate column name" in db.error_message:
-			print("Nodes master_attribute_bonuses column already exists")
-		else:
-			print("Nodes master_attribute_bonuses column migration note: " + db.error_message)
-	else:
-		print("Nodes table migrated to include master_attribute_bonuses column")
-	
-	var nodes_migration_query2 = "ALTER TABLE nodes ADD COLUMN ability_bonuses JSON"
-	db.query(nodes_migration_query2)
-	if not is_query_successful():
-		# Check if it's a duplicate column error
-		if "duplicate column name" in db.error_message:
-			print("Nodes ability_bonuses column already exists")
-		else:
-			print("Nodes ability_bonuses column migration note: " + db.error_message)
-	else:
-		print("Nodes table migrated to include ability_bonuses column")
 	
 	# Create skill_tree table
 	var skill_tree_query = """
@@ -199,23 +175,6 @@ func create_tables():
 	else:
 		print("Backgrounds table created successfully")
 	
-	# Migrate existing backgrounds tables to add missing columns if they don't exist
-	var backgrounds_migration_queries = [
-		"ALTER TABLE backgrounds ADD COLUMN attribute_bonuses JSON",
-		"ALTER TABLE backgrounds ADD COLUMN skill_bonuses JSON",
-		"ALTER TABLE backgrounds ADD COLUMN starting_equipment TEXT"
-	]
-	
-	for migration_query in backgrounds_migration_queries:
-		db.query(migration_query)
-		if not is_query_successful():
-			# Check if it's a duplicate column error
-			if "duplicate column name" in db.error_message:
-				print("Backgrounds column already exists")
-			else:
-				print("Backgrounds migration note: " + db.error_message)
-		else:
-			print("Backgrounds table migrated to include new columns")
 	
 	# Create features table
 	var features_query = """
@@ -256,17 +215,6 @@ func create_tables():
 	else:
 		print("Personalities table created successfully")
 	
-	# Migrate existing features tables to add trait_id column if it doesn't exist
-	var features_migration_query = "ALTER TABLE features ADD COLUMN trait_id INTEGER"
-	db.query(features_migration_query)
-	if not is_query_successful():
-		# Check if it's a duplicate column error
-		if "duplicate column name" in db.error_message:
-			print("Features trait_id column already exists")
-		else:
-			print("Features trait column migration note: " + db.error_message)
-	else:
-		print("Features table migrated to include trait_id column")
 	
 	# Create character table for persistent character creation
 	var character_query = """
@@ -296,17 +244,6 @@ func create_tables():
 	else:
 		print("Character table created successfully")
 	
-	# Migrate existing character tables to add feature_id column if it doesn't exist
-	var migration_query = "ALTER TABLE character ADD COLUMN feature_id INTEGER"
-	db.query(migration_query)
-	if not is_query_successful():
-		# Check if it's a duplicate column error
-		if "duplicate column name" in db.error_message:
-			print("Character feature_id column already exists")
-		else:
-			print("Feature column migration note: " + db.error_message)
-	else:
-		print("Character table migrated to include feature_id column")
 	
 	# Create ref_map table (template maps)
 	var ref_map_query = """
@@ -434,52 +371,8 @@ func create_tables():
 	else:
 		print("Map_tile table created successfully")
 
-func seed_data():
-	seed_attributes()
-	seed_traits()       # Seed traits before races (foreign key dependency)
-	seed_races()
-	seed_backgrounds()  # Seed backgrounds
-	seed_features()     # Seed features
-	seed_abilities()    # Seed abilities (includes old competences)
-	seed_nodes()        # Seed sample nodes for skill trees
 
 
-func seed_attributes():
-	# Check if we already have attribute data
-	var check_query = "SELECT COUNT(*) as count FROM attributes"
-	db.query(check_query)
-	var result = db.query_result
-	
-	print("Checking existing attribute data - query result: ", result)
-	if result.size() > 0:
-		print("Found %d rows, count = %s" % [result.size(), str(result[0]["count"])])
-		if result[0]["count"] > 0:
-			print("Database already contains attribute data")
-			return
-	
-	print("No existing attribute data found, seeding attributes...")
-	
-	# Insert the 6 attributes
-	var attributes_data = [
-		{"name": "Strength", "description": "Physical strength and power", "display_order": 1},
-		{"name": "Essence", "description": "Magical power and energy", "display_order": 2},
-		{"name": "Agility", "description": "Physical agility and reflexes", "display_order": 3},
-		{"name": "Resolution", "description": "Mental resilience and determination", "display_order": 4},
-		{"name": "Intelligence", "description": "Reasoning and learning ability", "display_order": 5},
-		{"name": "Stamina", "description": "Endurance and vitality", "display_order": 6}
-	]
-	
-	for attr in attributes_data:
-		var insert_query = """
-		INSERT INTO attributes (name, base_value, max_value, display_order, description)
-		VALUES ('%s', 0, 6, %d, '%s')
-		""" % [attr.name, attr.display_order, attr.description]
-		
-		db.query(insert_query)
-		if not is_query_successful():
-			print("Error inserting attribute " + attr.name + ": " + db.error_message)
-		else:
-			print("Inserted attribute: ", attr.name)
 
 
 
@@ -525,87 +418,6 @@ func get_ability_by_name(ability_name: String):
 	else:
 		return null
 
-func seed_traits():
-	# Check if we already have trait data
-	var check_query = "SELECT COUNT(*) as count FROM traits"
-	db.query(check_query)
-	var result = db.query_result
-	
-	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains trait data")
-		# Update existing traits with icon names if they don't have them
-		_update_existing_traits_with_icons()
-		return
-	
-	print("No existing trait data found, seeding traits...")
-	
-	# Define traits data as GDScript objects
-	var traits_data = [
-		{
-			"name": "Polyvalent",
-			"description": "Humans are adaptable and versatile, gaining small bonuses to all areas of expertise",
-			"icon_name": "hobbit",
-			"point_bonuses": "1:4",
-			"attribute_scaling_bonuses": "",
-			"master_attribute_scaling_bonuses": "",
-			"others_bonuses": "10% [Chance avoidance]; 10% to [Critical chance]",
-			"display_order": 1
-		},
-		{
-			"name": "Ancient Wisdom",
-			"description": "Elfs possess centuries of accumulated knowledge and unshakeable mental fortitude",
-			"icon_name": "magic_book",
-			"point_bonuses": "",
-			"attribute_scaling_bonuses": "{intelligence}x2 [MP]",
-			"master_attribute_scaling_bonuses": "",
-			"others_bonuses": "Long lifespan",
-			"display_order": 2
-		},
-		{
-			"name": "Divine Heritage",
-			"description": "Celestial-blooded carry divine blessings, excelling in protection and social grace",
-			"icon_name": "giant",
-			"point_bonuses": "",
-			"attribute_scaling_bonuses": "{agility}x0.25 [AP]; {agility}x0.5 to [Physical damage]",
-			"master_attribute_scaling_bonuses": "",
-			"others_bonuses": "Fire and lightning resistance",
-			"display_order": 3
-		},
-		{
-			"name": "Infernal Power",
-			"description": "Infernal-blooded channel raw dark power, devastating in combat but consuming",
-			"icon_name": "lion",
-			"point_bonuses": "",
-			"attribute_scaling_bonuses": "{strenght} [MP]; {strenght} to [Critical chance]",
-			"master_attribute_scaling_bonuses": "",
-			"others_bonuses": "Fire and cold resistance",
-			"display_order": 4
-		}
-	]
-	
-	# Insert each trait
-	for trait_data in traits_data:
-		var insert_query = """
-		INSERT INTO traits (name, description, icon_name, point_bonuses, attribute_scaling_bonuses, master_attribute_scaling_bonuses, others_bonuses, display_order)
-		VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)
-		""" % [
-			trait_data.name,
-			trait_data.description,
-			trait_data.icon_name,
-			trait_data.get("point_bonuses", ""),
-			trait_data.get("attribute_scaling_bonuses", ""),
-			trait_data.get("master_attribute_scaling_bonuses", ""),
-			trait_data.get("others_bonuses", ""),
-			trait_data.display_order
-		]
-		
-		db.query(insert_query)
-		if is_query_successful():
-			print("Inserted trait: " + trait_data.name)
-		else:
-			print("Error inserting " + trait_data.name + " trait: " + db.error_message)
-	
-	print("Trait seeding complete")
 
 func _update_existing_traits_with_icons():
 	"""Update existing traits with icon names if they don't have them"""
@@ -663,63 +475,6 @@ func _update_existing_nodes_with_icons():
 	
 	print("Node icon updates complete")
 
-func seed_races():
-	# Check if we already have race data
-	var check_query = "SELECT COUNT(*) as count FROM races"
-	db.query(check_query)
-	var result = db.query_result
-	
-	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains race data")
-		return
-	
-	print("No existing race data found, seeding races...")
-	
-	# Insert the 4 races with their attribute bonuses
-	var races_data = [
-		{
-			"name": "Human", 
-			"description": "The most adaptable and common race", 
-			"display_order": 1, 
-			"attribute_bonuses": {}
-		},
-		{
-			"name": "Elf", 
-			"description": "Ancient and wise beings with extended lifespans", 
-			"display_order": 2, 
-			"attribute_bonuses": {"stamina": -1, "resolution": 1}
-		},
-		{
-			"name": "Celestial-blooded", 
-			"description": "Descendants of celestial beings with divine heritage", 
-			"display_order": 3, 
-			"attribute_bonuses": {"agility": 1}
-		},
-		{
-			"name": "Infernal-blooded", 
-			"description": "Descendants of infernal beings with dark heritage", 
-			"display_order": 4, 
-			"attribute_bonuses": {"agility": 1}
-		}
-	]
-	
-	for race_data in races_data:
-		var json = JSON.new()
-		var bonuses_json = json.stringify(race_data.attribute_bonuses)
-		
-		var insert_query = """
-		INSERT INTO races (name, display_order, description, attribute_bonuses)
-		VALUES ('%s', %d, '%s', '%s')
-		""" % [race_data.name, race_data.display_order, race_data.description, bonuses_json]
-		
-		db.query(insert_query)
-		if not is_query_successful():
-			print("Error inserting race " + race_data.name + ": " + db.error_message)
-		else:
-			print("Inserted race: ", race_data.name)
-	
-	# Now seed the races_traits relationships
-	seed_races_traits()
 
 func get_all_races():
 	var query = """
@@ -919,41 +674,6 @@ func get_features_by_trait(trait_id: int) -> Array:
 		print("Error fetching features by trait: ", db.error_message)
 		return []
 
-func seed_abilities():
-	# Check if we already have ability data
-	var check_query = "SELECT COUNT(*) as count FROM abilities"
-	db.query(check_query)
-	var result = db.query_result
-	
-	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains ability data")
-		return
-	
-	print("No existing ability data found, seeding abilities...")
-	
-	# Insert the 8 abilities (formerly competences) as specified
-	var abilities_data = [
-		{"name": "Survival", "description": "Ability to survive in the wilderness", "display_order": 1},
-		{"name": "Perception", "description": "Awareness and ability to notice details", "display_order": 2},
-		{"name": "Stealth", "description": "Ability to move silently and remain hidden", "display_order": 3},
-		{"name": "Knowledge", "description": "General learning and intellectual capacity", "display_order": 4},
-		{"name": "Arcana", "description": "Understanding of magical theory and practice", "display_order": 5},
-		{"name": "Sleight of Hand", "description": "Dexterity and manual skill for precise tasks", "display_order": 6},
-		{"name": "Persuasion", "description": "Ability to influence and convince others", "display_order": 7},
-		{"name": "Athletics", "description": "Physical prowess and bodily coordination", "display_order": 8}
-	]
-	
-	for ability in abilities_data:
-		var insert_query = """
-		INSERT INTO abilities (name, base_value, max_value, display_order, description)
-		VALUES ('%s', 0, 6, %d, '%s')
-		""" % [ability.name, ability.display_order, ability.description]
-		
-		db.query(insert_query)
-		if not is_query_successful():
-			print("Error inserting ability " + ability.name + ": " + db.error_message)
-		else:
-			print("Inserted ability: ", ability.name)
 
 
 
@@ -1691,343 +1411,9 @@ func get_skill_tree_by_name(name: String) -> Dictionary:
 		print("Skill tree not found with name: ", name)
 		return {}
 
-func seed_nodes():
-	"""Seed the database with sample skill tree nodes"""
-	# Check if we already have node data
-	var check_query = "SELECT COUNT(*) as count FROM nodes"
-	db.query(check_query)
-	var result = db.query_result
-	
-	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains node data")
-		# Update existing nodes with icon names if they don't have them
-		_update_existing_nodes_with_icons()
-		return
-	
-	print("No existing node data found, seeding nodes...")
-	
-	# Get some trait and ability IDs for foreign key references
-	var traits = get_all_traits()
-	var abilities = get_all_abilities()
-	
-	var trait_id = -1
-	var ability_id = -1
-	
-	if traits.size() > 0:
-		trait_id = traits[0].id
-	if abilities.size() > 0:
-		ability_id = abilities[0].id
-	
-	# Sample nodes data
-	var nodes_data = [
-		{
-			"name": "Combat Mastery",
-			"description": "Master of all combat techniques",
-			"icon_name": "lion",
-			"node_type": "MASTER_ATTRIBUTE",
-			"trait_id": trait_id,
-			"skill_id": -1,
-			"attribute_bonuses": {"damage": 15, "critical_chance": 10}
-		},
-		{
-			"name": "Arcane Knowledge",
-			"description": "Deep understanding of magical arts",
-			"icon_name": "magic_book",
-			"node_type": "IMPROVEMENT",
-			"trait_id": -1,
-			"skill_id": ability_id,
-			"attribute_bonuses": {"mana": 20, "resistance": 15}
-		},
-		{
-			"name": "Stealth Expert",
-			"description": "Master of stealth and subterfuge",
-			"icon_name": "monkey",
-			"node_type": "PASSIVE",
-			"trait_id": trait_id,
-			"skill_id": -1,
-			"attribute_bonuses": {"dodge": 20, "accuracy": 10}
-		},
-		{
-			"name": "Leadership",
-			"description": "Natural leader and commander",
-			"icon_name": "giant",
-			"node_type": "ACTIVE",
-			"trait_id": -1,
-			"skill_id": -1,
-			"attribute_bonuses": {"willpower": 15, "endurance": 10}
-		}
-	]
-	
-	for node in nodes_data:
-		var node_id = save_node(
-			node.name,
-			node.description,
-			node.icon_name,
-			node.node_type,
-			node.trait_id,
-			node.skill_id,
-			node.attribute_bonuses,
-			node.get("master_attribute_bonuses", {}),
-			node.get("ability_bonuses", {})
-		)
-		
-		if node_id > 0:
-			print("Seeded node: ", node.name)
-		else:
-			print("Failed to seed node: ", node.name)
-	
-	print("Node seeding complete")
 
-func seed_backgrounds():
-	"""Seed the database with background data"""
-	# Check if we already have background data
-	var check_query = "SELECT COUNT(*) as count FROM backgrounds"
-	db.query(check_query)
-	var result = db.query_result
-	
-	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains background data")
-		return
-	
-	print("No existing background data found, seeding backgrounds...")
-	
-	# Define backgrounds data
-	var backgrounds_data = [
-		{
-			"name": "Acolyte",
-			"description": "Religious training and devotion to a higher power",
-			"ability_bonuses": {"Persuasion": 1, "Knowledge": 1},
-			"display_order": 1
-		},
-		{
-			"name": "Criminal",
-			"description": "Life of crime and street smarts",
-			"ability_bonuses": {"Sleight of Hand": 1, "Stealth": 1},
-			"display_order": 2
-		},
-		{
-			"name": "Entertainer",
-			"description": "Performance and artistic expression",
-			"ability_bonuses": {"Persuasion": 1, "Athletics": 1},
-			"display_order": 3
-		},
-		{
-			"name": "Artisan",
-			"description": "Skilled craftsmanship and trade",
-			"ability_bonuses": {"Perception": 1, "Persuasion": 1},
-			"display_order": 4
-		},
-		{
-			"name": "Noble",
-			"description": "High social status and education",
-			"ability_bonuses": {"Knowledge": 1, "Arcana": 1},
-			"display_order": 5
-		},
-		{
-			"name": "Outlander",
-			"description": "Life in the wilderness and survival",
-			"ability_bonuses": {"Survival": 1, "Perception": 1},
-			"display_order": 6
-		},
-		{
-			"name": "Sage",
-			"description": "Academic knowledge and research",
-			"ability_bonuses": {"Knowledge": 1, "Arcana": 1},
-			"display_order": 7
-		},
-		{
-			"name": "Soldier",
-			"description": "Military training and combat experience",
-			"ability_bonuses": {"Athletics": 1, "Perception": 1},
-			"display_order": 8
-		}
-	]
-	
-	for background in backgrounds_data:
-		var json = JSON.new()
-		var bonuses_json = json.stringify(background.ability_bonuses)
-		
-		var insert_query = """
-		INSERT INTO backgrounds (name, description, ability_bonuses, display_order)
-		VALUES ('%s', '%s', '%s', %d)
-		""" % [
-			background.name,
-			background.description,
-			bonuses_json,
-			background.display_order
-		]
-		
-		db.query(insert_query)
-		if is_query_successful():
-			print("Inserted background: " + background.name)
-		else:
-			print("Error inserting " + background.name + " background: " + db.error_message)
-	
-	print("Background seeding complete")
 
-func seed_features():
-	"""Seed the database with feature data"""
-	# Check if we already have feature data
-	var check_query = "SELECT COUNT(*) as count FROM features"
-	db.query(check_query)
-	var result = db.query_result
-	
-	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains feature data")
-		return
-	
-	print("No existing feature data found, seeding features...")
-	
-	# Define features data with 6 features
-	var features_data = [
-		{
-			"name": "Force of Nature",
-			"description": "Born with exceptional physical strength and resilience",
-			"icon_name": "force_of_nature",
-			"attribute_bonuses": {"Strength": 1, "Stamina": 1},
-			"ability_bonuses": {"Athletics": 1},
-			"skill_bonuses": {},
-			"other_bonuses": {},
-			"trait_id": 1,  # Polyvalent trait (Human trait)
-			"display_order": 1
-		},
-		{
-			"name": "Master Mind",
-			"description": "Exceptional intelligence and analytical thinking",
-			"icon_name": "master_mind",
-			"attribute_bonuses": {"Intelligence": 2},
-			"ability_bonuses": {"Knowledge": 1, "Arcana": 1},
-			"skill_bonuses": {},
-			"other_bonuses": {},
-			"trait_id": null,  # No trait for this feature
-			"display_order": 2
-		},
-		{
-			"name": "Shadow Walker",
-			"description": "Natural stealth and agility abilities",
-			"icon_name": "shadow_walker",
-			"attribute_bonuses": {"Agility": 1, "Resolution": 1},
-			"ability_bonuses": {"Stealth": 1, "Sleight of Hand": 1},
-			"skill_bonuses": {},
-			"other_bonuses": {},
-			"trait_id": null,  # No trait for this feature
-			"display_order": 3
-		},
-		{
-			"name": "Iron Will",
-			"description": "Unbreakable mental fortitude and determination",
-			"icon_name": "iron_will",
-			"attribute_bonuses": {"Resolution": 2},
-			"ability_bonuses": {"Intimidation": 1},
-			"skill_bonuses": {},
-			"other_bonuses": {},
-			"trait_id": null,  # No trait for this feature
-			"display_order": 4
-		},
-		{
-			"name": "Mystic Touch",
-			"description": "Natural affinity for magic and mystical energies",
-			"icon_name": "mystic_touch",
-			"attribute_bonuses": {"Essence": 2},
-			"ability_bonuses": {"Arcana": 1, "Perception": 1},
-			"skill_bonuses": {},
-			"other_bonuses": {},
-			"trait_id": null,  # No trait for this feature
-			"display_order": 5
-		},
-		{
-			"name": "Swift Reflexes",
-			"description": "Lightning-fast reactions and coordination",
-			"icon_name": "swift_reflexes",
-			"attribute_bonuses": {"Agility": 1, "Intelligence": 1},
-			"ability_bonuses": {"Acrobatics": 1, "Perception": 1},
-			"skill_bonuses": {},
-			"other_bonuses": {},
-			"trait_id": null,  # No trait for this feature
-			"display_order": 6
-		}
-	]
-	
-	for feature in features_data:
-		var json = JSON.new()
-		var attr_bonuses_json = json.stringify(feature.attribute_bonuses)
-		var ability_bonuses_json = json.stringify(feature.ability_bonuses)
-		var skill_bonuses_json = json.stringify(feature.skill_bonuses)
-		var other_bonuses_json = json.stringify(feature.other_bonuses)
-		
-		var insert_query = """
-		INSERT INTO features (name, description, icon_name, attribute_bonuses, ability_bonuses, skill_bonuses, other_bonuses, trait_id, display_order)
-		VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, %d)
-		""" % [
-			feature.name,
-			feature.description,
-			feature.icon_name,
-			attr_bonuses_json,
-			ability_bonuses_json,
-			skill_bonuses_json,
-			other_bonuses_json,
-			"NULL" if feature.trait_id == null else str(feature.trait_id),
-			feature.display_order
-		]
-		
-		db.query(insert_query)
-		if is_query_successful():
-			print("Inserted feature: " + feature.name)
-		else:
-			print("Error inserting " + feature.name + " feature: " + db.error_message)
-	
-	print("Feature seeding complete")
 
-func seed_races_traits():
-	"""Seed the races_traits join table with race-trait relationships"""
-	# Check if we already have races_traits data
-	var check_query = "SELECT COUNT(*) as count FROM races_traits"
-	db.query(check_query)
-	var result = db.query_result
-	
-	if result.size() > 0 and result[0]["count"] > 0:
-		print("Database already contains races_traits data")
-		return
-	
-	print("No existing races_traits data found, seeding race-trait relationships...")
-	
-	# Define race-trait relationships
-	var race_trait_relationships = [
-		{"race_name": "Human", "trait_name": "Polyvalent"},
-		{"race_name": "Elf", "trait_name": "Ancient Wisdom"},
-		{"race_name": "Celestial-blooded", "trait_name": "Divine Heritage"},
-		{"race_name": "Infernal-blooded", "trait_name": "Infernal Power"}
-	]
-	
-	for relationship in race_trait_relationships:
-		# Get race ID
-		var race_query = "SELECT id FROM races WHERE name = '%s'" % relationship.race_name
-		db.query(race_query)
-		var race_result = db.query_result
-		
-		# Get trait ID
-		var trait_query = "SELECT id FROM traits WHERE name = '%s'" % relationship.trait_name
-		db.query(trait_query)
-		var trait_result = db.query_result
-		
-		if race_result.size() > 0 and trait_result.size() > 0:
-			var race_id = race_result[0].id
-			var trait_id = trait_result[0].id
-			
-			var insert_query = """
-			INSERT INTO races_traits (race_id, trait_id)
-			VALUES (%d, %d)
-			""" % [race_id, trait_id]
-			
-			db.query(insert_query)
-			if is_query_successful():
-				print("Inserted race-trait relationship: %s - %s" % [relationship.race_name, relationship.trait_name])
-			else:
-				print("Error inserting race-trait relationship: " + db.error_message)
-		else:
-			print("Warning: Could not find race or trait for relationship: %s - %s" % [relationship.race_name, relationship.trait_name])
-	
-	print("Races_traits seeding complete")
 
 func get_race_traits(race_name: String) -> Array:
 	"""Get all traits for a specific race"""

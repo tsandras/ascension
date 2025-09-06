@@ -461,27 +461,6 @@ func print_character_stats():
 	print("Remaining Points: %d" % remaining_points)
 	print("=============================")
 
-# Convenience functions for backward compatibility
-func get_attribute_names() -> Array:
-	return get_item_names()
-
-func get_attribute_value(attr_name: String) -> int:
-	return get_item_value(attr_name)
-
-func can_increase_attribute(attr_name: String) -> bool:
-	return can_increase_item(attr_name)
-
-func can_decrease_attribute(attr_name: String) -> bool:
-	return can_decrease_item(attr_name)
-
-func increase_attribute(attr_name: String) -> bool:
-	return increase_item(attr_name)
-
-func decrease_attribute(attr_name: String) -> bool:
-	return decrease_item(attr_name)
-
-func get_character_attributes() -> Dictionary:
-	return get_character_items()
 
 func add_free_points(points: int):
 	"""Add free points to the allocation pool (for trait bonuses)"""

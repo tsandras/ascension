@@ -58,34 +58,27 @@ func _load_icon():
 		print("Warning: Icon node not ready yet")
 		return
 	
-	if SkillTreeRenderer:
-		icon.texture = SkillTreeRenderer.load_icon_texture(icon_name, node_type)
+	# Load icon using SkillTreeConstants
+	if icon_name.is_empty():
+		var default_icon_path = _get_default_icon_path()
+		if default_icon_path and ResourceLoader.exists(default_icon_path):
+			icon.texture = load(default_icon_path)
+		return
+	
+	var icon_path = SkillTreeConstants.get_icon_path(icon_name, node_type)
+	if ResourceLoader.exists(icon_path):
+		icon.texture = load(icon_path)
+		print("Loaded icon: ", icon_path)
 	else:
-		# Fallback to old method if utility class not available
-		if icon_name.is_empty():
-			var default_icon_path = _get_default_icon_path()
-			if default_icon_path and ResourceLoader.exists(default_icon_path):
-				icon.texture = load(default_icon_path)
-			return
-		
-		var icon_path = SkillTreeConstants.get_icon_path(icon_name, node_type)
-		if ResourceLoader.exists(icon_path):
-			icon.texture = load(icon_path)
-			print("Loaded icon: ", icon_path)
-		else:
-			print("Icon not found: ", icon_path)
-			# Try to load a default icon as fallback
-			var default_icon_path = _get_default_icon_path()
-			if default_icon_path and ResourceLoader.exists(default_icon_path):
-				icon.texture = load(default_icon_path)
+		print("Icon not found: ", icon_path)
+		# Try to load a default icon as fallback
+		var default_icon_path = _get_default_icon_path()
+		if default_icon_path and ResourceLoader.exists(default_icon_path):
+			icon.texture = load(default_icon_path)
 
 func _get_default_icon_path() -> String:
 	"""Get a default icon path based on node type"""
-	if SkillTreeRenderer:
-		return SkillTreeRenderer.get_icon_path("", node_type)
-	else:
-		# Use centralized constants
-		return SkillTreeConstants.get_icon_path("", node_type)
+	return SkillTreeConstants.get_icon_path("", node_type)
 
 func _load_frame():
 	"""Load the frame based on node type"""
@@ -96,22 +89,13 @@ func _load_frame():
 	
 	print("Loading frame for node type: ", node_type)
 	
-	if SkillTreeRenderer:
-		var frame_texture = SkillTreeRenderer.load_frame_texture(node_type)
-		if frame_texture:
-			frame.texture = frame_texture
-			print("Loaded frame via SkillTreeRenderer: ", node_type)
-		else:
-			print("Failed to load frame via SkillTreeRenderer for: ", node_type)
+	# Load frame using SkillTreeConstants
+	var frame_path = SkillTreeConstants.get_frame_path(node_type)
+	if ResourceLoader.exists(frame_path):
+		frame.texture = load(frame_path)
+		print("Loaded frame: ", frame_path)
 	else:
-		# Fallback to old method if utility class not available
-		var frame_path = SkillTreeConstants.get_frame_path(node_type)
-		print("Using fallback frame path: ", frame_path)
-		if ResourceLoader.exists(frame_path):
-			frame.texture = load(frame_path)
-			print("Loaded fallback frame: ", frame_path)
-		else:
-			print("Fallback frame not found: ", frame_path)
+		print("Frame not found: ", frame_path)
 
 func _on_gui_input(event: InputEvent):
 	# Let SkillTreeEditor handle input in connect mode and edit mode

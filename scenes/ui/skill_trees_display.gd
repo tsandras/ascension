@@ -31,7 +31,7 @@ var all_skill_trees: Array = []
 var current_skill_tree_id: int = -1
 var current_skill_tree_data: Dictionary = {}
 var skill_nodes: Array[Control] = []
-var connections: Array[Dictionary] = []
+var connection_instances: Array[Control] = []
 var tab_buttons: Array[Button] = []
 var skill_trees_loaded: bool = false
 
@@ -333,7 +333,7 @@ func _load_skill_tree_data(data_dict: Dictionary):
 	# Force an immediate redraw to show connections with proper offset
 	call_deferred("queue_redraw")
 	
-	print("Skill tree loaded successfully with ", skill_nodes.size(), " nodes and ", connections.size(), " connections")
+	print("Skill tree loaded successfully with ", skill_nodes.size(), " nodes and ", connection_instances.size(), " connections")
 	return true
 
 func _create_skill_node(node_data: Dictionary, position: Vector2):
@@ -373,8 +373,8 @@ func _create_connection(from_id: int, to_id: int):
 	var to_node = SkillTreeUtil.get_node_by_database_id(skill_nodes, to_id)
 	
 	if from_node and to_node:
-		var connection = SkillTreeUtil.create_connection(from_node, to_node, from_id, to_id)
-		connections.append(connection)
+		var connection_instance = SkillTreeUtil.create_connection(from_node, to_node, from_id, to_id, skill_tree_container, connection_color)
+		connection_instances.append(connection_instance)
 
 func _update_header(skill_tree_data: Dictionary):
 	"""Update the header with skill tree information"""
@@ -389,8 +389,11 @@ func _clear_skill_tree():
 	# Clear nodes using utility
 	SkillTreeUtil.clear_skill_tree_nodes(skill_nodes)
 	
-	# Clear connections
-	connections.clear()
+	# Clear connection instances
+	for connection in connection_instances:
+		if is_instance_valid(connection):
+			connection.cleanup()
+	connection_instances.clear()
 	
 	# Reset data
 	current_skill_tree_id = -1
@@ -437,17 +440,10 @@ func _on_close_button_pressed():
 	queue_free()
 
 func _draw():
-	"""Draw the skill tree connections"""
-	print("DEBUG: _draw() called with ", connections.size(), " connections")
-	
-	if not show_connections:
-		return
-	
-	# Draw all connections using utility with offset to account for container position
-	# The container is offset by the sidebar width, so we need to adjust the drawing coordinates
-	var container_offset = skill_tree_container.global_position - global_position
-	print("DEBUG: Container offset for drawing: ", container_offset)
-	SkillTreeUtil.draw_all_connections_with_offset(self, connections, connection_color, SkillTreeUtil.DEFAULT_LINE_WIDTH, SkillTreeUtil.DEFAULT_PARALLEL_OFFSET, true, container_offset)
+	"""Draw the skill tree connections - no longer needed since connections are instances"""
+	# This function is no longer needed since connections are now scene instances
+	# that move with the container automatically
+	pass
 
 # Public API methods
 func set_interactive(interactive: bool):

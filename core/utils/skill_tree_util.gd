@@ -8,6 +8,7 @@ class_name SkillTreeUtil
 
 # Constants
 const SKILL_NODE_SCENE = preload("res://tools/skill_node.tscn")
+const SKILL_CONNECTION_SCENE = preload("res://tools/skill_connection.tscn")
 
 # Default configuration
 const DEFAULT_CONNECTION_COLOR = Color("#FAB85F")
@@ -269,55 +270,16 @@ static func parse_skill_tree_data(skill_tree_data: Dictionary) -> Dictionary:
 	return result
 
 ## Create connection between two nodes
-static func create_connection(from_node: Control, to_node: Control, from_id: int, to_id: int) -> Dictionary:
-	"""Create a connection data structure between two nodes"""
-	return {
-		"from_node": from_node,
-		"to_node": to_node,
-		"from_id": from_id,
-		"to_id": to_id
-	}
-
-## Draw all connections
-static func draw_all_connections(canvas_item: CanvasItem, connections: Array[Dictionary], color: Color = DEFAULT_CONNECTION_COLOR, line_width: float = DEFAULT_LINE_WIDTH, parallel_offset: float = DEFAULT_PARALLEL_OFFSET, show_arrows: bool = true):
-	"""Draw all connections in a skill tree"""
-	for connection in connections:
-		var from_node = connection.from_node
-		var to_node = connection.to_node
-		
-		if from_node and to_node and is_instance_valid(from_node) and is_instance_valid(to_node):
-			var from_pos = from_node.position + from_node.size / 2
-			var to_pos = to_node.position + to_node.size / 2
-			
-			# Skip connections that are too close
-			if from_pos.distance_to(to_pos) < 5.0:
-				continue
-			
-			# Draw curved connection line
-			draw_curved_connection(canvas_item, from_pos, to_pos, color, line_width, parallel_offset)
-			
-			# Draw arrow at the end (only if there's enough distance)
-			if show_arrows:
-				draw_connection_arrow(canvas_item, from_pos, to_pos, color)
-
-## Draw all connections with offset
-static func draw_all_connections_with_offset(canvas_item: CanvasItem, connections: Array[Dictionary], color: Color = DEFAULT_CONNECTION_COLOR, line_width: float = DEFAULT_LINE_WIDTH, parallel_offset: float = DEFAULT_PARALLEL_OFFSET, show_arrows: bool = true, offset: Vector2 = Vector2.ZERO):
-	"""Draw all connections in a skill tree with a coordinate offset"""
-	for connection in connections:
-		var from_node = connection.from_node
-		var to_node = connection.to_node
-		
-		if from_node and to_node and is_instance_valid(from_node) and is_instance_valid(to_node):
-			var from_pos = from_node.position + from_node.size / 2 + offset
-			var to_pos = to_node.position + to_node.size / 2 + offset
-			
-			# Skip connections that are too close
-			if from_pos.distance_to(to_pos) < 5.0:
-				continue
-			
-			# Draw curved connection line
-			draw_curved_connection(canvas_item, from_pos, to_pos, color, line_width, parallel_offset)
-			
-			# Draw arrow at the end (only if there's enough distance)
-			if show_arrows:
-				draw_connection_arrow(canvas_item, from_pos, to_pos, color)
+static func create_connection(from_node: Control, to_node: Control, from_id: int, to_id: int, parent_container: Control = null, color: Color = DEFAULT_CONNECTION_COLOR, line_width: float = DEFAULT_LINE_WIDTH, parallel_offset: float = DEFAULT_PARALLEL_OFFSET, show_arrows: bool = true) -> Control:
+	"""Create a visual connection instance between two nodes"""
+	if not parent_container:
+		print("Error: Parent container required for connection creation")
+		return null
+	
+	var connection_scene = SKILL_CONNECTION_SCENE.instantiate()
+	parent_container.add_child(connection_scene)
+	
+	# Set up the connection
+	connection_scene.setup(from_node, to_node, from_id, to_id, color, line_width, parallel_offset, show_arrows)
+	
+	return connection_scene
